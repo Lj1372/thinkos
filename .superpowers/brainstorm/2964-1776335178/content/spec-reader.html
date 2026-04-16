@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThinkOS Sprint 1 — Design Spec</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0a0a; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px 32px 80px; max-width: 820px; margin: 0 auto; line-height: 1.7; }
+  h1 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .meta { font-size: 13px; color: #555; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid #1e1e1e; }
+  h2 { font-size: 17px; font-weight: 700; color: #fff; margin: 36px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #1e1e1e; display: flex; align-items: center; gap: 10px; }
+  h2 .num { background: #a78bfa; color: #000; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 99px; }
+  h3 { font-size: 14px; font-weight: 700; color: #bbb; margin: 18px 0 8px; }
+  p { font-size: 14px; color: #aaa; margin-bottom: 10px; }
+  ul, ol { padding-left: 20px; margin-bottom: 12px; }
+  li { font-size: 14px; color: #aaa; margin-bottom: 4px; }
+  li strong { color: #ddd; }
+  code { background: #1a1a1a; color: #a78bfa; padding: 1px 6px; border-radius: 4px; font-size: 12px; font-family: 'Menlo', monospace; }
+  pre { background: #111; border: 1px solid #222; border-radius: 8px; padding: 14px 16px; margin: 10px 0 14px; overflow-x: auto; }
+  pre code { background: none; color: #34d399; padding: 0; font-size: 12px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { text-align: left; padding: 8px 12px; background: #141414; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #222; }
+  td { padding: 8px 12px; border-bottom: 1px solid #1a1a1a; color: #aaa; vertical-align: top; }
+  td:first-child { color: #ddd; font-weight: 600; white-space: nowrap; }
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 13px; color: #888; display: flex; align-items: center; gap: 10px; }
+  .checklist li::before { content: '○'; color: #333; font-size: 14px; }
+  .checklist li:hover { background: #141414; color: #bbb; }
+  .section-card { background: #111; border: 1px solid #1e1e1e; border-radius: 10px; padding: 20px 22px; margin-bottom: 6px; }
+  .overview { background: #0d0a1a; border: 1px solid #2a1a4a; border-radius: 10px; padding: 16px 20px; margin-bottom: 28px; font-size: 14px; color: #bbb; line-height: 1.7; }
+  .tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; margin-right: 6px; margin-bottom: 4px; }
+  .tag-new { background: #0d2a18; color: #34d399; border: 1px solid #1a4a2a; }
+  .tag-ux  { background: #0d1a2e; color: #60a5fa; border: 1px solid #1a2a4a; }
+  .tag-be  { background: #2a1a0d; color: #f59e0b; border: 1px solid #4a2a0d; }
+  hr { border: none; border-top: 1px solid #1e1e1e; margin: 28px 0; }
+  .scope-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 28px; }
+</style>
+</head>
+<body>
+
+<h1>ThinkOS Sprint 1 — Design Spec</h1>
+<div class="meta">Date: 2026-04-16 &nbsp;·&nbsp; Scope: Full UI rebuild + 10 features &nbsp;·&nbsp; Target: index.html + app.py</div>
+
+<div class="scope-row">
+  <span class="tag tag-ux">UI Rebuild</span>
+  <span class="tag tag-new">Blind Spot Detector</span>
+  <span class="tag tag-new">Full Council Session</span>
+  <span class="tag tag-ux">Save & History</span>
+  <span class="tag tag-ux">Voice Input</span>
+  <span class="tag tag-ux">Templates Modal</span>
+  <span class="tag tag-ux">Dark/Light Mode</span>
+  <span class="tag tag-ux">Keyboard Shortcuts</span>
+  <span class="tag tag-ux">Mobile Bottom Nav</span>
+  <span class="tag tag-be">2 New API Endpoints</span>
+</div>
+
+<div class="overview">ThinkOS currently has 4 tools in a tab layout. Sprint 1 transforms it into an OS-feeling app with a persistent sidebar, a new Full Council mode, saved history, and 6 UX upgrades. Everything stays in a single HTML file + Flask backend — no build toolchain, no frameworks.</div>
+
+<h2><span class="num">1</span> Layout — Sidebar Architecture</h2>
+<div class="section-card">
+  <h3>Left sidebar (240px, fixed)</h3>
+  <ol>
+    <li><strong>Logo</strong> — "ThinkOS" with purple accent</li>
+    <li><strong>Current Thought</strong> textarea (auto-grows, ~80px min) + 🎙️ voice button inline</li>
+    <li><strong>⚡ Full Council</strong> button — primary CTA, purple</li>
+    <li><strong>Tools nav</strong> — REI Council, The Ladder, Kingdom Lens, Socratic, 🔍 Blind Spot</li>
+    <li><strong>📋 Templates</strong> — ghost button, opens modal</li>
+    <li><strong>Recent Sessions</strong> — last 8, clickable to restore</li>
+    <li><strong>🌓 Theme toggle</strong> — bottom of sidebar</li>
+  </ol>
+  <h3 style="margin-top:16px">Right main area</h3>
+  <ul>
+    <li>Shows active tool output — no tabs</li>
+    <li>Thought shown as read-only pill at top with 🔒 + "edit" link</li>
+    <li>Tool switching via sidebar nav only</li>
+  </ul>
+  <h3 style="margin-top:16px">Mobile (&lt; 640px)</h3>
+  <ul>
+    <li>Sidebar collapses → fixed bottom nav bar (5 tool icons)</li>
+    <li>Thought field → sticky collapsible bar at top of main</li>
+    <li>Full Council → floating action button (bottom-right)</li>
+  </ul>
+</div>
+
+<h2><span class="num">2</span> Global "Current Thought" Field</h2>
+<div class="section-card">
+  <ul>
+    <li>Single source of truth — feeds all tools when you switch</li>
+    <li>Persists to <code>localStorage</code> across refresh</li>
+    <li>🎙️ voice button: Web Speech API, appends to existing text</li>
+    <li>First-visit hint: "feeds all tools"</li>
+  </ul>
+</div>
+
+<h2><span class="num">3</span> Full Council Session</h2>
+<div class="section-card">
+  <p>Runs: <strong>REI → Ladder → Kingdom Lens → Blind Spot</strong> (Socratic excluded — conversational)</p>
+  <h3>Report layout</h3>
+  <ol>
+    <li><strong>Synthesis card</strong> (top) — AI reads all 4 results, writes 3–4 sentence synthesis + one sharp question. Gradient bg: dark purple → dark teal.</li>
+    <li><strong>Full detail sections</strong> (collapsible) — REI, Ladder, Kingdom, Blind Spot each rendered in full</li>
+    <li><strong>Bottom</strong> — Export as Markdown + Share buttons</li>
+  </ol>
+  <h3 style="margin-top:14px">New endpoint</h3>
+  <pre><code>POST /api/synthesis
+Body:    { rei, ladder, kingdom, blind_spot }
+Returns: { synthesis, synthesis_question }</code></pre>
+</div>
+
+<h2><span class="num">4</span> Workflow Templates</h2>
+<div class="section-card">
+  <p>📋 Templates button → modal overlay (max 560px, 2-column grid of template cards)</p>
+  <table>
+    <tr><th>Template</th><th>Tools</th><th>For</th></tr>
+    <tr><td>🔮 Big Life Decision</td><td>REI → Ladder → Kingdom → Blind Spot</td><td>Major choices</td></tr>
+    <tr><td>⚡ Conflict with Someone</td><td>REI → Socratic</td><td>Relationship tension</td></tr>
+    <tr><td>🎨 Creative Block</td><td>Ladder → Socratic</td><td>Stuck on a project</td></tr>
+    <tr><td>✝️ Spiritual Discernment</td><td>Kingdom → Socratic</td><td>Faith decisions</td></tr>
+    <tr><td>🧠 Pressure Test an Idea</td><td>REI → Blind Spot</td><td>Challenge assumptions</td></tr>
+    <tr><td>💬 Hard Conversation</td><td>REI → Socratic</td><td>Difficult talk prep</td></tr>
+  </table>
+  <p>Click template → modal closes, thought field focused. If thought exists → runs immediately.</p>
+</div>
+
+<h2><span class="num">5</span> Save & History</h2>
+<div class="section-card">
+  <ul>
+    <li><code>localStorage</code> key: <code>thinkos_sessions</code> — max 50 sessions</li>
+    <li>Each session: id, title (first 40 chars of thought), timestamp, all tool results</li>
+    <li>Sidebar shows last 8 — click to restore instantly (no API call)</li>
+    <li>Hover → delete button (×)</li>
+    <li>"View all" → sessions modal with search</li>
+    <li>Export → clean <code>.md</code> file download from Full Council report</li>
+  </ul>
+</div>
+
+<h2><span class="num">6</span> Blind Spot Detector</h2>
+<div class="section-card">
+  <p>New tool: "What perspective is completely missing here?"</p>
+  <pre><code>POST /api/blindspot
+Body:    { situation, context? }
+Returns: { missing_perspective, why_its_missing, reframe, blind_spot_question }</code></pre>
+  <ul>
+    <li>Forced to ONE specific missing angle — no generic advice</li>
+    <li>Cross-references REI results if available</li>
+    <li>UI: 3 cards (Missing / Why / Reframe) + blind spot question</li>
+  </ul>
+</div>
+
+<h2><span class="num">7</span> Premium Progress Bar</h2>
+<div class="section-card">
+  <ul>
+    <li>Full-width animated gradient bar at top of main area (replaces spinner)</li>
+    <li>Colour matches active tool</li>
+    <li>Animates 0% → 85% during call, snaps to 100% on completion, fades out</li>
+    <li>Subtle glow effect</li>
+    <li>Loading messages still cycle underneath (existing system)</li>
+  </ul>
+</div>
+
+<h2><span class="num">8</span> Dark / Light Mode</h2>
+<div class="section-card">
+  <ul>
+    <li>Default: dark. Toggle: 🌓 at bottom of sidebar.</li>
+    <li>Detects <code>prefers-color-scheme</code> on first load</li>
+    <li>Persisted to <code>localStorage</code> key <code>thinkos_theme</code></li>
+    <li>CSS swap: <code>data-theme="light"</code> on <code>&lt;html&gt;</code>, all colours already CSS variables</li>
+  </ul>
+</div>
+
+<h2><span class="num">9</span> Keyboard Shortcuts</h2>
+<div class="section-card">
+  <table>
+    <tr><th>Shortcut</th><th>Action</th></tr>
+    <tr><td><code>Cmd/Ctrl + Enter</code></td><td>Submit current tool</td></tr>
+    <tr><td><code>Cmd/Ctrl + K</code></td><td>Focus thought field</td></tr>
+    <tr><td><code>Cmd/Ctrl + Shift + F</code></td><td>Trigger Full Council</td></tr>
+    <tr><td><code>Cmd/Ctrl + 1–5</code></td><td>Switch tools</td></tr>
+    <tr><td><code>Escape</code></td><td>Close any modal</td></tr>
+  </table>
+</div>
+
+<h2><span class="num">10</span> Mobile Bottom Nav</h2>
+<div class="section-card">
+  <ul>
+    <li>Fixed 60px bar, full width, 5 tool icon buttons</li>
+    <li>Active tool highlighted in tool colour</li>
+    <li>Full Council → floating action button (bottom-right, purple)</li>
+    <li>Templates → ⋯ menu</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>Success Criteria</h2>
+<ul class="checklist">
+  <li>Sidebar layout works on desktop and mobile</li>
+  <li>Global thought field feeds all tools automatically</li>
+  <li>Full Council runs all 4 tools and shows synthesis + full detail</li>
+  <li>Templates modal opens, selecting one pre-fills and runs</li>
+  <li>Sessions saved to localStorage, restorable from sidebar</li>
+  <li>Blind Spot Detector returns unique, specific insight</li>
+  <li>Progress bar replaces spinner, feels premium</li>
+  <li>Dark/light toggle persists across refresh</li>
+  <li>All keyboard shortcuts work</li>
+  <li>Mobile bottom nav replaces sidebar on small screens</li>
+  <li>Export to Markdown works</li>
+</ul>
+
+<hr>
+<p style="color:#444;font-size:12px">File: docs/superpowers/specs/2026-04-16-thinkos-sprint1-design.md</p>
+
+</body>
+</html>

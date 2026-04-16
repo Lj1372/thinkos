@@ -1,0 +1,186 @@
+<h2>Workflow Templates — Where do they live?</h2>
+<p class="subtitle">Three different approaches. Click your favourite.</p>
+
+<style>
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 8px; }
+.opt { border-radius: 12px; border: 2px solid #2a2a2a; overflow: hidden; cursor: pointer; transition: all 0.15s; background: #0d0d0d; }
+.opt:hover { border-color: #444; }
+.opt.selected { border-color: #a78bfa; box-shadow: 0 0 0 3px #1e1030; }
+.opt-label { padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #a78bfa; background: #0f0a1a; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
+.opt-check { opacity: 0; }
+.opt.selected .opt-check { opacity: 1; }
+
+/* Shared sidebar chrome */
+.mock-shell { display: flex; height: 360px; background: #0a0a0a; font-size: 10px; }
+.mock-sb { width: 160px; background: #111; border-right: 1px solid #1e1e1e; display: flex; flex-direction: column; padding: 10px; gap: 6px; flex-shrink: 0; overflow: hidden; }
+.mock-logo { font-weight: 700; font-size: 12px; color: #eee; margin-bottom: 2px; }
+.mock-logo span { color: #a78bfa; }
+.mock-lbl { font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: #444; font-weight: 700; }
+.mock-ta { background: #1a1a1a; border: 1px solid #252525; border-radius: 5px; padding: 6px; color: #888; font-size: 9px; line-height: 1.4; height: 52px; }
+.mock-full-btn { background: #a78bfa; color: #000; border-radius: 5px; padding: 5px; font-size: 9px; font-weight: 700; text-align: center; }
+.mock-divider { height: 1px; background: #1e1e1e; }
+.mock-tool { padding: 5px 7px; border-radius: 5px; font-size: 9px; color: #555; }
+.mock-tool.active { background: #1e1830; color: #a78bfa; }
+.mock-tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.mock-main { flex: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+.mock-main-title { font-size: 10px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* Option A — templates in sidebar */
+.sb-templates-section { display: flex; flex-direction: column; gap: 3px; }
+.sb-tmpl { padding: 5px 7px; border-radius: 5px; background: #141414; border: 1px solid #222; font-size: 9px; color: #666; line-height: 1.3; }
+.sb-tmpl strong { color: #999; display: block; margin-bottom: 1px; }
+.sb-tmpl.highlight { background: #1a1030; border-color: #3a2060; }
+.sb-tmpl.highlight strong { color: #c4b5fd; }
+
+/* Option B — modal overlay */
+.modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 10; }
+.modal-box { background: #141414; border: 1px solid #333; border-radius: 12px; padding: 16px; width: 85%; }
+.modal-title { font-size: 12px; font-weight: 700; color: #eee; margin-bottom: 3px; }
+.modal-sub { font-size: 9px; color: #555; margin-bottom: 12px; }
+.modal-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.modal-card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px 12px; }
+.modal-card-name { font-size: 10px; font-weight: 700; color: #ddd; margin-bottom: 3px; }
+.modal-card-desc { font-size: 9px; color: #555; line-height: 1.4; margin-bottom: 6px; }
+.modal-card-chain { display: flex; gap: 3px; flex-wrap: wrap; }
+.chain-tag { font-size: 8px; padding: 2px 6px; border-radius: 99px; font-weight: 600; }
+.ct-rei { background: #2a1a06; color: #f59e0b; }
+.ct-ladder { background: #1a1030; color: #a78bfa; }
+.ct-kingdom { background: #1a1200; color: #fbbf24; }
+.ct-socratic { background: #1a0820; color: #f472b6; }
+.modal-open-btn { background: #141414; border: 1px solid #333; color: #a78bfa; border-radius: 5px; padding: 5px 10px; font-size: 9px; font-weight: 700; text-align: center; margin-top: 4px; }
+.relative { position: relative; }
+
+/* Option C — inline starter prompts */
+.starter-section { display: flex; flex-direction: column; gap: 3px; }
+.starter-prompt { padding: 5px 8px; border-radius: 5px; background: #141414; border: 1px dashed #252525; font-size: 9px; color: #555; cursor: pointer; transition: all 0.1s; }
+.starter-prompt:hover { color: #999; border-color: #444; }
+.starter-prompt .arrow { color: #a78bfa; margin-right: 4px; }
+.empty-ta { background: #141414; border: 1px dashed #252525; border-radius: 5px; padding: 6px; color: #333; font-size: 9px; line-height: 1.4; height: 52px; display: flex; align-items: center; justify-content: center; text-align: center; font-style: italic; }
+</style>
+
+<div class="three-col">
+
+  <!-- A: Templates in sidebar -->
+  <div class="opt" data-choice="sidebar-templates" onclick="toggleSelect(this)">
+    <div class="opt-label">A — In the sidebar <span class="opt-check">✓</span></div>
+    <div class="mock-shell">
+      <div class="mock-sb">
+        <div class="mock-logo">Think<span>OS</span></div>
+        <div class="mock-lbl">Current Thought</div>
+        <div class="mock-ta">I'm thinking about leaving my job...</div>
+        <div class="mock-full-btn">⚡ Full Council</div>
+        <div class="mock-divider"></div>
+        <div class="mock-lbl">Tools</div>
+        <div class="mock-tool-grid">
+          <div class="mock-tool active">REI</div>
+          <div class="mock-tool">Ladder</div>
+          <div class="mock-tool">Kingdom</div>
+          <div class="mock-tool">Socratic</div>
+          <div class="mock-tool" style="grid-column:span 2">🔍 Blind Spot</div>
+        </div>
+        <div class="mock-divider"></div>
+        <div class="mock-lbl">Templates</div>
+        <div class="sb-templates-section">
+          <div class="sb-tmpl highlight"><strong>Big Life Decision</strong>REI → Ladder → Kingdom</div>
+          <div class="sb-tmpl"><strong>Conflict</strong>REI → Socratic</div>
+          <div class="sb-tmpl"><strong>Creative Block</strong>Ladder → Socratic</div>
+          <div class="sb-tmpl"><strong>Discernment</strong>Kingdom → Socratic</div>
+        </div>
+      </div>
+      <div class="mock-main">
+        <div class="mock-main-title">REI Council</div>
+        <div style="font-size:9px;color:#444;line-height:1.5">Template loaded: <span style="color:#c4b5fd">Big Life Decision</span><br>Runs: REI → Ladder → Kingdom</div>
+        <div style="background:#1a1a1a;border:1px solid #222;border-radius:6px;padding:8px;font-size:9px;color:#666;">I'm thinking about leaving my job to build this full-time...</div>
+        <div style="background:#a78bfa;color:#000;border-radius:20px;padding:5px 12px;font-size:9px;font-weight:700;align-self:flex-start">Run Template →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B: Modal overlay -->
+  <div class="opt" data-choice="modal-templates" onclick="toggleSelect(this)">
+    <div class="opt-label">B — Modal chooser <span class="opt-check">✓</span></div>
+    <div class="mock-shell relative">
+      <div class="mock-sb">
+        <div class="mock-logo">Think<span>OS</span></div>
+        <div class="mock-lbl">Current Thought</div>
+        <div class="mock-ta">I'm thinking about leaving my job...</div>
+        <div class="mock-full-btn">⚡ Full Council</div>
+        <div class="mock-divider"></div>
+        <div class="mock-tool-grid">
+          <div class="mock-tool active">REI</div>
+          <div class="mock-tool">Ladder</div>
+          <div class="mock-tool">Kingdom</div>
+          <div class="mock-tool">Socratic</div>
+        </div>
+        <div class="mock-divider"></div>
+        <div class="modal-open-btn">📋 Templates</div>
+      </div>
+      <div class="mock-main"></div>
+      <!-- Modal overlay -->
+      <div class="modal-overlay">
+        <div class="modal-box">
+          <div class="modal-title">Choose a Template</div>
+          <div class="modal-sub">Pre-built thinking sequences for common situations</div>
+          <div class="modal-cards">
+            <div class="modal-card">
+              <div class="modal-card-name">🔮 Big Life Decision</div>
+              <div class="modal-card-desc">Major choices with long-term consequences</div>
+              <div class="modal-card-chain"><span class="chain-tag ct-rei">REI</span><span class="chain-tag ct-ladder">Ladder</span><span class="chain-tag ct-kingdom">Kingdom</span></div>
+            </div>
+            <div class="modal-card">
+              <div class="modal-card-name">⚡ Conflict</div>
+              <div class="modal-card-desc">Tension with someone you care about</div>
+              <div class="modal-card-chain"><span class="chain-tag ct-rei">REI</span><span class="chain-tag ct-socratic">Socratic</span></div>
+            </div>
+            <div class="modal-card">
+              <div class="modal-card-name">🎨 Creative Block</div>
+              <div class="modal-card-desc">Stuck on a project or creative decision</div>
+              <div class="modal-card-chain"><span class="chain-tag ct-ladder">Ladder</span><span class="chain-tag ct-socratic">Socratic</span></div>
+            </div>
+            <div class="modal-card">
+              <div class="modal-card-name">✝️ Discernment</div>
+              <div class="modal-card-desc">Faith-based decisions and spiritual direction</div>
+              <div class="modal-card-chain"><span class="chain-tag ct-kingdom">Kingdom</span><span class="chain-tag ct-socratic">Socratic</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C: Inline starter prompts -->
+  <div class="opt" data-choice="inline-starters" onclick="toggleSelect(this)">
+    <div class="opt-label">C — Inline starters <span class="opt-check">✓</span></div>
+    <div class="mock-shell">
+      <div class="mock-sb">
+        <div class="mock-logo">Think<span>OS</span></div>
+        <div class="mock-lbl">Current Thought</div>
+        <div class="empty-ta">What's on your mind?</div>
+        <div class="mock-lbl" style="margin-top:2px">Try one of these →</div>
+        <div class="starter-section">
+          <div class="starter-prompt"><span class="arrow">→</span>Big life decision...</div>
+          <div class="starter-prompt"><span class="arrow">→</span>Conflict with someone...</div>
+          <div class="starter-prompt"><span class="arrow">→</span>Creative block on...</div>
+          <div class="starter-prompt"><span class="arrow">→</span>Struggling with faith...</div>
+        </div>
+        <div class="mock-divider"></div>
+        <div class="mock-tool-grid">
+          <div class="mock-tool active">REI</div>
+          <div class="mock-tool">Ladder</div>
+          <div class="mock-tool">Kingdom</div>
+          <div class="mock-tool">Socratic</div>
+          <div class="mock-tool" style="grid-column:span 2">🔍 Blind Spot</div>
+        </div>
+      </div>
+      <div class="mock-main">
+        <div class="mock-main-title">REI Council</div>
+        <div style="font-size:9px;color:#444;line-height:1.6">Click a starter prompt on the left → it pre-fills your thought and suggests which tools to run. No separate UI — it disappears once you start typing.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:14px;font-size:12px">
+  <strong>A</strong> — always visible, one click away. <strong>B</strong> — cleaner sidebar, full cards with descriptions. <strong>C</strong> — most minimal, lives in the thought field itself.
+</p>

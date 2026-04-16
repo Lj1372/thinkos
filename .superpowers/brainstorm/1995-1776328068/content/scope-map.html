@@ -1,0 +1,199 @@
+<h2>ThinkOS — What are we building first?</h2>
+<p class="subtitle">You've got a great roadmap. Pick the features for <strong>this build sprint</strong> — we'll spec and implement exactly those. Everything else stays on the roadmap.</p>
+
+<style>
+.feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+.feature-group { background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 12px; padding: 18px; }
+.feature-group h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+.group-ux h3     { color: #60a5fa; }
+.group-features h3 { color: #34d399; }
+.group-polish h3 { color: #a78bfa; }
+.group-growth h3 { color: #fbbf24; }
+.feat-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px; border-radius: 8px; border: 1px solid #222;
+  margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
+  background: #141414;
+}
+.feat-item:hover { border-color: #444; background: #1a1a1a; }
+.feat-item.selected { border-color: #60a5fa; background: #0d1a2e; }
+.group-features .feat-item.selected { border-color: #34d399; background: #0d1f18; }
+.group-polish   .feat-item.selected { border-color: #a78bfa; background: #150d2a; }
+.group-growth   .feat-item.selected { border-color: #fbbf24; background: #1a1400; }
+.feat-effort {
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 99px;
+  white-space: nowrap; margin-top: 1px; flex-shrink: 0;
+}
+.effort-quick  { background: #0d2a18; color: #34d399; }
+.effort-medium { background: #2a200d; color: #fbbf24; }
+.effort-big    { background: #2a0d0d; color: #f87171; }
+.feat-name { font-size: 13px; font-weight: 600; color: #ddd; line-height: 1.3; }
+.feat-desc { font-size: 11px; color: #666; margin-top: 3px; line-height: 1.4; }
+.feat-check { color: #60a5fa; font-size: 16px; margin-left: auto; opacity: 0; }
+.feat-item.selected .feat-check { opacity: 1; }
+.deploy-note {
+  background: #1a0d00; border: 1px solid #5a3000; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 18px; font-size: 13px; color: #fbbf24; line-height: 1.6;
+}
+.deploy-note strong { color: #fff; }
+</style>
+
+<div class="deploy-note">
+  ⚠️ <strong>Stable URL first:</strong> To get a permanent "thinkos" URL that stays live without your machine running, we need to deploy to the cloud (Railway or Render — both free). This is separate from the features below and takes ~10 mins. Want this done first?
+</div>
+
+<p class="subtitle" style="margin-bottom:16px">Click everything you want in this sprint:</p>
+
+<div class="feature-grid" id="featureGrid">
+
+  <div class="feature-group group-ux">
+    <h3>⚡ UX / Flow</h3>
+
+    <div class="feat-item" data-choice="global-thought" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Global "Current Thought" bar</div>
+        <div class="feat-desc">Type once → feeds all tools automatically</div>
+      </div>
+      <span class="effort-quick feat-effort">Quick</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="full-council" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">One-click Full Council Session</div>
+        <div class="feat-desc">Run all 4 tools in sequence → single beautiful report</div>
+      </div>
+      <span class="effort-medium feat-effort">Medium</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="workflow-templates" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Workflow Templates</div>
+        <div class="feat-desc">"Big Life Decision", "Conflict", "Creative Block" pre-set chains</div>
+      </div>
+      <span class="effort-quick feat-effort">Quick</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="keyboard" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Keyboard shortcuts</div>
+        <div class="feat-desc">Cmd+Enter to submit, Cmd+K new session, tab switching</div>
+      </div>
+      <span class="effort-quick feat-effort">Quick</span>
+      <span class="feat-check">✓</span>
+    </div>
+  </div>
+
+  <div class="feature-group group-features">
+    <h3>🧠 Feature Additions</h3>
+
+    <div class="feat-item" data-choice="history" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Save &amp; History</div>
+        <div class="feat-desc">LocalStorage sessions + export as Markdown</div>
+      </div>
+      <span class="effort-medium feat-effort">Medium</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="blind-spot" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Blind Spot Detector</div>
+        <div class="feat-desc">New mini-tool: "What perspective is missing here?"</div>
+      </div>
+      <span class="effort-medium feat-effort">Medium</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="voice" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Voice input</div>
+        <div class="feat-desc">Web Speech API — speak your thought, especially in Socratic</div>
+      </div>
+      <span class="effort-quick feat-effort">Quick</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="share-cards" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Shareable result cards</div>
+        <div class="feat-desc">Copy result as a clean image card</div>
+      </div>
+      <span class="effort-big feat-effort">Big</span>
+      <span class="feat-check">✓</span>
+    </div>
+  </div>
+
+  <div class="feature-group group-polish">
+    <h3>✨ Polish</h3>
+
+    <div class="feat-item" data-choice="progress-bar" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Premium progress bar</div>
+        <div class="feat-desc">Animated gradient bar during "thinking" — feels premium</div>
+      </div>
+      <span class="effort-quick feat-effort">Quick</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="mobile-nav" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Mobile bottom nav</div>
+        <div class="feat-desc">App-like tab bar at bottom on phones</div>
+      </div>
+      <span class="effort-quick feat-effort">Quick</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="dark-toggle" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Dark / light mode toggle</div>
+        <div class="feat-desc">System preference detection + manual toggle</div>
+      </div>
+      <span class="effort-medium feat-effort">Medium</span>
+      <span class="feat-check">✓</span>
+    </div>
+  </div>
+
+  <div class="feature-group group-growth">
+    <h3>🚀 Growth (Later)</h3>
+
+    <div class="feat-item" data-choice="supabase" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Cloud Save (Supabase)</div>
+        <div class="feat-desc">Sync sessions across devices, user accounts</div>
+      </div>
+      <span class="effort-big feat-effort">Big</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="api" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Public API / Embed</div>
+        <div class="feat-desc">/consult?thought=... endpoint for Obsidian/Notion</div>
+      </div>
+      <span class="effort-big feat-effort">Big</span>
+      <span class="feat-check">✓</span>
+    </div>
+
+    <div class="feat-item" data-choice="gallery" onclick="toggleFeature(this)">
+      <div>
+        <div class="feat-name">Public Think Gallery</div>
+        <div class="feat-desc">Opt-in anonymous session sharing for inspiration</div>
+      </div>
+      <span class="effort-big feat-effort">Big</span>
+      <span class="feat-check">✓</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleFeature(el) {
+  el.classList.toggle('selected');
+  const selected = [...document.querySelectorAll('.feat-item.selected')].map(e => e.dataset.choice);
+  if (window.recordSelection) window.recordSelection(selected.join(','), selected.map(s => document.querySelector('[data-choice="'+s+'"] .feat-name')?.textContent).join(', '));
+}
+</script>

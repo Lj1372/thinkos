@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThinkOS</title>
+<style>
+  :root {
+    --bg:        #0a0a0a;
+    --surface:   #141414;
+    --surface2:  #1c1c1c;
+    --border:    #262626;
+    --text:      #efefef;
+    --muted:     #555;
+    --instinct:  #f59e0b;
+    --emotion:   #60a5fa;
+    --reason:    #34d399;
+    --ladder:    #a78bfa;
+    --socratic:  #f472b6;
+    --kingdom:   #fbbf24;
+    --kingdom2:  #92400e;
+    --radius:    10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header { padding: 28px 32px 0; display: flex; align-items: baseline; gap: 14px; }
+  .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo span { color: var(--ladder); }
+  .tagline { font-size: 13px; color: var(--muted); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 6px; padding: 24px 32px 0; flex-wrap: wrap; }
+  .tab {
+    padding: 8px 18px; border-radius: 99px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+  }
+  .tab:hover { color: var(--text); border-color: #444; }
+  @media(max-width:480px){
+    .tabs { padding: 16px 16px 0; gap: 8px; }
+    .tab { padding: 10px 16px; font-size: 13px; flex: 1 1 calc(50% - 4px); text-align: center; border-radius: 12px; }
+  }
+  .tab.active-rei      { background: #2a1f06; color: var(--instinct);  border-color: var(--instinct); }
+  .tab.active-ladder   { background: #1e1830; color: var(--ladder);    border-color: var(--ladder); }
+  .tab.active-socratic { background: #271326; color: var(--socratic);  border-color: var(--socratic); }
+  .tab.active-kingdom  { background: #2a1e06; color: var(--kingdom);   border-color: var(--kingdom); }
+
+  /* ── Main ── */
+  main { flex: 1; padding: 28px 32px 48px; max-width: 960px; width: 100%; margin: 0 auto; }
+  @media(max-width:480px){ main { padding: 20px 16px 48px; } header { padding: 20px 16px 0; } }
+  .mode { display: none; }
+  .mode.active { display: block; }
+
+  /* ── Input area ── */
+  .prompt-area { display: flex; flex-direction: column; gap: 12px; }
+  .prompt-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; }
+  textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text); font-size: 15px;
+    line-height: 1.6; padding: 16px; resize: vertical; min-height: 110px;
+    outline: none; font-family: inherit; transition: border-color 0.15s;
+  }
+  textarea:focus { border-color: #444; }
+  textarea::placeholder { color: var(--muted); }
+
+  .btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 22px; border-radius: 99px; border: none;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .btn-rei      { background: var(--instinct); color: #000; }
+  .btn-ladder   { background: var(--ladder);   color: #000; }
+  .btn-socratic { background: var(--socratic); color: #000; }
+  .btn-kingdom  { background: var(--kingdom);  color: #000; }
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); padding: 8px 16px; font-size: 13px;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: #555; }
+
+  /* ── Spinner ── */
+  .loading-wrap { display: none; flex-direction: column; align-items: center; gap: 10px; padding: 28px 0; }
+  .loading-wrap.visible { display: flex; }
+  .spinner {
+    width: 20px; height: 20px; border: 2px solid #333;
+    border-top-color: var(--text); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-size: 13px; color: var(--muted); font-style: italic; }
+
+  /* ── Results ── */
+  .results { margin-top: 28px; display: none; }
+  .results.visible { display: block; }
+
+  /* Copy button */
+  .copy-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    transition: all 0.15s; margin-top: 14px;
+  }
+  .copy-btn:hover { color: var(--text); border-color: #555; }
+  .copy-btn.copied { color: var(--reason); border-color: var(--reason); }
+
+  /* ── Mode desc ── */
+  .mode-desc {
+    font-size: 13px; color: var(--muted); line-height: 1.65;
+    margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
+  }
+  .mode-desc strong { color: #999; }
+
+  /* ── REI ── */
+  .rei-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 16px; }
+  @media(max-width:640px){ .rei-cards { grid-template-columns: 1fr; } }
+  .mind-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; border-top-width: 3px;
+  }
+  .mind-card.instinct { border-top-color: var(--instinct); }
+  .mind-card.emotion  { border-top-color: var(--emotion); }
+  .mind-card.reason   { border-top-color: var(--reason); }
+  .mind-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+  .mind-card.instinct .mind-label { color: var(--instinct); }
+  .mind-card.emotion  .mind-label { color: var(--emotion); }
+  .mind-card.reason   .mind-label { color: var(--reason); }
+  .mind-text { font-size: 14px; line-height: 1.65; color: #ccc; }
+
+  .rei-bottom { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: start; margin-bottom: 14px; }
+  @media(max-width:600px){ .rei-bottom { grid-template-columns: 1fr; } }
+  .majority-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .majority-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .majority-text { font-size: 14px; line-height: 1.6; }
+  .alignment-badge {
+    padding: 8px 16px; border-radius: 99px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; align-self: start;
+  }
+  .alignment-divided { background: #3a1010; color: #f87171; }
+  .alignment-partial  { background: #2a2010; color: var(--instinct); }
+  .alignment-strong   { background: #0f2a1a; color: var(--reason); }
+  .action-question {
+    padding: 14px 18px; background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--text); border-radius: var(--radius);
+    font-size: 15px; font-style: italic; color: var(--text); line-height: 1.5;
+  }
+
+  /* ── Ladder ── */
+  .ladder-layout { display: grid; grid-template-columns: 130px 1fr; gap: 24px; align-items: start; }
+  @media(max-width:560px){ .ladder-layout { grid-template-columns: 1fr; } }
+  .ladder-visual { display: flex; flex-direction: column; gap: 3px; }
+  .rung {
+    display: flex; align-items: center; gap: 10px; padding: 7px 12px;
+    border-radius: 8px; border: 1px solid transparent; transition: all 0.2s; cursor: default;
+  }
+  .rung-num { font-size: 11px; font-weight: 700; color: var(--muted); width: 14px; text-align: right; }
+  .rung-name { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .rung.active { background: #1e1830; border-color: var(--ladder); }
+  .rung.active .rung-num, .rung.active .rung-name { color: var(--ladder); }
+  .rung-connector { width: 2px; height: 8px; background: var(--border); margin-left: 22px; }
+  .ladder-info { display: flex; flex-direction: column; gap: 12px; }
+  .ladder-view { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .ladder-view-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .lv-above { color: var(--ladder); }
+  .lv-current { color: var(--text); border-top: 2px solid var(--ladder) !important; }
+  .lv-below  { color: var(--muted); }
+  .ladder-view-text { font-size: 14px; line-height: 1.65; color: #ccc; }
+  .ladder-view.dim { opacity: 0.45; }
+  .ascent-q {
+    padding: 14px 18px; background: #1e1830; border: 1px solid var(--ladder);
+    border-radius: var(--radius); font-size: 15px; font-style: italic; color: var(--ladder); line-height: 1.5;
+  }
+
+  /* ── Socratic ── */
+  .chat-window {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    min-height: 260px; max-height: 420px; overflow-y: auto;
+    padding: 18px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .chat-empty { color: var(--muted); font-size: 14px; text-align: center; margin: auto; line-height: 1.7; }
+  .msg { display: flex; flex-direction: column; gap: 4px; max-width: 86%; }
+  .msg-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .msg-text { padding: 11px 15px; border-radius: 10px; font-size: 14px; line-height: 1.6; }
+  .msg.user { align-self: flex-end; text-align: right; }
+  .msg.user .msg-label { color: var(--muted); }
+  .msg.user .msg-text  { background: var(--surface2); color: var(--text); }
+  .msg.socratic { align-self: flex-start; }
+  .msg.socratic .msg-label { color: var(--socratic); }
+  .msg.socratic .msg-text  { background: #1e1030; border: 1px solid #3a1a4a; color: var(--text); font-style: italic; }
+  .chat-input-row { display: flex; gap: 10px; align-items: flex-end; }
+  .chat-input-row textarea { flex: 1; min-height: 50px; max-height: 120px; resize: none; }
+  .reset-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 6px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;
+    transition: all 0.15s; margin-top: 8px;
+  }
+  .reset-btn:hover { color: var(--text); border-color: #555; }
+
+  /* ── Kingdom Lens ── */
+  .kingdom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  @media(max-width:640px){ .kingdom-grid { grid-template-columns: 1fr; } }
+  .k-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; border-top: 3px solid var(--kingdom);
+  }
+  .k-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--kingdom); margin-bottom: 10px; }
+  .k-text  { font-size: 14px; line-height: 1.65; color: #ccc; }
+
+  .analogy-card {
+    background: #1a1200; border: 1px solid #3d2e00; border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+  }
+  .analogy-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .analogy-icon { font-size: 18px; }
+  .analogy-title { font-size: 13px; font-weight: 700; color: var(--kingdom); text-transform: uppercase; letter-spacing: 0.08em; }
+  .analogy-person { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .analogy-situation { font-size: 13px; color: #aaa; line-height: 1.6; margin-bottom: 10px; font-style: italic; }
+  .analogy-parallel { font-size: 14px; color: #ddd; line-height: 1.65; }
+
+  .scripture-section { margin-bottom: 16px; }
+  .scripture-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .verse-card {
+    background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--kingdom);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
+  }
+  .verse-ref  { font-size: 11px; font-weight: 700; color: var(--kingdom); margin-bottom: 6px; }
+  .verse-text { font-size: 14px; font-style: italic; color: #ddd; line-height: 1.6; margin-bottom: 8px; }
+  .verse-applied { font-size: 13px; color: #aaa; line-height: 1.6; border-top: 1px solid var(--border); padding-top: 8px; }
+
+  .kingdom-q {
+    padding: 16px 20px; background: #1a1200; border: 1px solid var(--kingdom);
+    border-radius: var(--radius); font-size: 16px; font-style: italic;
+    color: var(--kingdom); line-height: 1.5;
+  }
+
+  /* ── Chain buttons ── */
+  .chain-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+  .chain-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-right: 2px; }
+  .btn-chain {
+    padding: 7px 14px; border-radius: 99px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid; background: transparent; transition: all 0.15s;
+  }
+  .btn-chain:hover { opacity: 0.85; }
+  .btn-chain-ladder  { color: var(--ladder);  border-color: var(--ladder); }
+  .btn-chain-ladder:hover  { background: #1e1830; }
+  .btn-chain-kingdom { color: var(--kingdom); border-color: var(--kingdom); }
+  .btn-chain-kingdom:hover { background: #1a1200; }
+  .btn-chain-socratic { color: var(--socratic); border-color: var(--socratic); }
+  .btn-chain-socratic:hover { background: #1e1030; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Think<span>OS</span></div>
+  <div class="tagline">A system for human thinking</div>
+</header>
+
+<div class="tabs">
+  <button class="tab" data-mode="rei"      onclick="switchMode('rei')">REI Council</button>
+  <button class="tab" data-mode="ladder"   onclick="switchMode('ladder')">The Ladder</button>
+  <button class="tab" data-mode="kingdom"  onclick="switchMode('kingdom')">Kingdom Lens</button>
+  <button class="tab" data-mode="socratic" onclick="switchMode('socratic')">Socratic</button>
+</div>
+
+<main>
+
+  <!-- ── REI Council ── -->
+  <div class="mode" id="mode-rei">
+    <p class="mode-desc">Every decision runs through three minds: <strong>Instinct</strong> (fear, protection), <strong>Emotion</strong> (desire, vision), <strong>Reason</strong> (analysis, strategy). The Council surfaces all three — then finds where they agree.</p>
+    <div class="prompt-area">
+      <label class="prompt-label">Describe your situation or decision</label>
+      <textarea id="rei-input" placeholder="e.g. I'm considering leaving my job to build my own project full-time..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-rei" id="rei-btn" onclick="submitREI()">Consult the Council</button>
+      </div>
+    </div>
+    <div class="loading-wrap" id="rei-loading"><div class="spinner"></div><div class="loading-msg" id="rei-loading-msg">Instinct is speaking...</div></div>
+    <div class="results" id="rei-results">
+      <div class="rei-cards">
+        <div class="mind-card instinct"><div class="mind-label">Instinct</div><div class="mind-text" id="rei-instinct"></div></div>
+        <div class="mind-card emotion"><div class="mind-label">Emotion</div><div class="mind-text" id="rei-emotion"></div></div>
+        <div class="mind-card reason"><div class="mind-label">Reason</div><div class="mind-text" id="rei-reason"></div></div>
+      </div>
+      <div class="rei-bottom">
+        <div class="majority-box"><div class="majority-label">Council View</div><div class="majority-text" id="rei-majority"></div></div>
+        <div class="alignment-badge" id="rei-alignment"></div>
+      </div>
+      <div class="action-question" id="rei-action"></div>
+      <div class="chain-row">
+        <span class="chain-label">Chain to →</span>
+        <button class="btn-chain btn-chain-ladder"  onclick="chainTo('ladder')">The Ladder</button>
+        <button class="btn-chain btn-chain-kingdom" onclick="chainTo('kingdom')">Kingdom Lens</button>
+        <button class="btn-chain btn-chain-socratic" onclick="chainTo('socratic')">Socratic</button>
+      </div>
+      <button class="copy-btn" onclick="copyResult('rei')">Copy results</button>
+    </div>
+  </div>
+
+  <!-- ── Ladder ── -->
+  <div class="mode" id="mode-ladder">
+    <p class="mode-desc">Reality has 5 rungs: <strong>Mathematics → Physics → Consciousness → Meaning → God</strong>. Each emerges from the one below but cannot be reduced to it. Where is your question operating — and what becomes visible one rung higher?</p>
+    <div class="prompt-area">
+      <label class="prompt-label">What question or problem are you working on?</label>
+      <textarea id="ladder-input" placeholder="e.g. Why do some people find life meaningful while others don't?"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-ladder" id="ladder-btn" onclick="submitLadder()">Diagnose</button>
+      </div>
+    </div>
+    <div class="loading-wrap" id="ladder-loading"><div class="spinner"></div><div class="loading-msg">Finding your rung...</div></div>
+    <div class="results" id="ladder-results">
+      <div class="ladder-layout">
+        <div class="ladder-visual" id="ladder-visual"></div>
+        <div class="ladder-info">
+          <div class="ladder-view dim" id="lv-above"><div class="ladder-view-label lv-above">One rung up</div><div class="ladder-view-text" id="lv-above-text"></div></div>
+          <div class="ladder-view lv-current"><div class="ladder-view-label lv-current">Current rung</div><div class="ladder-view-text" id="lv-current-text"></div></div>
+          <div class="ladder-view dim" id="lv-below"><div class="ladder-view-label lv-below">One rung down</div><div class="ladder-view-text" id="lv-below-text"></div></div>
+          <div class="ascent-q" id="ladder-ascent"></div>
+        </div>
+      </div>
+      <div class="chain-row">
+        <span class="chain-label">Chain to →</span>
+        <button class="btn-chain btn-chain-kingdom" onclick="chainTo('kingdom')">Kingdom Lens</button>
+        <button class="btn-chain btn-chain-socratic" onclick="chainTo('socratic')">Socratic</button>
+      </div>
+      <button class="copy-btn" onclick="copyResult('ladder')">Copy results</button>
+    </div>
+  </div>
+
+  <!-- ── Kingdom Lens ── -->
+  <div class="mode" id="mode-kingdom">
+    <p class="mode-desc">See your situation through a <strong>biblical lens</strong> — the four perspectives Jesus used, a biblical analogy from Scripture, and verses with applied wisdom for your specific situation. Honest, direct, not preachy.</p>
+    <div class="prompt-area">
+      <label class="prompt-label">Describe your situation, decision, or struggle</label>
+      <textarea id="kingdom-input" placeholder="e.g. I'm struggling to forgive someone who hurt me badly. I know I should but I can't seem to do it..."></textarea>
+      <div class="btn-row">
+        <button class="btn btn-kingdom" id="kingdom-btn" onclick="submitKingdom()">See Through the Lens</button>
+      </div>
+    </div>
+    <div class="loading-wrap" id="kingdom-loading"><div class="spinner"></div><div class="loading-msg" id="kingdom-loading-msg">Searching Scripture...</div></div>
+    <div class="results" id="kingdom-results">
+
+      <div class="kingdom-grid">
+        <div class="k-card"><div class="k-label">Kingdom View</div><div class="k-text" id="k-kingdom"></div></div>
+        <div class="k-card"><div class="k-label">The Person</div><div class="k-text" id="k-person"></div></div>
+        <div class="k-card"><div class="k-label">Eternal Weight</div><div class="k-text" id="k-eternal"></div></div>
+        <div class="k-card"><div class="k-label">The Path Through</div><div class="k-text" id="k-path"></div></div>
+      </div>
+
+      <div class="analogy-card">
+        <div class="analogy-header">
+          <div class="analogy-icon">&#x1F4DC;</div>
+          <div class="analogy-title">Biblical Parallel</div>
+        </div>
+        <div class="analogy-person" id="k-analogy-person"></div>
+        <div class="analogy-situation" id="k-analogy-situation"></div>
+        <div class="analogy-parallel" id="k-analogy-parallel"></div>
+      </div>
+
+      <div class="scripture-section">
+        <div class="scripture-title">Scripture & Applied Wisdom</div>
+        <div id="k-scripture"></div>
+      </div>
+
+      <div class="kingdom-q" id="k-question"></div>
+      <div class="chain-row">
+        <span class="chain-label">Chain to →</span>
+        <button class="btn-chain btn-chain-socratic" onclick="chainTo('socratic')">Socratic</button>
+      </div>
+      <button class="copy-btn" onclick="copyResult('kingdom')">Copy results</button>
+    </div>
+  </div>
+
+  <!-- ── Socratic ── -->
+  <div class="mode" id="mode-socratic">
+    <p class="mode-desc">A thinking partner that <strong>only asks questions</strong>. No answers, no advice, no comfort. The best questions make you pause, feel slightly uncomfortable, then think harder.</p>
+    <div class="chat-window" id="chat-window">
+      <div class="chat-empty" id="chat-empty">Type a thought, problem, or belief.<br>The Socratic will ask you a question you won't expect.</div>
+    </div>
+    <div class="chat-input-row">
+      <textarea id="socratic-input" placeholder="Type your thought..." rows="2"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitSocratic();}"></textarea>
+      <button class="btn btn-socratic" id="socratic-btn" onclick="submitSocratic()">Ask</button>
+    </div>
+    <button class="reset-btn" onclick="resetSocratic()">Clear conversation</button>
+  </div>
+
+</main>
+
+<script>
+const RUNG_NAMES = ['Mathematics','Physics','Consciousness','Meaning','God'];
+let socratiMessages = [];
+let lastResults = {};
+let lastInputs  = {};  // stores the raw input text per mode
+
+const LOADING_MSGS = {
+  rei: ['Instinct is speaking...','Emotion weighs in...','Reason calculates...','Finding the majority...'],
+  ladder: ['Finding your rung...','Looking above and below...','Formulating the ascent question...'],
+  kingdom: ['Searching Scripture...','Finding the parallel...','Applying the lenses...','Weighing eternity...'],
+  socratic: ['Sharpening the question...']
+};
+
+// ── Mode switching ──────────────────────────────────────────────
+function switchMode(mode) {
+  document.querySelectorAll('.mode').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.className = 'tab');
+  document.getElementById('mode-' + mode).classList.add('active');
+  document.querySelector(`[data-mode="${mode}"]`).classList.add('tab', 'active-' + mode);
+}
+
+// ── Loading state ───────────────────────────────────────────────
+function setLoading(mode, on) {
+  const wrap = document.getElementById(mode + '-loading');
+  const btn  = document.getElementById(mode + '-btn');
+  wrap.classList.toggle('visible', on);
+  if (btn) btn.disabled = on;
+  if (!on) return;
+  document.getElementById(mode + '-results').classList.remove('visible');
+  const msgs = LOADING_MSGS[mode] || ['Thinking...'];
+  let i = 0;
+  const msgEl = wrap.querySelector('.loading-msg');
+  if (msgEl) msgEl.textContent = msgs[0];
+  wrap._interval = setInterval(() => {
+    i = (i + 1) % msgs.length;
+    if (msgEl) msgEl.textContent = msgs[i];
+  }, 1200);
+}
+function stopLoading(mode) {
+  const wrap = document.getElementById(mode + '-loading');
+  clearInterval(wrap._interval);
+  wrap.classList.remove('visible');
+  const btn = document.getElementById(mode + '-btn');
+  if (btn) btn.disabled = false;
+}
+
+// ── API call ────────────────────────────────────────────────────
+async function callAPI(endpoint, body) {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+// ── Chain between tools ──────────────────────────────────────────
+function chainTo(targetMode) {
+  // Figure out where we're coming from (which mode is active)
+  const activeMode = document.querySelector('.mode.active')?.id?.replace('mode-', '');
+  const sourceText = lastInputs[activeMode] || '';
+
+  if (targetMode === 'socratic') {
+    // Seed the Socratic chat with the source situation as first message
+    switchMode('socratic');
+    if (sourceText) {
+      document.getElementById('socratic-input').value = sourceText;
+      submitSocratic();
+    }
+    return;
+  }
+
+  const inputId = targetMode === 'ladder' ? 'ladder-input' : 'kingdom-input';
+  document.getElementById(inputId).value = sourceText;
+  switchMode(targetMode);
+  if (targetMode === 'ladder') submitLadder();
+  else submitKingdom();
+}
+
+// ── REI Council ─────────────────────────────────────────────────
+async function submitREI() {
+  const input = document.getElementById('rei-input').value.trim();
+  if (!input) return;
+  lastInputs.rei = input;
+  setLoading('rei', true);
+  try {
+    const d = await callAPI('/api/rei', { situation: input });
+    lastResults.rei = d;
+    document.getElementById('rei-instinct').textContent = d.instinct;
+    document.getElementById('rei-emotion').textContent  = d.emotion;
+    document.getElementById('rei-reason').textContent   = d.reason;
+    document.getElementById('rei-majority').textContent = d.majority_view;
+    document.getElementById('rei-action').textContent   = '\u201c' + d.action_question + '\u201d';
+    const badge = document.getElementById('rei-alignment');
+    const labels = { divided: 'Divided', partial: 'Partial Alignment', strong: 'Strong Alignment' };
+    badge.textContent = labels[d.alignment] || d.alignment;
+    badge.className = 'alignment-badge alignment-' + d.alignment;
+    document.getElementById('rei-results').classList.add('visible');
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { stopLoading('rei'); }
+}
+
+// ── Ladder ──────────────────────────────────────────────────────
+async function submitLadder() {
+  const input = document.getElementById('ladder-input').value.trim();
+  if (!input) return;
+  lastInputs.ladder = input;
+  setLoading('ladder', true);
+  try {
+    const d = await callAPI('/api/ladder', { question: input });
+    lastResults.ladder = d;
+    const rung = d.current_rung;
+    const visual = document.getElementById('ladder-visual');
+    visual.innerHTML = '';
+    for (let i = 5; i >= 1; i--) {
+      const div = document.createElement('div');
+      div.className = 'rung' + (i === rung ? ' active' : '');
+      div.innerHTML = `<span class="rung-num">${i}</span><span class="rung-name">${RUNG_NAMES[i-1]}</span>`;
+      visual.appendChild(div);
+      if (i > 1) { const c = document.createElement('div'); c.className = 'rung-connector'; visual.appendChild(c); }
+    }
+    document.getElementById('lv-current-text').textContent = d.current_view;
+    document.getElementById('lv-above-text').textContent   = d.above_view || '(highest rung)';
+    document.getElementById('lv-below-text').textContent   = d.below_view || '(lowest rung)';
+    document.getElementById('ladder-ascent').textContent   = '\u201c' + d.ascent_question + '\u201d';
+    document.getElementById('lv-above').classList.toggle('dim', !d.above_view);
+    document.getElementById('lv-below').classList.toggle('dim', !d.below_view);
+    document.getElementById('ladder-results').classList.add('visible');
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { stopLoading('ladder'); }
+}
+
+// ── Kingdom Lens ─────────────────────────────────────────────────
+async function submitKingdom() {
+  const input = document.getElementById('kingdom-input').value.trim();
+  if (!input) return;
+  lastInputs.kingdom = input;
+  setLoading('kingdom', true);
+  try {
+    const d = await callAPI('/api/kingdom', { situation: input });
+    lastResults.kingdom = d;
+
+    document.getElementById('k-kingdom').textContent = d.kingdom;
+    document.getElementById('k-person').textContent  = d.the_person;
+    document.getElementById('k-eternal').textContent = d.eternal_weight;
+    document.getElementById('k-path').textContent    = d.the_path;
+
+    document.getElementById('k-analogy-person').textContent    = d.biblical_analogy.person_or_story;
+    document.getElementById('k-analogy-situation').textContent = d.biblical_analogy.their_situation;
+    document.getElementById('k-analogy-parallel').textContent  = d.biblical_analogy.the_parallel;
+
+    const scriptureEl = document.getElementById('k-scripture');
+    scriptureEl.innerHTML = '';
+    (d.scripture || []).forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'verse-card';
+      card.innerHTML = `
+        <div class="verse-ref">${esc(s.reference)}</div>
+        <div class="verse-text">\u201c${esc(s.verse)}\u201d</div>
+        <div class="verse-applied">${esc(s.applied)}</div>`;
+      scriptureEl.appendChild(card);
+    });
+
+    document.getElementById('k-question').textContent = '\u201c' + d.kingdom_question + '\u201d';
+    document.getElementById('kingdom-results').classList.add('visible');
+  } catch(e) { alert('Error: ' + e.message); }
+  finally { stopLoading('kingdom'); }
+}
+
+// ── Socratic ─────────────────────────────────────────────────────
+async function submitSocratic() {
+  const input = document.getElementById('socratic-input').value.trim();
+  if (!input) return;
+  document.getElementById('socratic-input').value = '';
+  document.getElementById('chat-empty').style.display = 'none';
+  addMsg('user', input);
+  socratiMessages.push({ role: 'user', content: input });
+  document.getElementById('socratic-btn').disabled = true;
+  try {
+    const d = await callAPI('/api/socratic', { messages: socratiMessages });
+    addMsg('socratic', d.question);
+    socratiMessages.push({ role: 'assistant', content: d.question });
+  } catch(e) { addMsg('socratic', 'Error: ' + e.message); }
+  finally { document.getElementById('socratic-btn').disabled = false; }
+}
+
+function addMsg(role, text) {
+  const win = document.getElementById('chat-window');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `<div class="msg-label">${role === 'user' ? 'You' : 'Socratic'}</div><div class="msg-text">${esc(text)}</div>`;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+}
+
+function resetSocratic() {
+  socratiMessages = [];
+  document.getElementById('chat-window').innerHTML =
+    '<div class="chat-empty" id="chat-empty">Type a thought, problem, or belief.<br>The Socratic will ask you a question you won\'t expect.</div>';
+}
+
+// ── Copy ─────────────────────────────────────────────────────────
+function copyResult(mode) {
+  const d = lastResults[mode];
+  if (!d) return;
+  let text = '';
+  if (mode === 'rei') {
+    text = `INSTINCT: ${d.instinct}\n\nEMOTION: ${d.emotion}\n\nREASON: ${d.reason}\n\nCOUNCIL VIEW: ${d.majority_view}\n\nALIGNMENT: ${d.alignment}\n\nKEY QUESTION: ${d.action_question}`;
+  } else if (mode === 'ladder') {
+    text = `RUNG ${d.current_rung} — ${d.rung_name}\n\nCURRENT VIEW: ${d.current_view}\n\nONE RUNG UP: ${d.above_view}\n\nONE RUNG DOWN: ${d.below_view}\n\nASCENT QUESTION: ${d.ascent_question}`;
+  } else if (mode === 'kingdom') {
+    const verses = (d.scripture || []).map(s => `${s.reference}: "${s.verse}" — ${s.applied}`).join('\n\n');
+    text = `KINGDOM VIEW: ${d.kingdom}\n\nTHE PERSON: ${d.the_person}\n\nETERNAL WEIGHT: ${d.eternal_weight}\n\nTHE PATH THROUGH: ${d.the_path}\n\nBIBLICAL PARALLEL: ${d.biblical_analogy.person_or_story} — ${d.biblical_analogy.the_parallel}\n\nSCRIPTURE:\n${verses}\n\nKINGDOM QUESTION: ${d.kingdom_question}`;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy results'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Util ─────────────────────────────────────────────────────────
+function esc(t) {
+  return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+switchMode('rei');
+</script>
+</body>
+</html>

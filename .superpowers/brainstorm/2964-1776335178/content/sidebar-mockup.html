@@ -1,0 +1,129 @@
+<h2>Sidebar Layout — Two variations</h2>
+<p class="subtitle">Both have the thought panel on the left. The difference is what else lives there.</p>
+
+<style>
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 8px; }
+.mockup { border-radius: 12px; overflow: hidden; border: 2px solid #2a2a2a; cursor: pointer; transition: all 0.15s; }
+.mockup:hover { border-color: #444; }
+.mockup.selected { border-color: #a78bfa; box-shadow: 0 0 0 3px #2a1a4a; }
+.mockup-label { padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #a78bfa; background: #0f0a1a; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: space-between; }
+.mockup-check { opacity: 0; color: #a78bfa; font-size: 14px; }
+.mockup.selected .mockup-check { opacity: 1; }
+.mock-shell { background: #0a0a0a; display: flex; height: 320px; font-size: 11px; }
+
+/* Sidebar */
+.mock-sidebar-panel { width: 200px; background: #111; border-right: 1px solid #222; display: flex; flex-direction: column; padding: 12px; gap: 8px; flex-shrink: 0; }
+.mock-logo { font-weight: 700; font-size: 13px; color: #eee; margin-bottom: 4px; }
+.mock-logo span { color: #a78bfa; }
+.mock-thought-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: #555; font-weight: 700; }
+.mock-textarea { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; padding: 8px; color: #aaa; font-size: 10px; line-height: 1.5; height: 70px; resize: none; width: 100%; box-sizing: border-box; }
+.mock-btn-full { background: #a78bfa; color: #000; border: none; border-radius: 6px; padding: 7px; font-size: 10px; font-weight: 700; width: 100%; cursor: default; text-align: center; }
+.mock-divider { height: 1px; background: #222; margin: 2px 0; }
+.mock-history-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: #555; font-weight: 700; }
+.mock-history-item { padding: 6px 8px; border-radius: 5px; background: #1a1a1a; color: #777; font-size: 10px; line-height: 1.4; border: 1px solid #222; }
+.mock-history-item.active { background: #1e1830; color: #a78bfa; border-color: #3a2a5a; }
+.mock-history-date { font-size: 9px; color: #444; margin-top: 2px; }
+
+/* Main content area */
+.mock-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.mock-tabs-horiz { display: flex; gap: 4px; padding: 10px 12px 0; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; }
+.mock-tab { padding: 5px 10px; border-radius: 6px 6px 0 0; font-size: 10px; color: #555; border: 1px solid #222; border-bottom: none; }
+.mock-tab.active { background: #1e1830; color: #a78bfa; border-color: #3a2a5a; }
+.mock-content-area { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.mock-mode-desc { font-size: 10px; color: #444; line-height: 1.5; }
+.mock-input-locked { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; padding: 8px 10px; color: #666; font-size: 10px; font-style: italic; display: flex; align-items: center; justify-content: space-between; }
+.mock-lock-icon { font-size: 11px; color: #444; }
+.mock-submit-btn { background: #a78bfa; color: #000; border: none; border-radius: 20px; padding: 6px 14px; font-size: 10px; font-weight: 700; align-self: flex-start; }
+.mock-result-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.mock-result-card { background: #141414; border: 1px solid #2a2a2a; border-radius: 6px; padding: 8px; border-top: 2px solid; }
+.mock-result-card.i { border-top-color: #f59e0b; }
+.mock-result-card.e { border-top-color: #60a5fa; }
+.mock-result-card.r { border-top-color: #34d399; }
+.mock-card-label { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+.mock-result-card.i .mock-card-label { color: #f59e0b; }
+.mock-result-card.e .mock-card-label { color: #60a5fa; }
+.mock-result-card.r .mock-card-label { color: #34d399; }
+.mock-card-text { font-size: 9px; color: #666; line-height: 1.4; }
+
+/* Variation B2 — with tool selector in sidebar */
+.mock-tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.mock-tool-btn { background: #141414; border: 1px solid #222; border-radius: 6px; padding: 6px; text-align: center; font-size: 9px; color: #666; }
+.mock-tool-btn.active-tool { background: #1e1830; color: #a78bfa; border-color: #3a2a5a; }
+</style>
+
+<div class="split">
+
+  <!-- Option A: Sidebar thought + history, tabs across top -->
+  <div class="mockup" data-choice="sidebar-tabs-top" onclick="toggleSelect(this)">
+    <div class="mockup-label">A — Sidebar + top tabs <span class="mockup-check">✓</span></div>
+    <div class="mock-shell">
+      <div class="mock-sidebar-panel">
+        <div class="mock-logo">Think<span>OS</span></div>
+        <div class="mock-thought-label">Current Thought</div>
+        <textarea class="mock-textarea" readonly>I'm thinking about leaving my job to build this full-time...</textarea>
+        <div class="mock-btn-full">⚡ Full Council</div>
+        <div class="mock-divider"></div>
+        <div class="mock-history-label">Recent Sessions</div>
+        <div class="mock-history-item active">Leaving job decision<div class="mock-history-date">Today</div></div>
+        <div class="mock-history-item">Conflict with co-founder<div class="mock-history-date">Yesterday</div></div>
+        <div class="mock-history-item">Creative block on project<div class="mock-history-date">Apr 14</div></div>
+      </div>
+      <div class="mock-main">
+        <div class="mock-tabs-horiz">
+          <div class="mock-tab active">REI Council</div>
+          <div class="mock-tab">Ladder</div>
+          <div class="mock-tab">Kingdom</div>
+          <div class="mock-tab">Socratic</div>
+        </div>
+        <div class="mock-content-area">
+          <div class="mock-input-locked">I'm thinking about leaving my job... <span class="mock-lock-icon">🔒</span></div>
+          <div class="mock-result-cards">
+            <div class="mock-result-card i"><div class="mock-card-label">Instinct</div><div class="mock-card-text">You're terrified of losing the safety net. That fear is real.</div></div>
+            <div class="mock-result-card e"><div class="mock-card-label">Emotion</div><div class="mock-card-text">You've been waiting for this. You know you can do it.</div></div>
+            <div class="mock-result-card r"><div class="mock-card-label">Reason</div><div class="mock-card-text">6 months runway. One client would cover costs. Risk is manageable.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Sidebar has thought + tool selector, no top tabs -->
+  <div class="mockup" data-choice="sidebar-tool-nav" onclick="toggleSelect(this)">
+    <div class="mockup-label">B — Sidebar has the nav too <span class="mockup-check">✓</span></div>
+    <div class="mock-shell">
+      <div class="mock-sidebar-panel">
+        <div class="mock-logo">Think<span>OS</span></div>
+        <div class="mock-thought-label">Current Thought</div>
+        <textarea class="mock-textarea" readonly>I'm thinking about leaving my job to build this full-time...</textarea>
+        <div class="mock-btn-full">⚡ Full Council</div>
+        <div class="mock-divider"></div>
+        <div class="mock-thought-label">Tools</div>
+        <div class="mock-tool-grid">
+          <div class="mock-tool-btn active-tool">REI Council</div>
+          <div class="mock-tool-btn">The Ladder</div>
+          <div class="mock-tool-btn">Kingdom</div>
+          <div class="mock-tool-btn">Socratic</div>
+          <div class="mock-tool-btn" style="grid-column:span 2;">🔍 Blind Spot</div>
+        </div>
+        <div class="mock-divider"></div>
+        <div class="mock-history-label">Recent</div>
+        <div class="mock-history-item active">Leaving job decision<div class="mock-history-date">Today</div></div>
+        <div class="mock-history-item">Conflict with co-founder<div class="mock-history-date">Yesterday</div></div>
+      </div>
+      <div class="mock-main">
+        <div class="mock-content-area" style="padding-top:18px">
+          <div class="mock-mode-desc" style="color:#555;font-size:11px;font-weight:600">REI COUNCIL</div>
+          <div class="mock-input-locked">I'm thinking about leaving my job... <span class="mock-lock-icon">🔒</span></div>
+          <div class="mock-result-cards">
+            <div class="mock-result-card i"><div class="mock-card-label">Instinct</div><div class="mock-card-text">You're terrified of losing the safety net. That fear is real.</div></div>
+            <div class="mock-result-card e"><div class="mock-card-label">Emotion</div><div class="mock-card-text">You've been waiting for this. You know you can do it.</div></div>
+            <div class="mock-result-card r"><div class="mock-card-label">Reason</div><div class="mock-card-text">6 months runway. One client would cover costs. Risk is manageable.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;font-size:12px">Both show the thought locked in on each tool. <strong>A</strong> keeps tabs familiar. <strong>B</strong> puts everything in the sidebar — cleaner main area, more "OS" feeling but tighter on mobile.</p>

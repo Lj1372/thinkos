@@ -1,0 +1,91 @@
+<h2>Full Council Report — Layout options</h2>
+<p class="subtitle">After all 4 tools run, this is what you see. Pick the format that feels right.</p>
+
+<style>
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 4px; }
+.option { cursor: pointer; border-radius: 12px; border: 2px solid #2a2a2a; overflow: hidden; transition: all 0.15s; background: #0d0d0d; }
+.option:hover { border-color: #444; }
+.option.selected { border-color: #a78bfa; box-shadow: 0 0 0 3px #1e1030; }
+.opt-label { padding: 10px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #a78bfa; background: #0f0a1a; border-bottom: 1px solid #222; display: flex; justify-content: space-between; }
+.opt-check { opacity: 0; }
+.option.selected .opt-check { opacity: 1; }
+.opt-body { padding: 14px; }
+
+/* Report style A — Scrollable sections */
+.rep-section { margin-bottom: 10px; }
+.rep-section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.rep-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rep-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #777; }
+.rep-card { background: #141414; border: 1px solid #222; border-radius: 8px; padding: 10px 12px; }
+.rep-mini-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.rep-mini { background: #141414; border: 1px solid #222; border-radius: 6px; padding: 7px 9px; border-top: 2px solid; }
+.rep-mini.i { border-top-color: #f59e0b; } .rep-mini.e { border-top-color: #60a5fa; } .rep-mini.r { border-top-color: #34d399; }
+.rep-mini-lbl { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+.rep-mini.i .rep-mini-lbl { color: #f59e0b; } .rep-mini.e .rep-mini-lbl { color: #60a5fa; } .rep-mini.r .rep-mini-lbl { color: #34d399; }
+.rep-mini-txt { font-size: 9px; color: #666; line-height: 1.4; }
+.rep-text { font-size: 10px; color: #888; line-height: 1.5; }
+.rep-verse { font-size: 10px; font-style: italic; color: #777; line-height: 1.4; border-left: 2px solid #fbbf24; padding-left: 8px; }
+.rep-q { font-size: 11px; font-style: italic; color: #a78bfa; padding: 8px 10px; background: #140d2a; border-radius: 6px; border: 1px solid #2a1a4a; }
+
+/* Report style B — Big synthesis card at top */
+.synth-card { background: linear-gradient(135deg, #1a0a30, #0a1a20); border: 1px solid #3a2a5a; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+.synth-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #a78bfa; margin-bottom: 6px; }
+.synth-text { font-size: 11px; color: #ddd; line-height: 1.6; }
+.synth-q { font-size: 12px; font-style: italic; color: #fff; margin-top: 8px; padding-top: 8px; border-top: 1px solid #3a2a5a; }
+.tool-strips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tool-strip { background: #141414; border: 1px solid #222; border-radius: 6px; padding: 8px 10px; }
+.tool-strip-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.ts-rei { color: #f59e0b; } .ts-ladder { color: #a78bfa; } .ts-kingdom { color: #fbbf24; } .ts-socratic { color: #f472b6; }
+.tool-strip-txt { font-size: 9px; color: #666; line-height: 1.4; }
+</style>
+
+<div class="options">
+
+  <!-- Option A: Scrollable sections, each tool collapsed -->
+  <div class="option" data-choice="report-sections" onclick="toggleSelect(this)">
+    <div class="opt-label">A — Each tool as a section <span class="opt-check">✓</span></div>
+    <div class="opt-body">
+      <div class="rep-section">
+        <div class="rep-section-header"><div class="rep-dot" style="background:#f59e0b"></div><div class="rep-title">REI Council</div></div>
+        <div class="rep-mini-grid">
+          <div class="rep-mini i"><div class="rep-mini-lbl">Instinct</div><div class="rep-mini-txt">You're terrified of losing the safety net.</div></div>
+          <div class="rep-mini e"><div class="rep-mini-lbl">Emotion</div><div class="rep-mini-txt">You've been waiting for this moment.</div></div>
+          <div class="rep-mini r"><div class="rep-mini-lbl">Reason</div><div class="rep-mini-txt">6 months runway. Risk is manageable.</div></div>
+        </div>
+      </div>
+      <div class="rep-section">
+        <div class="rep-section-header"><div class="rep-dot" style="background:#a78bfa"></div><div class="rep-title">The Ladder — Rung 4: Meaning</div></div>
+        <div class="rep-card"><div class="rep-text">This is a meaning-level question. You're not asking "can I afford it" — you're asking "what kind of person do I want to be."</div></div>
+      </div>
+      <div class="rep-section">
+        <div class="rep-section-header"><div class="rep-dot" style="background:#fbbf24"></div><div class="rep-title">Kingdom Lens</div></div>
+        <div class="rep-verse">"Whatever you do, work at it with all your heart..." — Col 3:23</div>
+      </div>
+      <div class="rep-section">
+        <div class="rep-section-header"><div class="rep-dot" style="background:#f472b6"></div><div class="rep-title">Socratic Question</div></div>
+        <div class="rep-q">"If you knew you'd regret not trying, what's actually stopping you?"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Big AI synthesis at top, tool summaries below -->
+  <div class="option" data-choice="report-synthesis" onclick="toggleSelect(this)">
+    <div class="opt-label">B — AI synthesis first, tools below <span class="opt-check">✓</span></div>
+    <div class="opt-body">
+      <div class="synth-card">
+        <div class="synth-label">⚡ Council Synthesis</div>
+        <div class="synth-text">All four lenses converge: this is a meaning-level decision being processed at a fear level. Your instinct is protecting you from a risk that Reason says is manageable. The Kingdom lens adds weight — this isn't just a career move.</div>
+        <div class="synth-q">"What would you do if the fear of failure wasn't part of the equation?"</div>
+      </div>
+      <div class="tool-strips">
+        <div class="tool-strip"><div class="tool-strip-lbl ts-rei">REI — Partial alignment</div><div class="tool-strip-txt">Emotion + Reason say go. Instinct needs a runway plan.</div></div>
+        <div class="tool-strip"><div class="tool-strip-lbl ts-ladder">Ladder — Rung 4</div><div class="tool-strip-txt">Meaning question. "Who do I want to be?" not "Can I afford it?"</div></div>
+        <div class="tool-strip"><div class="tool-strip-lbl ts-kingdom">Kingdom</div><div class="tool-strip-txt">Joseph parallel. The pit before the palace is part of the path.</div></div>
+        <div class="tool-strip"><div class="tool-strip-lbl ts-socratic">Socratic</div><div class="tool-strip-txt">"If you knew you'd regret not trying, what's stopping you?"</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;font-size:12px"><strong>A</strong> is thorough — all the detail, scrollable. <strong>B</strong> leads with a 5th AI "synthesis" that reads across all 4 tools, then shows summaries below. B feels like a coach handing you a brief.</p>
