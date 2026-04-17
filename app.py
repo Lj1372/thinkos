@@ -168,6 +168,41 @@ def socratic():
         return jsonify({'error': str(e)}), 500
 
 
+BLINDSPOT_PROMPT = """You are a Blind Spot Detector. Your job is to find the ONE perspective that is completely absent from someone's thinking about a situation.
+
+Rules:
+- Identify ONE specific missing angle — not generic "consider all sides" advice
+- Name it precisely (e.g. "the impact on your team", "the long-term version of yourself", "the person who disagrees with you most")
+- why_its_missing: why this angle is psychologically easy to avoid (1-2 sentences)
+- reframe: one specific reframe of the situation from this missing perspective (2-3 sentences)
+- blind_spot_question: one sharp question under 20 words that forces the missing perspective
+
+If context about REI/Ladder results is provided, cross-reference them: "Both Instinct and Reason focused on X — what's neither seeing?"
+
+Respond ONLY with valid JSON. No markdown, no extra text:
+{
+  "missing_perspective": "...",
+  "why_its_missing": "...",
+  "reframe": "...",
+  "blind_spot_question": "..."
+}"""
+
+SYNTHESIS_PROMPT = """You are a Council Synthesist. You have been given the results of four thinking tools applied to the same situation: REI Council (three minds), The Information Ladder (which rung), Kingdom Lens (biblical perspective), and a Blind Spot Detector (missing angle).
+
+Your job: read across all four results and write a synthesis — what do they collectively reveal that none says alone?
+
+Rules:
+- synthesis: 3-4 sentences. What is the deeper pattern across all four lenses? Be specific to this situation.
+- synthesis_question: ONE question under 25 words that cuts to the heart of what all four lenses are pointing at
+- Do not summarise each tool — synthesise across them
+- Be direct. No hedging. No "it seems like."
+
+Respond ONLY with valid JSON. No markdown, no extra text:
+{
+  "synthesis": "...",
+  "synthesis_question": "..."
+}"""
+
 KINGDOM_PROMPT = """You are a Kingdom Lens advisor. You help people see their real-life situations through a biblical lens — not piously or with religious clichés, but with the honest, direct wisdom of Scripture applied to actual human experience.
 
 You respond through SIX dimensions:
@@ -219,6 +254,53 @@ def kingdom():
         return jsonify({'error': 'No situation provided'}), 400
     try:
         text = call_ai(KINGDOM_PROMPT, [{'role': 'user', 'content': situation}], max_tokens=1200, model=MODEL_RICH)
+        return jsonify(parse_json(text))
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Parse error', 'raw': text}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/blindspot', methods=['POST'])
+def blindspot():
+    data = request.get_json()
+    situation = (data or {}).get('situation', '').strip()
+    context = (data or {}).get('context', '').strip()
+    if not situation:
+        return jsonify({'error': 'No situation provided'}), 400
+    prompt = situation
+    if context:
+        prompt = f"{situation}\n\nContext from other tools:\n{context}"
+    try:
+        text = call_ai(BLINDSPOT_PROMPT, [{'role': 'user', 'content': prompt}])
+        return jsonify(parse_json(text))
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Parse error', 'raw': text}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/synthesis', methods=['POST'])
+def synthesis():
+    data = request.get_json()
+    parts = []
+    if data.get('rei'):
+        r = data['rei']
+        parts.append(f"REI Council — Instinct: {r.get('instinct','')} | Emotion: {r.get('emotion','')} | Reason: {r.get('reason','')} | Council view: {r.get('majority_view','')} | Alignment: {r.get('alignment','')}")
+    if data.get('ladder'):
+        l = data['ladder']
+        parts.append(f"Information Ladder — Rung {l.get('current_rung','')} ({l.get('rung_name','')}): {l.get('current_view','')} | Ascent: {l.get('ascent_question','')}")
+    if data.get('kingdom'):
+        k = data['kingdom']
+        parts.append(f"Kingdom Lens — Kingdom: {k.get('kingdom','')} | Eternal weight: {k.get('eternal_weight','')} | Path: {k.get('the_path','')} | Question: {k.get('kingdom_question','')}")
+    if data.get('blind_spot'):
+        b = data['blind_spot']
+        parts.append(f"Blind Spot — Missing: {b.get('missing_perspective','')} | Reframe: {b.get('reframe','')}")
+    if not parts:
+        return jsonify({'error': 'No tool results provided'}), 400
+    combined = '\n\n'.join(parts)
+    try:
+        text = call_ai(SYNTHESIS_PROMPT, [{'role': 'user', 'content': combined}], max_tokens=512)
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
         return jsonify({'error': 'Parse error', 'raw': text}), 500
