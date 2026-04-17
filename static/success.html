@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThinkOS — Welcome to Pro</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --bg:#0a0a0a; --surface:#141414; --border:#262626; --text:#efefef; --muted:#555; --ladder:#a78bfa; --reason:#34d399; --radius:10px; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:48px 40px; max-width:480px; width:100%; text-align:center; }
+.icon { font-size:56px; margin-bottom:20px; }
+h1 { font-size:26px; font-weight:700; margin-bottom:10px; }
+.sub { font-size:15px; color:var(--muted); line-height:1.6; margin-bottom:28px; }
+.status { font-size:13px; color:var(--muted); min-height:20px; margin-bottom:20px; }
+.status.success { color:var(--reason); }
+.status.error { color:#f87171; }
+.btn { display:inline-block; background:var(--ladder); color:#000; padding:13px 32px; border-radius:99px; font-size:15px; font-weight:700; text-decoration:none; cursor:pointer; border:none; transition:opacity 0.15s; width:100%; }
+.btn:hover { opacity:0.85; }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">⚡</div>
+  <h1>You're in.</h1>
+  <p class="sub">Your ThinkOS Pro access is unlocked. Unlimited Full Council sessions — think without limits.</p>
+  <p class="status" id="status">Verifying your payment...</p>
+  <a class="btn" id="go-btn" style="display:none" href="/">Open ThinkOS</a>
+</div>
+<script>
+async function verifyAndUnlock() {
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+  const statusEl = document.getElementById('status');
+  const btn = document.getElementById('go-btn');
+
+  if (!sessionId) {
+    statusEl.textContent = 'No session found. Contact support if you paid.';
+    statusEl.className = 'status error';
+    btn.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/verify-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      // Unlock in localStorage — works across reloads
+      localStorage.setItem('thinkos_paid', 'true');
+      localStorage.setItem('thinkos_paid_email', data.email || '');
+      localStorage.setItem('thinkos_paid_plan', data.plan || 'subscription');
+      statusEl.textContent = '✓ Payment confirmed — access unlocked';
+      statusEl.className = 'status success';
+    } else {
+      statusEl.textContent = 'Could not verify payment. Contact support with your receipt.';
+      statusEl.className = 'status error';
+    }
+  } catch(e) {
+    statusEl.textContent = 'Network error — but if you paid, you\'re good. Just open the app.';
+    statusEl.className = 'status error';
+  }
+  btn.style.display = 'block';
+}
+verifyAndUnlock();
+</script>
+</body>
+</html>

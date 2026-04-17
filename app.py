@@ -11,8 +11,17 @@ app = Flask(__name__, static_folder='static')
 
 OPENROUTER_KEY = os.environ.get('OPENROUTER_API_KEY', '')
 OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-MODEL       = 'anthropic/claude-haiku-4-5'   # fast + cheap for all modes
-MODEL_RICH  = 'anthropic/claude-haiku-4-5'   # kingdom lens (rich output, still haiku)
+MODEL       = 'anthropic/claude-haiku-4-5'
+MODEL_RICH  = 'anthropic/claude-haiku-4-5'
+
+# ─── Stripe ────────────────────────────────────────────────────────────────────
+# TODO: Set these in your .env / Railway environment variables
+STRIPE_SECRET_KEY      = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_WEBHOOK_SECRET  = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_PRICE_MONTHLY   = os.environ.get('STRIPE_PRICE_MONTHLY', '')   # price_xxx  $9/month
+STRIPE_PRICE_ANNUAL    = os.environ.get('STRIPE_PRICE_ANNUAL', '')    # price_xxx  $79/year
+STRIPE_PRICE_LIFETIME  = os.environ.get('STRIPE_PRICE_LIFETIME', '')  # price_xxx  $149 one-time
+APP_URL                = os.environ.get('APP_URL', 'http://localhost:5000')
 
 # ─── System Prompts ────────────────────────────────────────────────────────────
 
@@ -306,6 +315,91 @@ def synthesis():
         return jsonify({'error': 'Parse error', 'raw': text}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ─── Stripe Checkout ───────────────────────────────────────────────────────────
+
+@app.route('/api/create-checkout', methods=['POST'])
+def create_checkout():
+    if not STRIPE_SECRET_KEY:
+        return jsonify({'error': 'Payments not configured yet'}), 503
+    try:
+        import stripe
+        stripe.api_key = STRIPE_SECRET_KEY
+        data      = request.get_json() or {}
+        plan      = data.get('plan', 'monthly')          # monthly | annual | lifetime
+        email     = data.get('email', '')
+        price_map = {
+            'monthly':  STRIPE_PRICE_MONTHLY,
+            'annual':   STRIPE_PRICE_ANNUAL,
+            'lifetime': STRIPE_PRICE_LIFETIME,
+        }
+        price_id = price_map.get(plan, STRIPE_PRICE_MONTHLY)
+        if not price_id:
+            return jsonify({'error': f'Price ID for plan "{plan}" not set'}), 503
+
+        mode = 'payment' if plan == 'lifetime' else 'subscription'
+        params = dict(
+            payment_method_types=['card'],
+            line_items=[{'price': price_id, 'quantity': 1}],
+            mode=mode,
+            success_url=f"{APP_URL}/success?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{APP_URL}/",
+            allow_promotion_codes=True,
+        )
+        if email:
+            params['customer_email'] = email
+
+        session = stripe.checkout.Session.create(**params)
+        return jsonify({'url': session.url})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/verify-session', methods=['POST'])
+def verify_session():
+    """Called by the success page to confirm payment went through."""
+    if not STRIPE_SECRET_KEY:
+        return jsonify({'error': 'Payments not configured'}), 503
+    try:
+        import stripe
+        stripe.api_key = STRIPE_SECRET_KEY
+        data       = request.get_json() or {}
+        session_id = data.get('session_id', '')
+        if not session_id:
+            return jsonify({'ok': False, 'error': 'No session_id'}), 400
+        session = stripe.checkout.Session.retrieve(session_id)
+        if session.payment_status in ('paid', 'no_payment_required'):
+            customer_email = session.customer_details.email if session.customer_details else ''
+            plan = 'lifetime' if session.mode == 'payment' else 'subscription'
+            return jsonify({'ok': True, 'email': customer_email, 'plan': plan})
+        return jsonify({'ok': False, 'status': session.payment_status})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/stripe-webhook', methods=['POST'])
+def stripe_webhook():
+    """Stripe sends events here — used to handle cancellations etc."""
+    if not STRIPE_SECRET_KEY:
+        return 'not configured', 200
+    try:
+        import stripe
+        stripe.api_key = STRIPE_SECRET_KEY
+        payload    = request.get_data()
+        sig_header = request.headers.get('Stripe-Signature', '')
+        event      = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        # Log event type — extend here to handle cancellations, renewals, etc.
+        print(f'Stripe webhook: {event["type"]}')
+        return jsonify({'received': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/success')
+def success_page():
+    """Stripe redirects here after successful payment."""
+    return send_from_directory('static', 'success.html')
 
 
 if __name__ == '__main__':

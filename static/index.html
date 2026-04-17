@@ -420,6 +420,65 @@ body {
 /* ── Keyboard shortcuts hint ── */
 .shortcuts-hint { font-size: 10px; color: var(--muted); line-height: 1.9; padding: 4px 0; flex-shrink: 0; }
 .shortcut-key { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 10px; }
+
+/* ── Usage counter badge ── */
+.usage-badge {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; flex-shrink: 0; font-size: 11px;
+}
+.usage-badge .usage-count { color: var(--text); font-weight: 700; }
+.usage-badge .usage-label { color: var(--muted); }
+.usage-badge .usage-upgrade { color: var(--ladder); cursor: pointer; font-weight: 600; text-decoration: none; }
+.usage-badge .usage-upgrade:hover { opacity: 0.8; }
+.usage-bar-track { height: 3px; background: var(--border); border-radius: 99px; margin-top: 5px; }
+.usage-bar-fill { height: 100%; border-radius: 99px; background: var(--ladder); transition: width 0.4s ease; }
+.usage-bar-fill.warn { background: var(--instinct); }
+.usage-bar-fill.full { background: #f87171; }
+.usage-pro-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: #1e1830; border: 1px solid var(--ladder);
+  border-radius: 8px; padding: 8px 10px; flex-shrink: 0; font-size: 11px;
+  color: var(--ladder); font-weight: 600;
+}
+
+/* ── Paywall modal ── */
+.paywall-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 36px 32px; width: 100%; max-width: 520px;
+  text-align: center;
+}
+.paywall-icon { font-size: 48px; margin-bottom: 16px; }
+.paywall-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.paywall-sub { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 28px; }
+.plan-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 24px; }
+@media(max-width:480px){ .plan-grid { grid-template-columns: 1fr; } }
+.plan-card {
+  background: var(--surface2); border: 2px solid var(--border);
+  border-radius: 12px; padding: 16px 12px; cursor: pointer;
+  transition: all 0.15s; text-align: center;
+}
+.plan-card:hover { border-color: var(--ladder); }
+.plan-card.selected { border-color: var(--ladder); background: #1e1830; }
+.plan-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.plan-price { font-size: 22px; font-weight: 800; color: var(--ladder); }
+.plan-price span { font-size: 12px; font-weight: 400; color: var(--muted); }
+.plan-desc { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+.plan-badge { font-size: 10px; font-weight: 700; background: var(--ladder); color: #000; border-radius: 99px; padding: 2px 8px; display: inline-block; margin-bottom: 6px; }
+.paywall-email { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:11px 14px; color:var(--text); font-size:14px; outline:none; margin-bottom:12px; }
+.paywall-email:focus { border-color:var(--ladder); }
+.btn-pay { width:100%; padding:13px; border-radius:99px; border:none; background:var(--ladder); color:#000; font-size:15px; font-weight:700; cursor:pointer; transition:opacity 0.15s; margin-bottom:10px; }
+.btn-pay:hover { opacity:0.85; }
+.btn-pay:disabled { opacity:0.4; cursor:not-allowed; }
+.paywall-fine { font-size:11px; color:var(--muted); line-height:1.6; }
+.paywall-fine a { color:var(--muted); }
+.paywall-divider { display:flex; align-items:center; gap:10px; margin:16px 0; color:var(--muted); font-size:12px; }
+.paywall-divider::before,.paywall-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.paywall-free-count {
+  display:inline-flex; align-items:center; gap:6px;
+  background:#0f2a1a; border:1px solid var(--reason); border-radius:99px;
+  padding:5px 14px; font-size:12px; color:var(--reason); font-weight:600; margin-bottom:20px;
+}
 </style>
 </head>
 <body>
@@ -466,6 +525,8 @@ body {
     <span class="shortcut-key">⌘⇧F</span> Full Council<br>
     <span class="shortcut-key">⌘1–5</span> switch tool
   </div>
+
+  <div id="usage-badge-wrap"></div>
 
   <div class="sb-bottom">
     <button class="btn-theme" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">🌓</button>
@@ -680,6 +741,11 @@ body {
 <!-- Full Council FAB for mobile -->
 <button class="fab-council" onclick="runFullCouncil()">⚡ Full Council</button>
 
+<!-- Copyright footer (hidden on mobile, visible on desktop) -->
+<div style="position:fixed;bottom:6px;left:calc(var(--sb-width) + 12px);font-size:10px;color:var(--muted);pointer-events:none;z-index:10;">
+  © 2026 ThinkOS. All rights reserved. Patent Pending.
+</div>
+
 <!-- ── Templates modal ── -->
 <div class="modal-overlay" id="templates-modal" onclick="if(event.target===this)closeAllModals()">
   <div class="modal-box">
@@ -718,6 +784,45 @@ body {
         <div class="template-chain"><span class="chain-tag ct-rei">REI</span><span class="chain-tag ct-socratic">Socratic</span></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ── Paywall modal ── -->
+<div class="modal-overlay" id="paywall-modal">
+  <div class="paywall-box">
+    <div class="paywall-icon">⚡</div>
+    <div class="paywall-title">You've used your free sessions</div>
+    <div class="paywall-sub">You've experienced the Full Council. Ready to think without limits?</div>
+    <div class="paywall-free-count" id="paywall-free-line">5 of 5 free Full Councils used</div>
+
+    <div class="plan-grid">
+      <div class="plan-card selected" id="plan-monthly" onclick="selectPlan('monthly')">
+        <div class="plan-name">Monthly</div>
+        <div class="plan-price">$9<span>/mo</span></div>
+        <div class="plan-desc">Cancel anytime</div>
+      </div>
+      <div class="plan-card" id="plan-annual" onclick="selectPlan('annual')">
+        <div class="plan-badge">Save 27%</div>
+        <div class="plan-name">Annual</div>
+        <div class="plan-price">$79<span>/yr</span></div>
+        <div class="plan-desc">$6.58/month</div>
+      </div>
+      <div class="plan-card" id="plan-lifetime" onclick="selectPlan('lifetime')">
+        <div class="plan-name">Lifetime</div>
+        <div class="plan-price">$149</div>
+        <div class="plan-desc">Pay once, own it</div>
+      </div>
+    </div>
+
+    <input class="paywall-email" id="paywall-email" type="email" placeholder="Your email address (for your receipt)">
+    <button class="btn-pay" id="btn-pay" onclick="startCheckout()">Subscribe Now →</button>
+    <p id="paywall-status" style="font-size:13px;color:var(--muted);min-height:18px;margin-bottom:10px;"></p>
+    <p class="paywall-fine">
+      Secure payment via Stripe &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp;
+      <a href="mailto:support@thinkos.app">support@thinkos.app</a>
+    </p>
+    <div class="paywall-divider">or</div>
+    <button class="btn-pay" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:500;" onclick="closeAllModals()">Keep using free tools (REI, Ladder, Kingdom, Socratic)</button>
   </div>
 </div>
 
@@ -1020,6 +1125,7 @@ function resetSocratic() {
 
 // ── Full Council ───────────────────────────────────────────────
 async function runFullCouncil() {
+  if (!canRunCouncil()) { openPaywall('limit'); return; }
   const input = getThought();
   if (!input) { document.getElementById('global-thought').focus(); return; }
   switchTool('council');
@@ -1053,6 +1159,8 @@ async function runFullCouncil() {
     document.getElementById('council-synthesis').style.display = 'block';
     document.getElementById('council-actions').style.display = 'flex';
     saveSession();
+    // Count this as a used session (only after full success)
+    if (!isPaid()) incrementCouncilCount();
   } catch(e) { alert('Full Council error: ' + e.message); }
   finally { stopLoading('council'); document.getElementById('full-council-btn').disabled = false; }
 }
@@ -1318,11 +1426,116 @@ function submitCurrentTool() {
   if (fns[currentTool]) fns[currentTool]();
 }
 
+// ── Paywall & Usage Tracking ──────────────────────────────────
+const FREE_COUNCILS = 5;   // number of free Full Council runs
+
+function isPaid() {
+  return localStorage.getItem('thinkos_paid') === 'true';
+}
+function getCouncilCount() {
+  return parseInt(localStorage.getItem('thinkos_council_count') || '0', 10);
+}
+function incrementCouncilCount() {
+  const n = getCouncilCount() + 1;
+  localStorage.setItem('thinkos_council_count', n);
+  renderUsageBadge();
+  return n;
+}
+function councilsRemaining() {
+  return Math.max(0, FREE_COUNCILS - getCouncilCount());
+}
+function canRunCouncil() {
+  return isPaid() || councilsRemaining() > 0;
+}
+
+function renderUsageBadge() {
+  const wrap = document.getElementById('usage-badge-wrap');
+  if (!wrap) return;
+  if (isPaid()) {
+    const plan = localStorage.getItem('thinkos_paid_plan') || 'pro';
+    wrap.innerHTML = `<div class="usage-pro-badge">⚡ Pro — unlimited</div>`;
+    return;
+  }
+  const used = getCouncilCount();
+  const pct  = Math.min(100, (used / FREE_COUNCILS) * 100);
+  const cls  = pct >= 100 ? 'full' : pct >= 60 ? 'warn' : '';
+  const left = FREE_COUNCILS - used;
+  wrap.innerHTML = `
+    <div class="usage-badge">
+      <div>
+        <span class="usage-count">${left} free left</span>
+        <span class="usage-label"> · Full Council</span>
+      </div>
+      <a class="usage-upgrade" onclick="openPaywall('badge')">Upgrade</a>
+      <div class="usage-bar-track" style="margin-top:6px;grid-column:1/-1">
+        <div class="usage-bar-fill ${cls}" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  // fix: the bar track needs to be outside the flex row
+  wrap.querySelector('.usage-badge').style.display = 'block';
+}
+
+function openPaywall(source) {
+  const used = getCouncilCount();
+  const el = document.getElementById('paywall-free-line');
+  if (el) el.textContent = `${used} of ${FREE_COUNCILS} free Full Councils used`;
+  document.getElementById('paywall-modal').classList.add('visible');
+  document.getElementById('paywall-status').textContent = '';
+}
+
+// Plan selection
+let _selectedPlan = 'monthly';
+function selectPlan(plan) {
+  _selectedPlan = plan;
+  ['monthly','annual','lifetime'].forEach(p => {
+    document.getElementById('plan-' + p)?.classList.toggle('selected', p === plan);
+  });
+}
+
+async function startCheckout() {
+  const email  = document.getElementById('paywall-email').value.trim();
+  const btn    = document.getElementById('btn-pay');
+  const status = document.getElementById('paywall-status');
+  if (!email) { status.textContent = 'Please enter your email.'; return; }
+  btn.disabled = true; status.textContent = 'Redirecting to checkout...';
+  try {
+    const res  = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan: _selectedPlan, email })
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      status.textContent = data.error || 'Could not start checkout. Try again.';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    status.textContent = 'Network error. Please try again.';
+    btn.disabled = false;
+  }
+}
+
+// Check if returning from Stripe success page
+function checkSuccessReturn() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('payment') === 'success') {
+    localStorage.setItem('thinkos_paid', 'true');
+    window.history.replaceState({}, '', '/');
+    renderUsageBadge();
+  }
+}
+
+// Gate is applied inline inside runFullCouncil via canRunCouncil() check at top
+
 // ── Init ───────────────────────────────────────────────────────
 restoreTheme();
 restoreThought();
 switchTool('rei');
 renderSessions();
+renderUsageBadge();
+checkSuccessReturn();
 </script>
 </body>
 </html>
