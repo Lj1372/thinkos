@@ -447,6 +447,15 @@ body {
 .shortcuts-hint { font-size: 10px; color: var(--muted); line-height: 1.9; padding: 4px 0; flex-shrink: 0; }
 .shortcut-key { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: 10px; }
 
+/* ── Insights panel ── */
+.insights-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 6px; }
+.insights-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+.insights-value { font-size: 12px; color: var(--text); line-height: 1.55; }
+.insights-question { font-size: 13px; font-weight: 600; color: var(--ladder); line-height: 1.5; font-style: italic; padding: 10px 12px; background: #1e1830; border-radius: 8px; margin-top: 4px; }
+.btn-insights { width: 100%; padding: 9px; border-radius: 99px; border: 1px solid var(--ladder); background: transparent; color: var(--ladder); font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+.btn-insights:hover { background: var(--ladder); color: #000; }
+.btn-insights:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* ── Usage counter badge ── */
 .usage-badge {
   display: flex; align-items: center; justify-content: space-between;
@@ -581,6 +590,14 @@ body {
   </div>
 
   <div id="usage-badge-wrap"></div>
+
+  <!-- Insights panel — Pro + logged in only -->
+  <div id="insights-panel" style="display:none;">
+    <div class="sb-divider"></div>
+    <div class="sb-label" style="margin-bottom:6px;">Thinking Patterns</div>
+    <button class="btn-insights" id="btn-insights" onclick="loadInsights()">✦ Analyse my sessions</button>
+    <div id="insights-output" style="margin-top:8px;"></div>
+  </div>
 
   <div class="sb-bottom">
     <button class="btn-theme" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">🌓</button>
@@ -980,12 +997,14 @@ async function onLogin(user) {
     localStorage.setItem('thinkos_paid_plan', profile.plan);
   }
   renderAuthUI();
+  toggleInsightsPanel();
   loadSessionHistory();
 }
 
 function onLogout() {
   _sbUser = null;
   renderAuthUI();
+  toggleInsightsPanel();
 }
 
 function renderAuthUI() {
@@ -1900,6 +1919,73 @@ async function startCheckout() {
     status.textContent = 'Network error. Please try again.';
     btn.disabled = false;
   }
+}
+
+// ── Insights ──────────────────────────────────────────────────
+async function loadInsights() {
+  if (!_sbUser || !isPaid()) return;
+  const btn = document.getElementById('btn-insights');
+  const out = document.getElementById('insights-output');
+  btn.disabled = true;
+  btn.textContent = '✦ Analysing…';
+  out.innerHTML = '';
+
+  // Fetch all saved sessions from Supabase
+  const { data: sessions } = await _sb.from('sessions')
+    .select('tool,thought,result,created_at')
+    .eq('user_id', _sbUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (!sessions || sessions.length < 2) {
+    out.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:6px 0;">Save at least 2 sessions first to unlock your thinking patterns.</div>';
+    btn.disabled = false;
+    btn.textContent = '✦ Analyse my sessions';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/insights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessions })
+    });
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    renderInsights(d, sessions.length);
+  } catch(e) {
+    out.innerHTML = `<div style="font-size:11px;color:#f87171;">Error: ${e.message}</div>`;
+  }
+  btn.disabled = false;
+  btn.textContent = '✦ Refresh insights';
+}
+
+function renderInsights(d, count) {
+  const out = document.getElementById('insights-output');
+  const card = (label, value) => `
+    <div class="insights-card">
+      <div class="insights-label">${label}</div>
+      <div class="insights-value">${esc(value)}</div>
+    </div>`;
+  out.innerHTML = `
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Based on ${count} saved sessions</div>
+    ${card('Dominant Theme', d.dominant_theme)}
+    ${card('Your Thinking Style', d.thinking_style)}
+    ${card('Growth Edge', d.growth_edge)}
+    ${card('Recurring Blind Spot', d.blind_spot_pattern)}
+    ${card('Your Strongest Lens', d.strongest_lens)}
+    <div class="insights-card">
+      <div class="insights-label">Deep Insight</div>
+      <div class="insights-value">${esc(d.insight)}</div>
+    </div>
+    <div class="insights-question">"${esc(d.question)}"</div>`;
+}
+
+// Show insights panel only for paid + logged-in
+function toggleInsightsPanel() {
+  const panel = document.getElementById('insights-panel');
+  if (!panel) return;
+  panel.style.display = (_sbUser && isPaid()) ? 'block' : 'none';
 }
 
 // ── Disclaimer ────────────────────────────────────────────────

@@ -495,6 +495,60 @@ def success_page():
     return send_from_directory('static', 'success.html')
 
 
+INSIGHTS_PROMPT = """You are a Thinking Pattern Analyst. You have been given a person's saved ThinkOS sessions — a record of what they have been thinking about across different tools over time.
+
+Your job: read across ALL sessions and reveal the deeper patterns, growth edges, and recurring themes.
+
+Respond ONLY with valid JSON:
+{
+  "dominant_theme": "The single most recurring topic or concern across all sessions (1 sentence)",
+  "thinking_style": "How this person tends to approach problems — what their REI/Ladder/Kingdom results reveal about their mind (2 sentences)",
+  "growth_edge": "The one pattern that keeps appearing that they seem to be working through (2 sentences)",
+  "blind_spot_pattern": "A recurring blind spot or avoided angle across sessions (1-2 sentences)",
+  "strongest_lens": "Which tool reveals the most about them and why (1 sentence)",
+  "insight": "One deep, specific observation about this person's thinking that they probably haven't articulated themselves (2-3 sentences)",
+  "question": "One question under 25 words that cuts to the heart of what all their sessions are circling around"
+}"""
+
+
+@app.route('/api/insights', methods=['POST'])
+def get_insights():
+    """Analyse a user's saved sessions and return thinking patterns."""
+    try:
+        data = request.get_json() or {}
+        sessions = data.get('sessions', [])
+        if not sessions:
+            return jsonify({'error': 'No sessions provided'}), 400
+
+        # Build a concise summary of each session for the prompt
+        parts = []
+        for i, s in enumerate(sessions[:20], 1):  # cap at 20
+            tool = s.get('tool', 'unknown')
+            thought = s.get('thought', '')[:200]
+            result = s.get('result', {})
+            summary = f"Session {i} [{tool.upper()}]: \"{thought}\""
+            if tool == 'rei' and result:
+                summary += f" → Instinct: {result.get('instinct','')[:80]} | Alignment: {result.get('alignment','')}"
+            elif tool == 'ladder' and result:
+                summary += f" → Rung {result.get('current_rung','')}: {result.get('rung_name','')} | {result.get('current_view','')[:80]}"
+            elif tool == 'kingdom' and result:
+                summary += f" → {result.get('kingdom','')[:80]}"
+            elif tool == 'blind' and result:
+                summary += f" → Missing: {result.get('missing_perspective','')}"
+            elif tool == 'council' and result:
+                synth = result.get('synthesis', {})
+                summary += f" → {synth.get('synthesis','')[:100]}" if synth else ""
+            parts.append(summary)
+
+        combined = '\n'.join(parts)
+        text = call_ai(INSIGHTS_PROMPT, [{'role': 'user', 'content': combined}], max_tokens=800)
+        return jsonify(parse_json(text))
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f'\n  ThinkOS running at http://localhost:{port}\n')
