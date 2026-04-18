@@ -378,6 +378,78 @@ def verify_session():
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
+@app.route('/api/sync-subscription', methods=['POST'])
+def sync_subscription():
+    """Called after login — checks Stripe for this email and updates Supabase profile."""
+    if not STRIPE_SECRET_KEY:
+        return jsonify({'ok': False}), 200
+    try:
+        import stripe
+        import requests as req
+        stripe.api_key = STRIPE_SECRET_KEY
+        data = request.get_json() or {}
+        user_id = data.get('user_id', '')
+        email = data.get('email', '')
+        if not user_id or not email:
+            return jsonify({'ok': False, 'error': 'Missing user_id or email'}), 400
+
+        # Check Stripe for customer with this email
+        customers = stripe.Customer.list(email=email, limit=1)
+        plan = 'free'
+        plan_status = 'active'
+        stripe_customer_id = ''
+
+        if customers.data:
+            customer = customers.data[0]
+            stripe_customer_id = customer.id
+            # Check subscriptions
+            subs = stripe.Subscription.list(customer=customer.id, status='active', limit=1)
+            if subs.data:
+                sub = subs.data[0]
+                price_id = sub['items']['data'][0]['price']['id']
+                if price_id == STRIPE_PRICE_LIFETIME:
+                    plan = 'lifetime'
+                elif price_id == STRIPE_PRICE_ANNUAL:
+                    plan = 'annual'
+                elif price_id == STRIPE_PRICE_MONTHLY:
+                    plan = 'monthly'
+                else:
+                    plan = 'monthly'
+            else:
+                # Check for one-time lifetime payment
+                payments = stripe.PaymentIntent.list(customer=customer.id, limit=10)
+                for pi in payments.data:
+                    if pi.status == 'succeeded' and pi.amount >= 14900:
+                        plan = 'lifetime'
+                        break
+
+        # Update Supabase profile using service key
+        SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+        SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
+        if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+            headers = {
+                'apikey': SUPABASE_SERVICE_KEY,
+                'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}',
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            }
+            payload = {
+                'plan': plan,
+                'plan_status': plan_status,
+                'stripe_customer_id': stripe_customer_id,
+                'updated_at': 'now()'
+            }
+            req.patch(
+                f"{SUPABASE_URL}/rest/v1/profiles?id=eq.{user_id}",
+                headers=headers,
+                json=payload
+            )
+
+        return jsonify({'ok': True, 'plan': plan})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 @app.route('/api/stripe-webhook', methods=['POST'])
 def stripe_webhook():
     """Stripe sends events here — used to handle cancellations etc."""

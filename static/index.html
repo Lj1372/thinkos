@@ -506,6 +506,7 @@ body {
   padding:5px 14px; font-size:12px; color:var(--reason); font-weight:600; margin-bottom:20px;
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -542,6 +543,20 @@ body {
   <div class="sb-divider"></div>
   <button class="btn-templates" onclick="openTemplates()">📋 Templates</button>
 
+  <!-- Auth panel -->
+  <div id="sb-auth-panel">
+    <div id="sb-login-btn">
+      <div class="sb-label" style="margin-bottom:6px;">Save your progress</div>
+      <input id="sb-email-input" type="email" class="paywall-email" placeholder="your@email.com" style="margin-bottom:6px;" />
+      <button id="sb-send-btn" class="btn-full-council" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);" onclick="sendMagicLink()">✉ Email me a login link</button>
+      <p id="sb-auth-status" style="font-size:11px;color:var(--muted);min-height:16px;margin-top:6px;"></p>
+    </div>
+    <div id="sb-user-info" style="display:none;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Logged in as</div>
+      <div class="sb-email" style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;word-break:break-all;"></div>
+      <button onclick="signOut()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;width:100%;">Sign out</button>
+    </div>
+  </div>
   <div class="sb-divider"></div>
   <div class="sb-label">Recent Sessions</div>
   <div class="session-list" id="session-list"></div>
@@ -870,6 +885,115 @@ body {
 </div>
 
 <script>
+// ── Supabase Auth ──────────────────────────────────────────────
+const SUPABASE_URL = 'https://plbmidsmtbkggehmoeuf.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYm1pZHNtdGJrZ2dlaG1vZXVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0OTc5MjQsImV4cCI6MjA5MjA3MzkyNH0.8sBr6kWhLKMwtVx4KUse1nb6Ll5IdiZjYzCB8lTdkMo';
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let _sbUser = null;
+
+async function sbInit() {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session?.user) await onLogin(session.user);
+  _sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user) await onLogin(session.user);
+    if (event === 'SIGNED_OUT') onLogout();
+  });
+}
+
+async function onLogin(user) {
+  _sbUser = user;
+  // Check profile for paid plan
+  const { data: profile } = await _sb.from('profiles').select('plan,plan_status').eq('id', user.id).single();
+  if (profile && profile.plan !== 'free' && profile.plan_status === 'active') {
+    localStorage.setItem('thinkos_paid', 'true');
+    localStorage.setItem('thinkos_paid_plan', profile.plan);
+  }
+  renderAuthUI();
+  loadSessionHistory();
+}
+
+function onLogout() {
+  _sbUser = null;
+  renderAuthUI();
+}
+
+function renderAuthUI() {
+  const loginBtn = document.getElementById('sb-login-btn');
+  const userInfo = document.getElementById('sb-user-info');
+  if (!loginBtn || !userInfo) return;
+  if (_sbUser) {
+    loginBtn.style.display = 'none';
+    userInfo.style.display = 'block';
+    userInfo.querySelector('.sb-email').textContent = _sbUser.email;
+  } else {
+    loginBtn.style.display = 'block';
+    userInfo.style.display = 'none';
+  }
+}
+
+async function sendMagicLink() {
+  const emailInput = document.getElementById('sb-email-input');
+  const btn = document.getElementById('sb-send-btn');
+  const status = document.getElementById('sb-auth-status');
+  const email = emailInput?.value?.trim();
+  if (!email) { if (status) status.textContent = 'Enter your email first.'; return; }
+  btn.disabled = true;
+  if (status) status.textContent = 'Sending link...';
+  const { error } = await _sb.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin + '/?login=1' }
+  });
+  if (error) {
+    if (status) status.textContent = 'Error: ' + error.message;
+    btn.disabled = false;
+  } else {
+    if (status) status.textContent = '✓ Check your email — click the link to log in.';
+    emailInput.value = '';
+  }
+}
+
+async function signOut() {
+  await _sb.auth.signOut();
+  localStorage.removeItem('thinkos_paid');
+  localStorage.removeItem('thinkos_paid_plan');
+  localStorage.removeItem('thinkos_paid_email');
+}
+
+// Save a completed session to Supabase
+async function saveSessionCloud(tool, thought, result) {
+  if (!_sbUser) return;
+  await _sb.from('sessions').insert({
+    user_id: _sbUser.id,
+    tool,
+    thought,
+    result
+  });
+}
+
+// Load session history from Supabase
+async function loadSessionHistory() {
+  if (!_sbUser) return;
+  const { data } = await _sb.from('sessions')
+    .select('*')
+    .eq('user_id', _sbUser.id)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (data) renderCloudHistory(data);
+}
+
+function renderCloudHistory(sessions) {
+  const list = document.getElementById('session-list');
+  if (!list || !sessions.length) return;
+  // Add a cloud history section marker
+  const existing = list.querySelector('.cloud-history-marker');
+  if (existing) existing.remove();
+  const marker = document.createElement('div');
+  marker.className = 'cloud-history-marker';
+  marker.style.cssText = 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:8px 0 4px;';
+  marker.textContent = 'Your History';
+  list.prepend(marker);
+}
+
 // ── State ──────────────────────────────────────────────────────
 let currentTool = 'rei';
 let lastResults = {};
@@ -1053,6 +1177,7 @@ async function submitREI() {
     document.getElementById('rei-results').classList.add('visible');
     if (!isPaid()) incrementToolCount('rei');
     saveSession();
+    saveSessionCloud('rei', input, d);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('rei'); }
 }
@@ -1087,6 +1212,7 @@ async function submitLadder() {
     document.getElementById('ladder-results').classList.add('visible');
     if (!isPaid()) incrementToolCount('ladder');
     saveSession();
+    saveSessionCloud('ladder', input, d);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('ladder'); }
 }
@@ -1120,6 +1246,7 @@ async function submitKingdom() {
     document.getElementById('kingdom-results').classList.add('visible');
     if (!isPaid()) incrementToolCount('kingdom');
     saveSession();
+    saveSessionCloud('kingdom', input, d);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('kingdom'); }
 }
@@ -1145,6 +1272,7 @@ async function submitBlind() {
     document.getElementById('blind-results').classList.add('visible');
     if (!isPaid()) incrementToolCount('blind');
     saveSession();
+    saveSessionCloud('blind', input, d);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('blind'); }
 }
@@ -1215,6 +1343,7 @@ async function runFullCouncil() {
     document.getElementById('council-synthesis').style.display = 'block';
     document.getElementById('council-actions').style.display = 'flex';
     saveSession();
+    saveSessionCloud('council', input, { rei, ladder, kingdom, blind, synthesis: synth });
     // Count this as a used session (only after full success)
     if (!isPaid()) incrementCouncilCount();
   } catch(e) { alert('Full Council error: ' + e.message); }
@@ -1653,6 +1782,7 @@ switchTool('rei');
 renderSessions();
 renderUsageBadge();
 checkSuccessReturn();
+sbInit();
 </script>
 </body>
 </html>

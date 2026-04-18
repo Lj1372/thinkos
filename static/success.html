@@ -19,6 +19,7 @@ h1 { font-size:26px; font-weight:700; margin-bottom:10px; }
 .btn:hover { opacity:0.85; }
 .btn:disabled { opacity:0.4; cursor:not-allowed; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="card">
@@ -56,6 +57,18 @@ async function verifyAndUnlock() {
       localStorage.setItem('thinkos_paid_plan', data.plan || 'subscription');
       statusEl.textContent = '✓ Payment confirmed — access unlocked';
       statusEl.className = 'status success';
+      // After confirming payment, sync to Supabase
+      try {
+        const sbClient = supabase.createClient('https://plbmidsmtbkggehmoeuf.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYm1pZHNtdGJrZ2dlaG1vZXVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0OTc5MjQsImV4cCI6MjA5MjA3MzkyNH0.8sBr6kWhLKMwtVx4KUse1nb6Ll5IdiZjYzCB8lTdkMo');
+        const { data: { session } } = await sbClient.auth.getSession();
+        if (session?.user) {
+          await fetch('/api/sync-subscription', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: session.user.id, email: session.user.email })
+          });
+        }
+      } catch(sbErr) { console.warn('Supabase sync skipped:', sbErr); }
     } else {
       statusEl.textContent = 'Could not verify payment. Contact support with your receipt.';
       statusEl.className = 'status error';
