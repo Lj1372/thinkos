@@ -982,39 +982,73 @@ async function signOut() {
   localStorage.removeItem('thinkos_paid_email');
 }
 
-// Save a completed session to Supabase — paid users only
-async function saveSessionCloud(tool, thought, result) {
+// Show save prompt after a result — paid + logged-in users only
+let _pendingSave = null;
+function showSavePrompt(tool, thought, result) {
   if (!_sbUser || !isPaid()) return;
-  await _sb.from('sessions').insert({
-    user_id: _sbUser.id,
-    tool,
-    thought,
-    result
-  });
+  _pendingSave = { tool, thought, result };
+  const existing = document.getElementById('save-prompt-bar');
+  if (existing) existing.remove();
+  const bar = document.createElement('div');
+  bar.id = 'save-prompt-bar';
+  bar.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);z-index:500;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;';
+  bar.innerHTML = `<span>💾 Save this session?</span>
+    <button onclick="confirmSaveSession()" style="background:var(--ladder);color:#000;border:none;border-radius:99px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;">Save</button>
+    <button onclick="document.getElementById('save-prompt-bar').remove()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:0 4px;">×</button>`;
+  document.body.appendChild(bar);
+  // Auto-dismiss after 10 seconds
+  setTimeout(() => bar.remove(), 10000);
+}
+
+async function confirmSaveSession() {
+  const pending = _pendingSave;
+  document.getElementById('save-prompt-bar')?.remove();
+  if (!pending || !_sbUser) return;
+  await _sb.from('sessions').insert({ user_id: _sbUser.id, tool: pending.tool, thought: pending.thought, result: pending.result });
+  // Brief success toast
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--reason);color:#000;border-radius:99px;padding:8px 18px;font-size:13px;font-weight:700;z-index:500;';
+  toast.textContent = '✓ Session saved to your account';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+  loadSessionHistory(); // refresh the list
+  _pendingSave = null;
+}
+
+// Delete a cloud session
+async function deleteCloudSession(id) {
+  if (!_sbUser) return;
+  await _sb.from('sessions').delete().eq('id', id).eq('user_id', _sbUser.id);
+  loadSessionHistory();
 }
 
 // Load session history from Supabase — paid users only
 async function loadSessionHistory() {
   if (!_sbUser || !isPaid()) return;
   const { data } = await _sb.from('sessions')
-    .select('*')
+    .select('id,tool,thought,created_at')
     .eq('user_id', _sbUser.id)
     .order('created_at', { ascending: false })
     .limit(50);
-  if (data) renderCloudHistory(data);
+  renderCloudHistory(data || []);
 }
 
 function renderCloudHistory(sessions) {
   const list = document.getElementById('session-list');
-  if (!list || !sessions.length) return;
-  // Add a cloud history section marker
-  const existing = list.querySelector('.cloud-history-marker');
-  if (existing) existing.remove();
-  const marker = document.createElement('div');
-  marker.className = 'cloud-history-marker';
-  marker.style.cssText = 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:8px 0 4px;';
-  marker.textContent = 'Your History';
-  list.prepend(marker);
+  if (!list) return;
+  list.innerHTML = '';
+  if (!sessions.length) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:6px 10px">No saved sessions yet</div>';
+    return;
+  }
+  sessions.forEach(s => {
+    const title = (s.thought || 'Untitled').slice(0, 45) + ((s.thought||'').length > 45 ? '…' : '');
+    const toolLabel = { rei:'REI', ladder:'Ladder', kingdom:'Kingdom', blind:'Blind Spot', socratic:'Socratic', council:'Council' }[s.tool] || s.tool;
+    const item = document.createElement('div');
+    item.className = 'session-item';
+    item.innerHTML = `<span class="session-title"><span style="font-size:10px;color:var(--muted);margin-right:4px;">${esc(toolLabel)}</span>${esc(title)}</span><button class="session-del" onclick="event.stopPropagation();deleteCloudSession('${s.id}')" title="Delete">×</button>`;
+    list.appendChild(item);
+  });
 }
 
 // ── State ──────────────────────────────────────────────────────
@@ -1200,7 +1234,7 @@ async function submitREI() {
     document.getElementById('rei-results').classList.add('visible');
     if (!isPaid()) incrementToolCount('rei');
     saveSession();
-    saveSessionCloud('rei', input, d);
+    showSavePrompt('rei', input, d);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('rei'); }
 }
@@ -1235,7 +1269,7 @@ async function submitLadder() {
     document.getElementById('ladder-results').classList.add('visible');
     if (!isPaid()) incrementToolCount('ladder');
     saveSession();
-    saveSessionCloud('ladder', input, d);
+    showSavePrompt('ladder', input, d);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('ladder'); }
 }
@@ -1269,7 +1303,7 @@ async function submitKingdom() {
     document.getElementById('kingdom-results').classList.add('visible');
     if (!isPaid()) incrementToolCount('kingdom');
     saveSession();
-    saveSessionCloud('kingdom', input, d);
+    showSavePrompt('kingdom', input, d);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('kingdom'); }
 }
@@ -1295,7 +1329,7 @@ async function submitBlind() {
     document.getElementById('blind-results').classList.add('visible');
     if (!isPaid()) incrementToolCount('blind');
     saveSession();
-    saveSessionCloud('blind', input, d);
+    showSavePrompt('blind', input, d);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('blind'); }
 }
@@ -1366,7 +1400,7 @@ async function runFullCouncil() {
     document.getElementById('council-synthesis').style.display = 'block';
     document.getElementById('council-actions').style.display = 'flex';
     saveSession();
-    saveSessionCloud('council', input, { rei, ladder, kingdom, blind, synthesis: synth });
+    showSavePrompt('council', input, { rei, ladder, kingdom, blind, synthesis: synth });
     // Count this as a used session (only after full success)
     if (!isPaid()) incrementCouncilCount();
   } catch(e) { alert('Full Council error: ' + e.message); }
@@ -1502,6 +1536,9 @@ function loadSession(id) {
   renderSessions();
 }
 function renderSessions() {
+  // Paid + logged-in users see cloud history (handled by renderCloudHistory)
+  if (_sbUser && isPaid()) { loadSessionHistory(); return; }
+  // Everyone else sees local-only sessions
   const list = document.getElementById('session-list'); if (!list) return;
   const sessions = getSessions().slice(0, 8);
   list.innerHTML = sessions.length ? '' : '<div style="font-size:11px;color:var(--muted);padding:6px 10px">No sessions yet</div>';
