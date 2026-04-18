@@ -543,14 +543,24 @@ body {
   <div class="sb-divider"></div>
   <button class="btn-templates" onclick="openTemplates()">📋 Templates</button>
 
-  <!-- Auth panel -->
+  <!-- Auth panel — Pro only -->
   <div id="sb-auth-panel">
-    <div id="sb-login-btn">
+    <!-- Shown to free users: teaser locked behind upgrade -->
+    <div id="sb-free-teaser" style="display:none;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;">🔒 Cloud history</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;">Save your sessions across devices. Pro only.</div>
+        <button onclick="openPaywall('cloud')" style="width:100%;background:var(--ladder);color:#000;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">Upgrade to Pro →</button>
+      </div>
+    </div>
+    <!-- Shown to paid users who are not logged in -->
+    <div id="sb-login-btn" style="display:none;">
       <div class="sb-label" style="margin-bottom:6px;">Save your progress</div>
       <input id="sb-email-input" type="email" class="paywall-email" placeholder="your@email.com" style="margin-bottom:6px;" />
       <button id="sb-send-btn" class="btn-full-council" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);" onclick="sendMagicLink()">✉ Email me a login link</button>
       <p id="sb-auth-status" style="font-size:11px;color:var(--muted);min-height:16px;margin-top:6px;"></p>
     </div>
+    <!-- Shown to paid + logged-in users -->
     <div id="sb-user-info" style="display:none;">
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Logged in as</div>
       <div class="sb-email" style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;word-break:break-all;"></div>
@@ -918,14 +928,27 @@ function onLogout() {
 }
 
 function renderAuthUI() {
+  const teaser   = document.getElementById('sb-free-teaser');
   const loginBtn = document.getElementById('sb-login-btn');
   const userInfo = document.getElementById('sb-user-info');
-  if (!loginBtn || !userInfo) return;
-  if (_sbUser) {
+  if (!teaser || !loginBtn || !userInfo) return;
+
+  const paid = isPaid();
+
+  if (!paid) {
+    // Free user — show locked teaser, hide everything else
+    teaser.style.display   = 'block';
+    loginBtn.style.display = 'none';
+    userInfo.style.display = 'none';
+  } else if (_sbUser) {
+    // Paid + logged in
+    teaser.style.display   = 'none';
     loginBtn.style.display = 'none';
     userInfo.style.display = 'block';
     userInfo.querySelector('.sb-email').textContent = _sbUser.email;
   } else {
+    // Paid but not logged in yet
+    teaser.style.display   = 'none';
     loginBtn.style.display = 'block';
     userInfo.style.display = 'none';
   }
@@ -959,9 +982,9 @@ async function signOut() {
   localStorage.removeItem('thinkos_paid_email');
 }
 
-// Save a completed session to Supabase
+// Save a completed session to Supabase — paid users only
 async function saveSessionCloud(tool, thought, result) {
-  if (!_sbUser) return;
+  if (!_sbUser || !isPaid()) return;
   await _sb.from('sessions').insert({
     user_id: _sbUser.id,
     tool,
@@ -970,9 +993,9 @@ async function saveSessionCloud(tool, thought, result) {
   });
 }
 
-// Load session history from Supabase
+// Load session history from Supabase — paid users only
 async function loadSessionHistory() {
-  if (!_sbUser) return;
+  if (!_sbUser || !isPaid()) return;
   const { data } = await _sb.from('sessions')
     .select('*')
     .eq('user_id', _sbUser.id)
@@ -1781,6 +1804,7 @@ restoreThought();
 switchTool('rei');
 renderSessions();
 renderUsageBadge();
+renderAuthUI();
 checkSuccessReturn();
 sbInit();
 </script>
