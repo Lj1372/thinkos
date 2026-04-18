@@ -795,8 +795,8 @@ body {
 <div class="modal-overlay" id="paywall-modal">
   <div class="paywall-box">
     <div class="paywall-icon">⚡</div>
-    <div class="paywall-title">You've used your free sessions</div>
-    <div class="paywall-sub">You've experienced the Full Council. Ready to think without limits?</div>
+    <div class="paywall-title" id="paywall-title">You've used your free sessions</div>
+    <div class="paywall-sub" id="paywall-sub">You've experienced the Full Council. Ready to think without limits?</div>
     <div class="paywall-free-count" id="paywall-free-line">5 of 5 free Full Councils used</div>
 
     <div class="plan-grid">
@@ -990,6 +990,7 @@ function stopLoading(tool) {
 
 // ── REI Council ────────────────────────────────────────────────
 async function submitREI() {
+  if (!checkToolGate('rei')) return;
   const input = getThought();
   if (!input) { document.getElementById('global-thought').focus(); return; }
   renderThoughtPill('rei-pill');
@@ -1008,6 +1009,7 @@ async function submitREI() {
     badge.textContent = labels[d.alignment] || d.alignment;
     badge.className = 'alignment-badge alignment-' + d.alignment;
     document.getElementById('rei-results').classList.add('visible');
+    if (!isPaid()) incrementToolCount('rei');
     saveSession();
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('rei'); }
@@ -1015,6 +1017,7 @@ async function submitREI() {
 
 // ── Ladder ─────────────────────────────────────────────────────
 async function submitLadder() {
+  if (!checkToolGate('ladder')) return;
   const input = getThought();
   if (!input) { document.getElementById('global-thought').focus(); return; }
   renderThoughtPill('ladder-pill');
@@ -1040,6 +1043,7 @@ async function submitLadder() {
     document.getElementById('lv-above').classList.toggle('dim', !d.above_view);
     document.getElementById('lv-below').classList.toggle('dim', !d.below_view);
     document.getElementById('ladder-results').classList.add('visible');
+    if (!isPaid()) incrementToolCount('ladder');
     saveSession();
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('ladder'); }
@@ -1047,6 +1051,7 @@ async function submitLadder() {
 
 // ── Kingdom Lens ───────────────────────────────────────────────
 async function submitKingdom() {
+  if (!checkToolGate('kingdom')) return;
   const input = getThought();
   if (!input) { document.getElementById('global-thought').focus(); return; }
   renderThoughtPill('kingdom-pill');
@@ -1071,6 +1076,7 @@ async function submitKingdom() {
     });
     document.getElementById('k-question').textContent = '\u201c' + d.kingdom_question + '\u201d';
     document.getElementById('kingdom-results').classList.add('visible');
+    if (!isPaid()) incrementToolCount('kingdom');
     saveSession();
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('kingdom'); }
@@ -1078,6 +1084,7 @@ async function submitKingdom() {
 
 // ── Blind Spot ─────────────────────────────────────────────────
 async function submitBlind() {
+  if (!checkToolGate('blind')) return;
   const input = getThought();
   if (!input) { document.getElementById('global-thought').focus(); return; }
   renderThoughtPill('blind-pill');
@@ -1094,6 +1101,7 @@ async function submitBlind() {
     document.getElementById('blind-reframe').textContent = d.reframe;
     document.getElementById('blind-q').textContent       = '\u201c' + d.blind_spot_question + '\u201d';
     document.getElementById('blind-results').classList.add('visible');
+    if (!isPaid()) incrementToolCount('blind');
     saveSession();
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('blind'); }
@@ -1101,6 +1109,7 @@ async function submitBlind() {
 
 // ── Socratic ───────────────────────────────────────────────────
 async function submitSocratic() {
+  if (!checkToolGate('socratic')) return;
   const input = document.getElementById('socratic-input').value.trim();
   if (!input) return;
   document.getElementById('socratic-input').value = '';
@@ -1113,6 +1122,7 @@ async function submitSocratic() {
     const d = await callAPI('/api/socratic', { messages: socratiMessages });
     addChatMsg('socratic', d.question);
     socratiMessages.push({ role: 'assistant', content: d.question });
+    if (!isPaid()) incrementToolCount('socratic');
   } catch(e) { addChatMsg('socratic', 'Error: ' + e.message); }
   finally { btn.disabled = false; }
 }
@@ -1431,58 +1441,119 @@ function submitCurrentTool() {
 }
 
 // ── Paywall & Usage Tracking ──────────────────────────────────
-const FREE_COUNCILS = 5;   // number of free Full Council runs
+const FREE_USES = {
+  rei:      30,  // ~1 month of daily use before the wall hits
+  ladder:   30,
+  kingdom:  30,
+  blind:    30,
+  socratic: 50,  // chat exchanges — more generous since each is quick
+  council:  10   // full council is the premium feature — hook them then gate
+};
+
+const TOOL_LABELS = {
+  rei: 'REI Council', ladder: 'The Ladder', kingdom: 'Kingdom Lens',
+  blind: 'Blind Spot', socratic: 'Socratic', council: 'Full Council'
+};
 
 function isPaid() {
+  // Owner bypass — visiting with ?owner=1 sets permanent free access
+  if (new URLSearchParams(window.location.search).get('owner') === 'jl2026') {
+    localStorage.setItem('thinkos_paid', 'true');
+    localStorage.setItem('thinkos_paid_plan', 'owner');
+  }
   return localStorage.getItem('thinkos_paid') === 'true';
 }
-function getCouncilCount() {
-  return parseInt(localStorage.getItem('thinkos_council_count') || '0', 10);
+function getToolCount(tool) {
+  return parseInt(localStorage.getItem('thinkos_count_' + tool) || '0', 10);
 }
-function incrementCouncilCount() {
-  const n = getCouncilCount() + 1;
-  localStorage.setItem('thinkos_council_count', n);
+function incrementToolCount(tool) {
+  const n = getToolCount(tool) + 1;
+  localStorage.setItem('thinkos_count_' + tool, n);
   renderUsageBadge();
   return n;
 }
-function councilsRemaining() {
-  return Math.max(0, FREE_COUNCILS - getCouncilCount());
+function toolRemaining(tool) {
+  return Math.max(0, FREE_USES[tool] - getToolCount(tool));
 }
-function canRunCouncil() {
-  return isPaid() || councilsRemaining() > 0;
+function canUseTool(tool) {
+  return isPaid() || toolRemaining(tool) > 0;
 }
+
+// backward compat — old council_count key
+function getCouncilCount() { return getToolCount('council'); }
+function incrementCouncilCount() { return incrementToolCount('council'); }
+function councilsRemaining() { return toolRemaining('council'); }
+function canRunCouncil() { return canUseTool('council'); }
 
 function renderUsageBadge() {
   const wrap = document.getElementById('usage-badge-wrap');
   if (!wrap) return;
   if (isPaid()) {
-    const plan = localStorage.getItem('thinkos_paid_plan') || 'pro';
     wrap.innerHTML = `<div class="usage-pro-badge">⚡ Pro — unlimited</div>`;
     return;
   }
-  const used = getCouncilCount();
-  const pct  = Math.min(100, (used / FREE_COUNCILS) * 100);
-  const cls  = pct >= 100 ? 'full' : pct >= 60 ? 'warn' : '';
-  const left = FREE_COUNCILS - used;
+  // find the most constrained tool to surface
+  const tools = ['council','rei','ladder','kingdom','blind','socratic'];
+  let lowestTool = 'council', lowestLeft = Infinity;
+  tools.forEach(t => { const r = toolRemaining(t); if (r < lowestLeft) { lowestLeft = r; lowestTool = t; } });
+  const used = getToolCount(lowestTool);
+  const total = FREE_USES[lowestTool];
+  const pct = Math.min(100, (used / total) * 100);
+  const cls = pct >= 100 ? 'full' : pct >= 71 ? 'warn' : '';
+  const label = TOOL_LABELS[lowestTool];
   wrap.innerHTML = `
-    <div class="usage-badge">
-      <div>
-        <span class="usage-count">${left} free left</span>
-        <span class="usage-label"> · Full Council</span>
+    <div class="usage-badge" style="display:block">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span><span class="usage-count">${lowestLeft} free left</span><span class="usage-label"> · ${label}</span></span>
+        <a class="usage-upgrade" onclick="openPaywall('badge')">Upgrade</a>
       </div>
-      <a class="usage-upgrade" onclick="openPaywall('badge')">Upgrade</a>
-      <div class="usage-bar-track" style="margin-top:6px;grid-column:1/-1">
+      <div class="usage-bar-track" style="margin-top:6px">
         <div class="usage-bar-fill ${cls}" style="width:${pct}%"></div>
       </div>
     </div>`;
-  // fix: the bar track needs to be outside the flex row
-  wrap.querySelector('.usage-badge').style.display = 'block';
+}
+
+function checkToolGate(tool) {
+  // returns true if OK to proceed, false if blocked (shows paywall)
+  if (isPaid()) return true;
+  if (canUseTool(tool)) {
+    // warn on last use
+    if (toolRemaining(tool) === 1) {
+      showLastUseWarning(tool);
+    }
+    return true;
+  }
+  openPaywall(tool);
+  return false;
+}
+
+function showLastUseWarning(tool) {
+  const label = TOOL_LABELS[tool];
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;background:var(--instinct);color:#000;text-align:center;padding:9px 16px;font-size:13px;font-weight:700;z-index:9999;cursor:pointer';
+  bar.textContent = `⚠️ Last free ${label} — upgrade to keep going`;
+  bar.onclick = () => { openPaywall(tool); bar.remove(); };
+  document.body.prepend(bar);
+  setTimeout(() => bar.remove(), 6000);
 }
 
 function openPaywall(source) {
-  const used = getCouncilCount();
-  const el = document.getElementById('paywall-free-line');
-  if (el) el.textContent = `${used} of ${FREE_COUNCILS} free Full Councils used`;
+  const tool = (typeof source === 'string' && FREE_USES[source]) ? source : null;
+  const titleEl = document.getElementById('paywall-title');
+  const subEl   = document.getElementById('paywall-sub');
+  const lineEl  = document.getElementById('paywall-free-line');
+  if (tool) {
+    const label = TOOL_LABELS[tool];
+    const used  = getToolCount(tool);
+    const total = FREE_USES[tool];
+    if (titleEl) titleEl.textContent = `You've used your free ${label} sessions`;
+    if (subEl)   subEl.textContent   = `You've seen what ${label} can do. Pro unlocks unlimited access to every tool.`;
+    if (lineEl)  lineEl.textContent  = `${used} of ${total} free ${label} uses`;
+  } else {
+    if (titleEl) titleEl.textContent = `Upgrade to Pro`;
+    if (subEl)   subEl.textContent   = `Unlimited access to every tool — think without limits.`;
+    if (lineEl)  lineEl.textContent  = ``;
+  }
   document.getElementById('paywall-modal').classList.add('visible');
   document.getElementById('paywall-status').textContent = '';
 }
