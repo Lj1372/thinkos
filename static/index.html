@@ -602,6 +602,65 @@ body {
   background:#0f2a1a; border:1px solid var(--reason); border-radius:99px;
   padding:5px 14px; font-size:12px; color:var(--reason); font-weight:600; margin-bottom:20px;
 }
+/* ── Paywall feature list ── */
+.paywall-features {
+  display:grid; grid-template-columns:1fr 1fr; gap:7px;
+  margin:0 0 22px; text-align:left;
+}
+.paywall-feat {
+  display:flex; align-items:center; gap:7px;
+  font-size:12px; color:var(--text);
+}
+.paywall-feat .tick { color:#34d399; font-size:14px; flex-shrink:0; }
+.paywall-urgency {
+  background:linear-gradient(135deg,#1e1830,#14140a);
+  border:1px solid var(--ladder); border-radius:10px;
+  padding:10px 14px; font-size:12px; color:var(--text);
+  margin-bottom:18px; display:flex; align-items:center; gap:8px;
+}
+.paywall-referral {
+  margin-top:14px; padding:10px 14px;
+  background:var(--surface2); border-radius:8px; border:1px solid var(--border);
+  font-size:12px; color:var(--muted); text-align:left;
+}
+.paywall-referral strong { color:var(--text); }
+.paywall-referral input {
+  width:100%; background:var(--bg); border:1px solid var(--border);
+  border-radius:6px; padding:7px 10px; color:var(--muted);
+  font-size:11px; margin-top:6px; cursor:pointer;
+}
+
+/* ── Lead capture modal ── */
+.lead-modal {
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+  width:calc(100% - 32px); max-width:380px;
+  background:var(--surface); border:1px solid var(--ladder);
+  border-radius:16px; padding:20px; z-index:8000;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);
+  display:none; animation: slideUp 0.3s ease;
+}
+.lead-modal.visible { display:block; }
+@keyframes slideUp {
+  from { transform:translateX(-50%) translateY(20px); opacity:0; }
+  to   { transform:translateX(-50%) translateY(0);   opacity:1; }
+}
+.lead-modal-title { font-size:15px; font-weight:700; margin-bottom:4px; }
+.lead-modal-sub { font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.5; }
+.lead-modal-row { display:flex; gap:8px; }
+.lead-modal-row input {
+  flex:1; background:var(--surface2); border:1px solid var(--border);
+  border-radius:8px; padding:9px 12px; color:var(--text); font-size:13px; outline:none;
+}
+.lead-modal-row input:focus { border-color:var(--ladder); }
+.lead-modal-row button {
+  background:var(--ladder); color:#000; border:none; border-radius:8px;
+  padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;
+}
+.lead-modal-dismiss {
+  position:absolute; top:10px; right:12px;
+  background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer;
+}
+.lead-modal-note { font-size:11px; color:var(--muted); margin-top:8px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -672,6 +731,12 @@ body {
     <div id="sb-user-info" style="display:none;">
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Logged in as</div>
       <div class="sb-email" style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;word-break:break-all;"></div>
+      <!-- Referral link -->
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;color:var(--ladder);margin-bottom:4px;">🎁 Refer a friend — both get 1 month free</div>
+        <input id="referral-link-input" type="text" readonly onclick="copyReferralLink()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--muted);font-size:10px;cursor:pointer;" placeholder="Loading link…" title="Click to copy">
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Click to copy · share with anyone</div>
+      </div>
       <button onclick="signOut()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;width:100%;">Sign out</button>
     </div>
   </div>
@@ -1036,9 +1101,24 @@ body {
 <div class="modal-overlay" id="paywall-modal">
   <div class="paywall-box">
     <div class="paywall-icon">⚡</div>
-    <div class="paywall-title" id="paywall-title">You've used your free sessions</div>
-    <div class="paywall-sub" id="paywall-sub">You've experienced the Full Council. Ready to think without limits?</div>
+    <div class="paywall-title" id="paywall-title">Think without limits</div>
+    <div class="paywall-sub" id="paywall-sub">You've tried the tools — now unlock everything and start building real mental clarity.</div>
     <div class="paywall-free-count" id="paywall-free-line">5 of 5 free Full Councils used</div>
+
+    <!-- Urgency banner -->
+    <div class="paywall-urgency">
+      🔥 <span><strong>Early access pricing</strong> — prices will increase as we grow. Lock in now.</span>
+    </div>
+
+    <!-- Feature list -->
+    <div class="paywall-features">
+      <div class="paywall-feat"><span class="tick">✓</span> Unlimited all tools</div>
+      <div class="paywall-feat"><span class="tick">✓</span> Full Council (all lenses)</div>
+      <div class="paywall-feat"><span class="tick">✓</span> Save &amp; revisit sessions</div>
+      <div class="paywall-feat"><span class="tick">✓</span> Thinking Patterns insights</div>
+      <div class="paywall-feat"><span class="tick">✓</span> Cloud sync across devices</div>
+      <div class="paywall-feat"><span class="tick">✓</span> Priority support</div>
+    </div>
 
     <div class="plan-grid">
       <div class="plan-card selected" id="plan-monthly" onclick="selectPlan('monthly')">
@@ -1047,28 +1127,48 @@ body {
         <div class="plan-desc">Cancel anytime</div>
       </div>
       <div class="plan-card" id="plan-annual" onclick="selectPlan('annual')">
-        <div class="plan-badge">Save 27%</div>
+        <div class="plan-badge">Best value</div>
         <div class="plan-name">Annual</div>
         <div class="plan-price">A$79<span>/yr</span></div>
-        <div class="plan-desc">A$6.58/month</div>
+        <div class="plan-desc">Save 27% · A$6.58/mo</div>
       </div>
       <div class="plan-card" id="plan-lifetime" onclick="selectPlan('lifetime')">
+        <div class="plan-badge">Most popular</div>
         <div class="plan-name">Lifetime</div>
         <div class="plan-price">A$149</div>
-        <div class="plan-desc">Pay once, own it</div>
+        <div class="plan-desc">Pay once, own it forever</div>
       </div>
     </div>
 
     <input class="paywall-email" id="paywall-email" type="email" placeholder="Your email address (for your receipt)">
-    <button class="btn-pay" id="btn-pay" onclick="startCheckout()">Subscribe Now →</button>
+    <button class="btn-pay" id="btn-pay" onclick="startCheckout()">Unlock Pro Now →</button>
     <p id="paywall-status" style="font-size:13px;color:var(--muted);min-height:18px;margin-bottom:10px;"></p>
     <p class="paywall-fine">
-      Secure payment via Stripe &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp;
+      🔒 Secure payment via Stripe &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp;
       <a href="mailto:support@thinkos.app">support@thinkos.app</a>
     </p>
+
+    <!-- Referral section -->
+    <div class="paywall-referral">
+      <strong>🎁 Refer a friend, both get 1 month free</strong><br>
+      After upgrading, share your unique referral link. When a friend subscribes, you both get a free month added automatically.
+    </div>
+
     <div class="paywall-divider">or</div>
-    <button class="btn-pay" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:500;" onclick="closeAllModals()">Keep using free tools (REI, Ladder, Kingdom, Socratic)</button>
+    <button class="btn-pay" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:500;" onclick="closeAllModals()">Continue with free tools →</button>
   </div>
+</div>
+
+<!-- ── Lead capture modal ── -->
+<div class="lead-modal" id="lead-modal">
+  <button class="lead-modal-dismiss" onclick="dismissLeadModal()">×</button>
+  <div class="lead-modal-title">🧠 Get your free thinking report</div>
+  <div class="lead-modal-sub">Drop your email and we'll send you a breakdown of your thinking patterns — completely free.</div>
+  <div class="lead-modal-row">
+    <input type="email" id="lead-email" placeholder="your@email.com" />
+    <button onclick="submitLead()">Send it →</button>
+  </div>
+  <div class="lead-modal-note" id="lead-modal-note">No spam. Unsubscribe anytime.</div>
 </div>
 
 <!-- ── Sessions modal ── -->
@@ -1181,6 +1281,8 @@ function renderAuthUI() {
     loginBtn.style.display = 'none';
     userInfo.style.display = 'block';
     userInfo.querySelector('.sb-email').textContent = _sbUser.email;
+    const refInput = document.getElementById('referral-link-input');
+    if (refInput) refInput.value = generateReferralLink() || '';
   } else {
     // Paid but not logged in yet
     teaser.style.display   = 'none';
@@ -1491,6 +1593,7 @@ async function submitREI() {
     if (!isPaid()) incrementToolCount('rei');
     saveSession();
     showSavePrompt('rei', input, d);
+    trackUseAndMaybeCapture('rei');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('rei'); }
 }
@@ -1526,6 +1629,7 @@ async function submitLadder() {
     if (!isPaid()) incrementToolCount('ladder');
     saveSession();
     showSavePrompt('ladder', input, d);
+    trackUseAndMaybeCapture('ladder');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('ladder'); }
 }
@@ -1560,6 +1664,7 @@ async function submitKingdom() {
     if (!isPaid()) incrementToolCount('kingdom');
     saveSession();
     showSavePrompt('kingdom', input, d);
+    trackUseAndMaybeCapture('kingdom');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('kingdom'); }
 }
@@ -1586,6 +1691,7 @@ async function submitBlind() {
     if (!isPaid()) incrementToolCount('blind');
     saveSession();
     showSavePrompt('blind', input, d);
+    trackUseAndMaybeCapture('blind');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('blind'); }
 }
@@ -2182,6 +2288,99 @@ renderAuthUI();
 checkSuccessReturn();
 sbInit();
 checkDisclaimer();
+
+// ── Lead Capture ──────────────────────────────────────────────
+let _leadShownThisSession = false;
+
+function maybeShowLeadModal(tool) {
+  if (isPaid()) return;
+  if (_sbUser) return; // already logged in
+  if (localStorage.getItem('thinkos_lead_captured')) return;
+  if (localStorage.getItem('thinkos_lead_dismissed')) return;
+  if (_leadShownThisSession) return;
+  // Count total uses across all tools
+  const keys = ['rei','ladder','kingdom','blind','socratic','council'];
+  const total = keys.reduce((sum, k) => sum + (parseInt(localStorage.getItem('thinkos_uses_' + k)) || 0), 0);
+  if (total >= 3) {
+    _leadShownThisSession = true;
+    setTimeout(() => document.getElementById('lead-modal').classList.add('visible'), 800);
+  }
+}
+
+async function submitLead() {
+  const email = document.getElementById('lead-email').value.trim();
+  if (!email || !email.includes('@')) {
+    document.getElementById('lead-modal-note').textContent = 'Please enter a valid email.';
+    return;
+  }
+  const btn = document.querySelector('#lead-modal .lead-modal-row button');
+  btn.textContent = 'Sending…'; btn.disabled = true;
+  try {
+    // Get current tool for source tracking
+    const tool = currentTool || 'unknown';
+    await _sb.from('leads').insert({ email, source: 'capture_modal', tool });
+    localStorage.setItem('thinkos_lead_captured', email);
+    document.getElementById('lead-modal-note').style.color = '#34d399';
+    document.getElementById('lead-modal-note').textContent = '✓ Done! Check your inbox soon.';
+    btn.textContent = '✓ Sent';
+    setTimeout(() => document.getElementById('lead-modal').classList.remove('visible'), 2500);
+  } catch(e) {
+    btn.textContent = 'Send it →'; btn.disabled = false;
+    document.getElementById('lead-modal-note').textContent = 'Something went wrong — try again.';
+  }
+}
+
+function dismissLeadModal() {
+  localStorage.setItem('thinkos_lead_dismissed', '1');
+  document.getElementById('lead-modal').classList.remove('visible');
+}
+
+// Call maybeShowLeadModal after each tool result renders
+function trackUseAndMaybeCapture(tool) {
+  const key = 'thinkos_uses_' + tool;
+  const n = (parseInt(localStorage.getItem(key)) || 0) + 1;
+  localStorage.setItem(key, n);
+  maybeShowLeadModal(tool);
+}
+
+// ── Referral link ──────────────────────────────────────────────
+function generateReferralLink() {
+  if (!_sbUser) return null;
+  const code = btoa(_sbUser.id).replace(/[^a-z0-9]/gi,'').slice(0,12);
+  return window.location.origin + '/?ref=' + code;
+}
+
+function copyReferralLink() {
+  const link = generateReferralLink();
+  if (!link) return;
+  navigator.clipboard.writeText(link).then(() => {
+    const el = document.getElementById('referral-link-input');
+    if (el) { el.value = '✓ Copied!'; setTimeout(() => el.value = link, 2000); }
+  });
+}
+
+// Check if user arrived via referral
+(function checkReferral() {
+  const ref = new URLSearchParams(window.location.search).get('ref');
+  if (ref) localStorage.setItem('thinkos_referred_by', ref);
+})();
+
+// ── PWA Install Bonus ──────────────────────────────────────────
+function awardInstallBonus() {
+  if (localStorage.getItem('thinkos_install_bonus')) return;
+  localStorage.setItem('thinkos_install_bonus', '1');
+  // Give 10 extra uses on Blind Spot (bonus tool)
+  const cur = parseInt(localStorage.getItem('thinkos_bonus_blind') || '0');
+  localStorage.setItem('thinkos_bonus_blind', cur + 10);
+  // Show a toast
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e1830;border:1px solid var(--ladder);border-radius:10px;padding:12px 20px;font-size:13px;color:#efefef;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.4);white-space:nowrap;';
+  toast.textContent = '🎉 App installed! +10 free Blind Spot uses unlocked';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+  renderUsageBadge();
+}
+window.addEventListener('appinstalled', awardInstallBonus);
 
 // ── PWA: Service Worker ────────────────────────────────────────
 if ('serviceWorker' in navigator) {
