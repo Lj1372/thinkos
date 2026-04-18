@@ -123,9 +123,30 @@ def call_ai(system, messages, max_tokens=1024, model=None):
 
 
 def parse_json(text):
-    if text.startswith('```'):
-        text = text.split('\n', 1)[1].rsplit('```', 1)[0].strip()
-    return json.loads(text)
+    """Extract and parse JSON from model output, handling markdown fences and preamble."""
+    t = text.strip()
+    # Strip markdown code fences anywhere in response
+    if '```' in t:
+        # grab content between first ``` and last ```
+        start = t.find('```')
+        end   = t.rfind('```')
+        if start != end:
+            chunk = t[start+3:end].strip()
+            # strip language tag (e.g. "json\n")
+            if chunk and not chunk.startswith('{') and not chunk.startswith('['):
+                chunk = chunk.split('\n', 1)[-1].strip()
+            t = chunk
+    # Find outermost JSON object or array
+    for opener, closer in [('{', '}'), ('[', ']')]:
+        s = t.find(opener)
+        e = t.rfind(closer)
+        if s != -1 and e != -1 and e > s:
+            try:
+                return json.loads(t[s:e+1])
+            except json.JSONDecodeError:
+                pass
+    # Last resort — try raw
+    return json.loads(t)
 
 # ─── Routes ────────────────────────────────────────────────────────────────────
 
@@ -144,7 +165,7 @@ def rei_council():
         text = call_ai(REI_PROMPT, [{'role': 'user', 'content': situation}])
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
-        return jsonify({'error': 'Parse error', 'raw': text}), 500
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -159,7 +180,7 @@ def ladder():
         text = call_ai(LADDER_PROMPT, [{'role': 'user', 'content': question}])
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
-        return jsonify({'error': 'Parse error', 'raw': text}), 500
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -265,7 +286,7 @@ def kingdom():
         text = call_ai(KINGDOM_PROMPT, [{'role': 'user', 'content': situation}], max_tokens=1200, model=MODEL_RICH)
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
-        return jsonify({'error': 'Parse error', 'raw': text}), 500
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -284,7 +305,7 @@ def blindspot():
         text = call_ai(BLINDSPOT_PROMPT, [{'role': 'user', 'content': prompt}])
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
-        return jsonify({'error': 'Parse error', 'raw': text}), 500
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -312,7 +333,7 @@ def synthesis():
         text = call_ai(SYNTHESIS_PROMPT, [{'role': 'user', 'content': combined}], max_tokens=512)
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
-        return jsonify({'error': 'Parse error', 'raw': text}), 500
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
