@@ -2978,7 +2978,7 @@ function openGuidedPaths() {
   list.innerHTML = '';
   GUIDED_PATHS.forEach(path => {
     const btn = document.createElement('button');
-    btn.style.cssText = 'width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:left;cursor:pointer;transition:border-color 0.15s;';
+    btn.style.cssText = 'width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:left;cursor:pointer;transition:border-color 0.15s;color:var(--text);';
     btn.onmouseover = () => btn.style.borderColor = 'var(--ladder)';
     btn.onmouseout  = () => btn.style.borderColor = 'var(--border)';
 
@@ -2995,18 +2995,7 @@ function openGuidedPaths() {
   document.getElementById('guided-paths-modal').classList.add('visible');
 }
 
-// Add guided paths button to home screen
-(function patchHomeHero() {
-  const existing = document.querySelector('.home-intent');
-  if (existing && !document.getElementById('guided-btn')) {
-    const btn = document.createElement('button');
-    btn.id = 'guided-btn';
-    btn.onclick = openGuidedPaths;
-    btn.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 20px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:24px;';
-    btn.textContent = '🗺 What are you dealing with? →';
-    existing.parentNode.insertBefore(btn, existing.nextSibling);
-  }
-})();
+// "What are you dealing with?" button is already in the HTML — no injection needed
 
 // ── Share Result ───────────────────────────────────────────────
 async function shareCurrentResult() {
