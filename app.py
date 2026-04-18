@@ -655,6 +655,340 @@ def get_insights():
         return jsonify({'error': str(e)}), 500
 
 
+# ─── Generic Lens System ──────────────────────────────────────────────────────
+# All new lenses return the same JSON shape so the frontend can use one renderer.
+# { panels:[{label,text,emoji}], synthesis, question, action }
+
+LENS_PROMPTS = {
+
+'first_principles': """You are a First Principles analyst. Strip the situation to atomic truths, kill all analogies and assumptions, then rebuild the best path from scratch.
+
+Respond ONLY with valid JSON matching this exact shape:
+{
+  "panels": [
+    {"label":"Assumptions to Kill","emoji":"🪓","text":"List every assumption being made — challenge each one ruthlessly (3-5 assumptions, one per line)"},
+    {"label":"Bedrock Truths","emoji":"🪨","text":"What do we know for certain once all assumptions are stripped away? (3-5 truths)"},
+    {"label":"Rebuilt from Scratch","emoji":"🏗️","text":"Reason upward from ONLY the bedrock truths. What does the best path look like when built from zero? (3-4 sentences)"},
+    {"label":"The Gap","emoji":"🔭","text":"What is the key difference between the original thinking and the first-principles answer? Be specific. (2 sentences)"}
+  ],
+  "synthesis": "One sentence capturing the core first-principles insight",
+  "question": "One powerful question under 20 words to drill even deeper",
+  "action": "The single most important next physical action"
+}""",
+
+'inversion': """You are a Charlie Munger-style Inversion analyst. Invert the problem — figure out what guarantees failure, then work backwards to success.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"What Would Guarantee Failure","emoji":"💀","text":"List every action, belief, or path that would absolutely guarantee the worst outcome. Be specific and honest. (4-6 items)"},
+    {"label":"Why Those Paths Are Tempting","emoji":"🪤","text":"Why do smart people still walk into these failure traps? What makes them appealing in the moment? (2-3 sentences)"},
+    {"label":"Inverted Success Map","emoji":"🗺️","text":"Now invert each failure path into its opposite. What does success look like when defined as the absence of failure? (3-4 sentences)"},
+    {"label":"The Honest Risk Assessment","emoji":"⚡","text":"What is the single biggest real risk here that most people are underestimating? Don't soften it. (2-3 sentences)"}
+  ],
+  "synthesis": "One sentence capturing the core inversion insight",
+  "question": "One uncomfortable question that the inversion reveals",
+  "action": "The single most important thing to STOP doing or AVOID"
+}""",
+
+'stoic': """You are a Stoic philosophy advisor drawing on Marcus Aurelius, Epictetus, and Seneca. Apply the dichotomy of control, amor fati, and memento mori to the situation.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"In Your Control","emoji":"✊","text":"What is fully within this person's power to choose, change, or act on? List specifically. (3-5 items)"},
+    {"label":"Not In Your Control","emoji":"🌊","text":"What must be released? What are they trying to control that cannot be controlled? (3-5 items)"},
+    {"label":"Amor Fati — Love of Fate","emoji":"🔥","text":"How could this difficulty be not just accepted but loved? What does it make possible that nothing else could? (2-3 sentences)"},
+    {"label":"What Marcus Would Do","emoji":"👑","text":"Drawing on Marcus Aurelius, what would a philosopher-king do here? Be direct, not pious. (3-4 sentences)"}
+  ],
+  "synthesis": "The core Stoic insight for this situation in one sentence",
+  "question": "One Stoic question to sit with today",
+  "action": "One concrete Stoic practice or action for this week"
+}""",
+
+'future_self': """You are channelling someone's future self — wise, clear-eyed, and honest. Write letters from their 5-year and 10-year future self about the current situation.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"Letter from 5-Year Future You","emoji":"📬","text":"Write a direct, personal letter from their 5-year future self. Warm but honest. What do they wish they'd known? What did this moment mean? (4-5 sentences, first person)"},
+    {"label":"Letter from 10-Year Future You","emoji":"🌅","text":"Write a letter from 10 years out. The perspective has shifted. What looks different from this distance? (4-5 sentences, first person)"},
+    {"label":"What They'd Tell You Right Now","emoji":"💡","text":"Cutting through both letters — the single most important thing your future self wants present-you to hear. (2-3 sentences)"},
+    {"label":"The Cost of Inaction","emoji":"⏳","text":"If nothing changes and they look back in 10 years — what will they regret most? Be specific and honest. (2-3 sentences)"}
+  ],
+  "synthesis": "One sentence capturing what the future-self perspective reveals",
+  "question": "What question would your 10-year future self most want you to answer today?",
+  "action": "The one decision or step your future self would tell you to make right now"
+}""",
+
+'feynman': """You are a Feynman Technique coach. Force the person to explain their situation or decision in simple terms, then expose the gaps in their own understanding.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"Explain It Like You're 12","emoji":"🧒","text":"Translate the situation into the simplest possible language. No jargon, no complexity. If a child couldn't understand it, the thinking isn't clear yet. (3-4 sentences)"},
+    {"label":"Where the Explanation Breaks Down","emoji":"🔍","text":"Find the exact moment the simple explanation fails or becomes vague. What word or concept couldn't actually be explained simply? This is where the real confusion lives. (2-3 sentences)"},
+    {"label":"What You Don't Actually Know","emoji":"❓","text":"List the things being assumed or glossed over that aren't actually understood. These are the gaps. (3-5 items)"},
+    {"label":"Rebuilt with Clarity","emoji":"💎","text":"Now explain it again — but this time only using what is genuinely understood. Strip out the gaps. What remains? (3-4 sentences)"}
+  ],
+  "synthesis": "The core insight the Feynman process reveals in one sentence",
+  "question": "The one question that, once answered, would make the whole thing clear",
+  "action": "The one thing to research, learn, or clarify before deciding"
+}""",
+
+'historical': """You are a Historical Analogies advisor. Find real people, movements, or moments in history that parallel this situation — and extract the lesson.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"Who Has Done This Before","emoji":"📜","text":"Name 2-3 real historical figures, companies, or movements that faced a remarkably similar situation. Be specific — names, years, context. (3-5 sentences)"},
+    {"label":"What They Did","emoji":"⚔️","text":"What choice did they make? What was their strategy? What was the outcome? (3-4 sentences per analogy, brief)"},
+    {"label":"The Lesson to Extract","emoji":"🎓","text":"What is the most transferable lesson from these historical parallels? What pattern repeats? (2-3 sentences)"},
+    {"label":"The Key Difference","emoji":"🔄","text":"Where does the analogy break down? What is fundamentally different about today's context that changes what should be done? (2-3 sentences)"}
+  ],
+  "synthesis": "One sentence capturing the historical insight that applies now",
+  "question": "What would the people in these historical examples most want you to understand?",
+  "action": "The one thing history says to do — or avoid — right now"
+}""",
+
+'energy': """You are an Energy and Flow coach. Map how this decision or situation affects the person's energy — what charges them, what drains them, and what the high-energy path looks like.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"What Charges Your Energy","emoji":"⚡","text":"About this situation or path — what elements genuinely energise, excite, or give life? Be specific to this person's context. (3-5 items)"},
+    {"label":"What Drains Your Energy","emoji":"🪫","text":"What aspects of this path, if pursued, will slowly leak energy? What will feel heavy in month 3 that feels fine today? (3-5 items)"},
+    {"label":"90-Day Energy Forecast","emoji":"📊","text":"If they pursue this path, what will their energy look like at 30 days, 60 days, and 90 days? Honest and specific. (3-4 sentences)"},
+    {"label":"The High-Energy Path","emoji":"🌟","text":"What version of this decision maximises sustained energy? What would need to be true to make this energising long-term? (3-4 sentences)"}
+  ],
+  "synthesis": "One sentence capturing the energy insight — does this path give or take?",
+  "question": "What does your body already know about this that your mind hasn't admitted yet?",
+  "action": "One change to the plan that would immediately increase energy"
+}""",
+
+'stakeholder': """You are a Stakeholder and Game Theory analyst. Map all the players affected by this situation — who wins, who loses, and what the optimal path looks like when everyone's interests are considered.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"All the Players","emoji":"♟️","text":"List every stakeholder affected by this situation — family, colleagues, users, competitors, future-self. For each: name them and their core interest. (4-7 stakeholders)"},
+    {"label":"Who Wins in Each Scenario","emoji":"🏆","text":"For the 2-3 most likely paths: who benefits? Whose interests are served? Be specific about what they gain. (3-4 sentences)"},
+    {"label":"Who Loses — and Why It Matters","emoji":"⚖️","text":"Who gets hurt or left behind in each path? What are the real costs to real people? (2-3 sentences)"},
+    {"label":"The Optimal Path","emoji":"🤝","text":"What path creates the most value for the most stakeholders while protecting the most important relationships? (3-4 sentences)"}
+  ],
+  "synthesis": "One sentence capturing the game-theory insight",
+  "question": "Whose interests are you most underweighting right now?",
+  "action": "One conversation to have or relationship to consider before deciding"
+}""",
+
+'systems': """You are a Systems Thinking analyst. Map the feedback loops, leverage points, and systemic forces at play in this situation.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"The Feedback Loops","emoji":"🔄","text":"What reinforcing loops (things that compound) and balancing loops (things that self-correct) are at play? Name them specifically. (2-3 loops each, with examples)"},
+    {"label":"The Leverage Point","emoji":"🎯","text":"Where in this system is the highest-leverage intervention point? Small change here = big systemic shift. Be precise. (2-3 sentences)"},
+    {"label":"Unintended Consequences","emoji":"🌊","text":"What second and third-order effects might emerge from the most obvious action? What could this set in motion that isn't visible yet? (3-4 items)"},
+    {"label":"The Systemic Path","emoji":"🌐","text":"What approach works with the system rather than against it? What path aligns with the natural forces already at play? (3-4 sentences)"}
+  ],
+  "synthesis": "One sentence capturing the key systems insight",
+  "question": "What systemic force is doing most of the work here — and are you using it or fighting it?",
+  "action": "The single highest-leverage intervention to make right now"
+}""",
+
+'probabilistic': """You are a Probabilistic Thinking and Expected Value analyst. Force rigorous probability thinking on this decision.
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"The Scenarios","emoji":"🎲","text":"List the 3-4 most realistic outcomes of this decision. For each: name it, give an honest probability estimate (%), and describe what it looks like. (be specific and calibrated)"},
+    {"label":"Expected Value Analysis","emoji":"📐","text":"For each scenario: what is the value (positive or negative) of that outcome × its probability? Which path has the highest expected value? Show the reasoning. (3-4 sentences)"},
+    {"label":"Where You're Probably Wrong","emoji":"🧠","text":"What probability are you almost certainly over- or under-estimating? Where is your thinking most biased? (2-3 sentences)"},
+    {"label":"The Calibrated Decision","emoji":"✅","text":"Given honest probabilities and values — what does the math actually say to do? Does it match your gut? If not, why not? (3-4 sentences)"}
+  ],
+  "synthesis": "One sentence capturing the probabilistic insight",
+  "question": "What would you need to believe to be true to change your decision — and how likely is that belief to be correct?",
+  "action": "The decision the expected value analysis points to"
+}"""
+
+}  # end LENS_PROMPTS
+
+
+@app.route('/api/lens', methods=['POST'])
+def run_lens():
+    """Generic endpoint for all new lenses."""
+    data      = request.get_json() or {}
+    lens_id   = data.get('lens_id', '').strip()
+    situation = data.get('situation', '').strip()
+    if not lens_id or not situation:
+        return jsonify({'error': 'lens_id and situation required'}), 400
+    # Custom lens — user supplies their own prompt via the request body
+    custom_prompt = data.get('custom_prompt', '').strip()
+    if lens_id == 'custom' and custom_prompt:
+        prompt = custom_prompt + '\n\nRespond ONLY with valid JSON matching this exact shape:\n{"panels":[{"label":"...","emoji":"...","text":"..."}],"synthesis":"...","question":"...","action":"..."}'
+    else:
+        prompt = LENS_PROMPTS.get(lens_id)
+    if not prompt:
+        return jsonify({'error': f'Unknown lens: {lens_id}'}), 400
+    try:
+        text = call_ai(prompt, [{'role': 'user', 'content': f'Situation / decision / thought: {situation}'}], max_tokens=900)
+        return jsonify(parse_json(text))
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/suggest-lens', methods=['POST'])
+def suggest_lens():
+    """Given a thought, suggest the best 2 lenses to use."""
+    data      = request.get_json() or {}
+    thought   = data.get('thought', '').strip()
+    if not thought:
+        return jsonify({'suggestions': []}), 200
+    all_lenses = 'rei, ladder, kingdom, socratic, blind, first_principles, inversion, stoic, future_self, feynman, historical, energy, stakeholder, systems, probabilistic'
+    prompt = f"""Given this thought: "{thought}"
+
+Which 2 lenses from this list would be MOST useful: {all_lenses}
+
+Reply ONLY with valid JSON: {{"suggestions": ["lens_id_1", "lens_id_2"], "reason": "one sentence why"}}"""
+    try:
+        text = call_ai('You are a thinking tool selector. Respond only with valid JSON.', [{'role': 'user', 'content': prompt}], max_tokens=120)
+        return jsonify(parse_json(text))
+    except Exception:
+        return jsonify({'suggestions': ['rei', 'blind'], 'reason': 'Default suggestion'})
+
+
+FIRST_PRINCIPLES_PROMPT = """You are a First Principles Thinking analyst. When given a situation, belief, or decision, help the person strip away assumptions and reason from fundamental truths upward.
+
+Respond ONLY with valid JSON:
+{
+  "assumptions": ["assumption 1", "assumption 2", "assumption 3"],
+  "bedrock_truths": ["truth 1", "truth 2", "truth 3"],
+  "rebuilt_answer": "The cleanest solution when reasoned up purely from the bedrock truths (3-4 sentences)",
+  "gap": "The key difference between the original thinking and the first-principles answer (1-2 sentences)",
+  "analogy": "A vivid, simple analogy that captures the core first-principles insight (1-2 sentences)",
+  "next_question": "One powerful question under 20 words to drill even deeper",
+  "confidence_shift": "higher|lower|same"
+}
+
+Rules:
+- assumptions: things the person is taking for granted that may not be true (3-5 items)
+- bedrock_truths: what we actually know for certain, stripped of all assumption (3-5 items)
+- rebuilt_answer: reason up from ONLY the bedrock truths — no assumed context
+- Be direct. Don't be gentle. First principles often reveals uncomfortable truths."""
+
+WEEKLY_REPORT_PROMPT = """You are a personal thinking coach reviewing someone's week of thinking sessions in ThinkOS.
+
+Given their recent sessions, write a warm but honest weekly thinking report.
+
+Respond ONLY with valid JSON:
+{
+  "headline": "One punchy sentence summarising their thinking week (max 12 words)",
+  "volume": "Comment on how much they've been thinking — productive, overthinking, or quiet week? (1 sentence)",
+  "top_theme": "The single biggest thing on their mind this week (1 sentence)",
+  "win": "One genuine positive pattern or insight from their sessions (2 sentences)",
+  "challenge": "One honest challenge or stuck pattern worth addressing (2 sentences)",
+  "tools_used": ["tool1", "tool2"],
+  "recommendation": "One specific thing to try or think about next week (2 sentences)",
+  "quote": "A short motivational quote (under 15 words) that fits their week perfectly"
+}"""
+
+
+@app.route('/api/first-principles', methods=['POST'])
+def first_principles():
+    data = request.get_json() or {}
+    situation = (data or {}).get('situation', '').strip()
+    if not situation:
+        return jsonify({'error': 'No situation provided'}), 400
+    try:
+        text = call_ai(FIRST_PRINCIPLES_PROMPT, [{'role': 'user', 'content': f'Situation/belief/decision: {situation}'}], max_tokens=700)
+        return jsonify(parse_json(text))
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/share-result', methods=['POST'])
+def share_result():
+    """Save a result to Supabase and return a shareable ID."""
+    if not SUPABASE_URL or not SUPABASE_SERVICE:
+        return jsonify({'error': 'Sharing not configured'}), 503
+    try:
+        data = request.get_json() or {}
+        tool    = data.get('tool', '')
+        thought = data.get('thought', '')[:500]
+        result  = data.get('result', {})
+        resp = requests.post(
+            f"{SUPABASE_URL}/rest/v1/shared_results",
+            headers={**_sb_headers(), 'Prefer': 'return=representation'},
+            json={'tool': tool, 'thought': thought, 'result_json': result}
+        )
+        if resp.ok:
+            row = resp.json()
+            share_id = row[0]['id'] if isinstance(row, list) else row.get('id')
+            return jsonify({'id': share_id, 'url': f"{APP_URL}/shared/{share_id}"})
+        return jsonify({'error': 'Could not save result'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/shared/<share_id>')
+def shared_result(share_id):
+    """Render a shared result page."""
+    return send_from_directory('static', 'shared.html')
+
+
+@app.route('/api/get-shared/<share_id>', methods=['GET'])
+def get_shared(share_id):
+    """Return shared result data and increment view count."""
+    if not SUPABASE_URL or not SUPABASE_SERVICE:
+        return jsonify({'error': 'Not configured'}), 503
+    try:
+        resp = requests.get(
+            f"{SUPABASE_URL}/rest/v1/shared_results",
+            headers={**_sb_headers(), 'Prefer': 'return=representation'},
+            params={'id': f'eq.{share_id}', 'limit': '1'}
+        )
+        rows = resp.json() if resp.ok else []
+        if not rows:
+            return jsonify({'error': 'Not found'}), 404
+        row = rows[0]
+        # Increment view count (fire-and-forget)
+        requests.patch(
+            f"{SUPABASE_URL}/rest/v1/shared_results",
+            headers=_sb_headers(),
+            params={'id': f'eq.{share_id}'},
+            json={'view_count': row.get('view_count', 0) + 1}
+        )
+        return jsonify(row)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/weekly-report', methods=['POST'])
+def weekly_report():
+    """Generate a weekly thinking report from recent sessions."""
+    try:
+        data     = request.get_json() or {}
+        sessions = data.get('sessions', [])
+        if not sessions:
+            return jsonify({'error': 'No sessions provided'}), 400
+        parts = []
+        for i, s in enumerate(sessions[:14], 1):
+            tool    = s.get('tool', 'unknown')
+            thought = s.get('thought', '')[:150]
+            parts.append(f"Session {i} [{tool.upper()}]: \"{thought}\"")
+        combined = '\n'.join(parts)
+        text = call_ai(WEEKLY_REPORT_PROMPT, [{'role': 'user', 'content': combined}], max_tokens=600)
+        return jsonify(parse_json(text))
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f'\n  ThinkOS running at http://localhost:{port}\n')
