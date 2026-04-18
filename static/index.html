@@ -902,12 +902,38 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 let _sbUser = null;
 
 async function sbInit() {
-  const { data: { session } } = await _sb.auth.getSession();
-  if (session?.user) await onLogin(session.user);
+  // Listen for all auth events first — catches the code exchange completing
   _sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session?.user) await onLogin(session.user);
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+      await onLogin(session.user);
+    }
     if (event === 'SIGNED_OUT') onLogout();
   });
+
+  // Handle magic link PKCE callback (?code= in URL)
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('code')) {
+    try {
+      const { data, error } = await _sb.auth.exchangeCodeForSession(window.location.href);
+      if (data?.session?.user) {
+        await onLogin(data.session.user);
+        // Clean the code out of the URL so refresh doesn't re-run exchange
+        const clean = window.location.pathname + (params.has('owner') ? '?owner=' + params.get('owner') : '');
+        window.history.replaceState({}, '', clean);
+        return;
+      }
+    } catch(e) { console.warn('Code exchange failed:', e); }
+  }
+
+  // Handle implicit/hash-based magic link (#access_token=)
+  if (window.location.hash.includes('access_token=')) {
+    // Supabase will fire SIGNED_IN via onAuthStateChange — nothing extra needed
+    return;
+  }
+
+  // Normal page load — restore existing session
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session?.user) await onLogin(session.user);
 }
 
 async function onLogin(user) {
