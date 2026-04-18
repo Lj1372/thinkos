@@ -216,6 +216,75 @@ body {
 .tool-view { display: none; }
 .tool-view.active { display: block; }
 
+/* ── Home / Welcome ── */
+.home-hero {
+  text-align: center;
+  padding: 40px 0 32px;
+}
+.home-tagline {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+.home-tagline span { color: var(--ladder); }
+.home-sub {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 520px;
+  margin: 0 auto 10px;
+  line-height: 1.65;
+}
+.home-intent {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 480px;
+  margin: 0 auto 36px;
+  line-height: 1.6;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+.home-tools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.home-tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 16px 16px;
+  cursor: pointer;
+  transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+  text-align: left;
+}
+.home-tool-card:hover {
+  border-color: var(--card-accent, var(--ladder));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+.home-tool-icon { font-size: 22px; margin-bottom: 8px; }
+.home-tool-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--card-accent, var(--text));
+  margin-bottom: 5px;
+}
+.home-tool-blurb {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+@media(max-width:640px) {
+  .home-tagline { font-size: 24px; }
+  .home-tools { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .home-hero { padding: 24px 0 20px; }
+  .home-tool-card { padding: 14px 12px 12px; }
+}
+
 .tool-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .tool-title { font-size: 18px; font-weight: 700; flex-shrink: 0; }
 .tool-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
@@ -528,7 +597,7 @@ body {
 
 <!-- ── Sidebar ── -->
 <aside class="sidebar" id="sidebar">
-  <div class="logo">Think<span>OS</span></div>
+  <div class="logo" onclick="switchTool('home')" style="cursor:pointer;" title="Home">Think<span>OS</span></div>
 
   <div class="sb-thought-wrap">
     <div class="sb-label">Current Thought</div>
@@ -641,6 +710,52 @@ body {
     <!-- Loading message -->
     <div class="loading-msg-wrap" id="loading-msg-wrap">
       <div class="loading-msg" id="loading-msg">Thinking...</div>
+    </div>
+
+    <!-- ── Home / Welcome ── -->
+    <div class="tool-view" id="view-home">
+      <div class="home-hero">
+        <div class="home-tagline">Think clearer.<br><span>Decide better.</span></div>
+        <div class="home-sub">
+          ThinkOS is a structured thinking companion that helps you examine life's decisions, challenges, and situations through multiple lenses — so you can move forward with clarity and confidence.
+        </div>
+        <div class="home-intent">
+          Whether you're navigating a tough decision, processing an emotion, or trying to understand a situation more deeply — each tool below applies a different thinking framework to your thought. Drop a thought in the top bar and choose a lens to begin.
+        </div>
+
+        <div class="home-tools">
+          <div class="home-tool-card" style="--card-accent:var(--instinct)" onclick="switchTool('rei')">
+            <div class="home-tool-icon">🧠</div>
+            <div class="home-tool-name">REI Council</div>
+            <div class="home-tool-blurb">Split your situation into Instinct, Emotion, and Reason — then find where they agree.</div>
+          </div>
+          <div class="home-tool-card" style="--card-accent:var(--ladder)" onclick="switchTool('ladder')">
+            <div class="home-tool-icon">🪜</div>
+            <div class="home-tool-name">The Ladder</div>
+            <div class="home-tool-blurb">Locate your question on a 5-rung hierarchy from physics to meaning — and see what opens one rung higher.</div>
+          </div>
+          <div class="home-tool-card" style="--card-accent:var(--kingdom)" onclick="switchTool('kingdom')">
+            <div class="home-tool-icon">✝️</div>
+            <div class="home-tool-name">Kingdom Lens</div>
+            <div class="home-tool-blurb">See your situation through a biblical lens — perspectives, analogy, and Scripture applied to your situation.</div>
+          </div>
+          <div class="home-tool-card" style="--card-accent:var(--socratic)" onclick="switchTool('socratic')">
+            <div class="home-tool-icon">❓</div>
+            <div class="home-tool-name">Socratic</div>
+            <div class="home-tool-blurb">A guided questioning dialogue that challenges assumptions and reveals what you actually believe.</div>
+          </div>
+          <div class="home-tool-card" style="--card-accent:var(--blind)" onclick="switchTool('blind')">
+            <div class="home-tool-icon">🔍</div>
+            <div class="home-tool-name">Blind Spot</div>
+            <div class="home-tool-blurb">Surface the hidden biases, fears, and assumptions that might be distorting how you see the situation.</div>
+          </div>
+          <div class="home-tool-card" style="--card-accent:#e879f9" onclick="runFullCouncil()">
+            <div class="home-tool-icon">⚡</div>
+            <div class="home-tool-name">Full Council</div>
+            <div class="home-tool-blurb">Run all lenses at once for a complete 360° breakdown of your thought.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ── REI Council ── -->
@@ -2045,7 +2160,7 @@ function checkSuccessReturn() {
 // ── Init ───────────────────────────────────────────────────────
 restoreTheme();
 restoreThought();
-switchTool('rei');
+switchTool('home');
 renderSessions();
 renderUsageBadge();
 renderAuthUI();
