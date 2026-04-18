@@ -68,15 +68,37 @@ body {
 /* ── Mobile ── */
 @media(max-width:640px) {
   body { flex-direction: column; }
-  .sidebar { display: none; }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    z-index: 300;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+  }
+  .sidebar.open { transform: translateX(0); }
   .main { margin-left: 0; flex: 1; min-width: 0; width: 100%; }
   .bottom-nav { display: flex !important; }
-  .mobile-thought-bar { display: block !important; width: 100%; }
+  .mobile-thought-bar { display: flex !important; width: 100%; align-items: flex-start; gap: 8px; }
   .main-inner { padding: 16px 16px 80px; max-width: 100%; }
   .fab-council { display: block !important; }
   .tool-header { flex-direction: column; align-items: flex-start; gap: 6px; }
   .btn-submit { width: 100%; }
 }
+.sidebar-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 299;
+  backdrop-filter: blur(2px);
+}
+.sidebar-backdrop.visible { display: block; }
+.btn-hamburger {
+  display: none; flex-shrink: 0;
+  background: none; border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 11px;
+  color: var(--text); font-size: 16px; cursor: pointer;
+  line-height: 1; transition: background 0.15s;
+  margin-top: 2px;
+}
+.btn-hamburger:hover { background: var(--surface2); }
+@media(max-width:640px) { .btn-hamburger { display: block; } }
 .bottom-nav {
   display: none; position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--surface); border-top: 1px solid var(--border);
@@ -487,6 +509,9 @@ body {
 </head>
 <body>
 
+<!-- ── Sidebar backdrop ── -->
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
 <!-- ── Sidebar ── -->
 <aside class="sidebar" id="sidebar">
   <div class="logo">Think<span>OS</span></div>
@@ -539,11 +564,12 @@ body {
 
 <!-- ── Mobile thought bar ── -->
 <div class="mobile-thought-bar" id="mobile-thought-bar">
+  <button class="btn-hamburger" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
   <textarea class="sb-textarea" id="mobile-thought"
     placeholder="What's on your mind?"
     oninput="onMobileThoughtInput()"
     rows="2"
-    style="min-height:50px;width:100%;"></textarea>
+    style="min-height:50px;flex:1;"></textarea>
 </div>
 
 <!-- ── Main content ── -->
@@ -903,9 +929,25 @@ function renderThoughtPill(containerId) {
   </div>`;
 }
 
+// ── Sidebar drawer (mobile) ────────────────────────────────────
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-backdrop').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
+}
+
 // ── Tool switching ─────────────────────────────────────────────
 function switchTool(tool) {
   currentTool = tool;
+  closeSidebar();
   document.querySelectorAll('.tool-btn').forEach(btn => {
     btn.className = 'tool-btn';
     if (btn.dataset.tool === tool) btn.classList.add('active', 'active-' + tool);
