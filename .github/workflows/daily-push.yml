@@ -1,0 +1,20 @@
+name: Daily Push Notifications
+
+on:
+  schedule:
+    # Runs at 9:00 AM UTC every day (7pm AEST / 8pm AEDT)
+    - cron: '0 9 * * *'
+  workflow_dispatch:   # allows manual trigger from GitHub Actions tab
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send daily push notifications
+        run: |
+          curl -s -X POST \
+            https://thinkos-production.up.railway.app/api/send-daily-notifications \
+            -H "Content-Type: application/json" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            -d '{"prompt": "What is one decision you have been avoiding?"}' \
+            | jq .
