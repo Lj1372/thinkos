@@ -796,9 +796,37 @@ body {
 <!-- Full Council FAB for mobile -->
 <button class="fab-council" onclick="runFullCouncil()">⚡ Full Council</button>
 
+<!-- ── Disclaimer modal ── -->
+<div class="modal-overlay" id="disclaimer-modal" style="z-index:9000;background:rgba(0,0,0,0.85);">
+  <div class="modal-box" style="max-width:480px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">🧠</div>
+    <div class="modal-title" style="margin-bottom:10px;">Before you think with ThinkOS</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px;text-align:left;">
+      ThinkOS is a <strong style="color:var(--text);">thinking tool</strong> — not a mental health service.
+      It uses AI to help you explore decisions, emotions, and ideas more clearly.
+    </p>
+    <div style="background:#1a0a0a;border:1px solid #5f2120;border-radius:10px;padding:12px 16px;margin-bottom:20px;text-align:left;">
+      <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:6px;">⚠️ Important</div>
+      <p style="font-size:12px;color:#fca5a5;line-height:1.6;margin:0;">
+        ThinkOS is <strong>not a substitute for professional mental health care.</strong>
+        If you are experiencing a crisis, distress, suicidal thoughts, or any mental health emergency —
+        please stop and contact a professional immediately.
+      </p>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6;">
+      🇦🇺 <strong style="color:var(--text);">Lifeline:</strong> 13 11 14 &nbsp;·&nbsp;
+      <strong style="color:var(--text);">Beyond Blue:</strong> 1300 22 4636<br>
+      <strong style="color:var(--text);">Crisis Text Line:</strong> Text HOME to 741741
+    </div>
+    <button onclick="acceptDisclaimer()" style="width:100%;background:var(--ladder);color:#000;border:none;border-radius:99px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;">I understand — let me think</button>
+    <p style="font-size:10px;color:var(--muted);margin-top:10px;">This message shows once. You can view it again via the footer link.</p>
+  </div>
+</div>
+
 <!-- Copyright footer (hidden on mobile, visible on desktop) -->
-<div style="position:fixed;bottom:6px;left:calc(var(--sb-width) + 12px);font-size:10px;color:var(--muted);pointer-events:none;z-index:10;">
-  © 2026 ThinkOS. All rights reserved. Patent Pending.
+<div style="position:fixed;bottom:6px;left:calc(var(--sb-width) + 12px);font-size:10px;color:var(--muted);z-index:10;display:flex;gap:12px;align-items:center;">
+  <span style="pointer-events:none;">© 2026 ThinkOS. All rights reserved. Patent Pending.</span>
+  <span onclick="showDisclaimer()" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;pointer-events:auto;">Not health advice</span>
 </div>
 
 <!-- ── Templates modal ── -->
@@ -938,6 +966,13 @@ async function sbInit() {
 
 async function onLogin(user) {
   _sbUser = user;
+  // If owner param is present, mark this account as owner in Supabase permanently
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('owner') === 'jl2026') {
+    await _sb.from('profiles').upsert({ id: user.id, email: user.email, plan: 'owner', plan_status: 'active' });
+    localStorage.setItem('thinkos_paid', 'true');
+    localStorage.setItem('thinkos_paid_plan', 'owner');
+  }
   // Check profile for paid plan
   const { data: profile } = await _sb.from('profiles').select('plan,plan_status').eq('id', user.id).single();
   if (profile && profile.plan !== 'free' && profile.plan_status === 'active') {
@@ -962,10 +997,20 @@ function renderAuthUI() {
   const paid = isPaid();
 
   if (!paid) {
-    // Free user — show locked teaser, hide everything else
+    // Free user — show teaser + a subtle "already subscribed?" login link
     teaser.style.display   = 'block';
     loginBtn.style.display = 'none';
     userInfo.style.display = 'none';
+    // Add/show "already pro" link
+    let proLink = document.getElementById('sb-already-pro');
+    if (!proLink) {
+      proLink = document.createElement('div');
+      proLink.id = 'sb-already-pro';
+      proLink.style.cssText = 'font-size:11px;color:var(--muted);text-align:center;margin-top:8px;cursor:pointer;';
+      proLink.innerHTML = '<span onclick="showOwnerLogin()" style="text-decoration:underline;text-underline-offset:2px;">Already a Pro member? Log in →</span>';
+      teaser.parentNode.insertBefore(proLink, teaser.nextSibling);
+    }
+    proLink.style.display = 'block';
   } else if (_sbUser) {
     // Paid + logged in
     teaser.style.display   = 'none';
@@ -988,9 +1033,11 @@ async function sendMagicLink() {
   if (!email) { if (status) status.textContent = 'Enter your email first.'; return; }
   btn.disabled = true;
   if (status) status.textContent = 'Sending link...';
+  // Preserve owner param in redirect so isPaid() works on return
+  const ownerParam = new URLSearchParams(window.location.search).get('owner') === 'jl2026' ? '?owner=jl2026' : '';
   const { error } = await _sb.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: window.location.origin + '/?login=1' }
+    options: { emailRedirectTo: window.location.origin + '/' + ownerParam }
   });
   if (error) {
     if (status) status.textContent = 'Error: ' + error.message;
@@ -999,6 +1046,12 @@ async function sendMagicLink() {
     if (status) status.textContent = '✓ Check your email — click the link to log in.';
     emailInput.value = '';
   }
+}
+
+function showOwnerLogin() {
+  // Reveal login form for people who are already Pro but localStorage was cleared
+  localStorage.setItem('thinkos_paid', 'true');
+  renderAuthUI();
 }
 
 async function signOut() {
@@ -1849,6 +1902,20 @@ async function startCheckout() {
   }
 }
 
+// ── Disclaimer ────────────────────────────────────────────────
+function checkDisclaimer() {
+  if (!localStorage.getItem('thinkos_disclaimer_accepted')) {
+    document.getElementById('disclaimer-modal').classList.add('visible');
+  }
+}
+function acceptDisclaimer() {
+  localStorage.setItem('thinkos_disclaimer_accepted', '1');
+  document.getElementById('disclaimer-modal').classList.remove('visible');
+}
+function showDisclaimer() {
+  document.getElementById('disclaimer-modal').classList.add('visible');
+}
+
 // Check if returning from Stripe success page
 function checkSuccessReturn() {
   const p = new URLSearchParams(window.location.search);
@@ -1870,6 +1937,7 @@ renderUsageBadge();
 renderAuthUI();
 checkSuccessReturn();
 sbInit();
+checkDisclaimer();
 </script>
 </body>
 </html>
