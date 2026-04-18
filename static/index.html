@@ -3270,6 +3270,279 @@ function switchTool(tool) {
   if (tool === 'journal')   setTimeout(renderJournal,  50);
 }
 
+// ══════════════════════════════════════════════════════════════
+// ── SHAREABLE CARD GENERATOR (Canvas) ─────────────────────────
+// ══════════════════════════════════════════════════════════════
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '', lines = [];
+  for (let w of words) {
+    const test = line ? line + ' ' + w : w;
+    if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = w; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+  lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight));
+  return lines.length;
+}
+
+function generateShareCard(opts = {}) {
+  // opts: { tool, thought, insight, color, icon }
+  const W = 1080, H = 1080;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const color = opts.color || '#a78bfa';
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#0a0a0a');
+  grad.addColorStop(1, '#121020');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Accent bar top
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, W, 8);
+
+  // Large icon
+  ctx.font = '120px serif';
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.15;
+  ctx.fillText(opts.icon || '🧠', W - 200, 220);
+  ctx.globalAlpha = 1;
+
+  // ThinkOS logo
+  ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('Think', 72, 90);
+  ctx.fillStyle = color;
+  ctx.fillText('OS', 72 + ctx.measureText('Think').width, 90);
+
+  // Tool name badge
+  ctx.fillStyle = color + '22';
+  ctx.strokeStyle = color + '66';
+  ctx.lineWidth = 1;
+  roundRect(ctx, 72, 118, 200, 40, 8);
+  ctx.fill(); ctx.stroke();
+  ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = color;
+  ctx.fillText((opts.icon || '') + ' ' + (opts.toolName || 'Lens'), 86, 144);
+
+  // Thought text (the input)
+  const thought = (opts.thought || '').slice(0, 150) + (opts.thought?.length > 150 ? '…' : '');
+  ctx.font = '500 34px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#888888';
+  ctx.fillText('"', 72, 240);
+  ctx.font = '500 32px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#cccccc';
+  const thoughtLines = wrapText(ctx, thought, 72, 280, W - 144, 46);
+  ctx.fillStyle = '#888888';
+  ctx.fillText('"', 72, 280 + thoughtLines * 46);
+
+  // Divider
+  const divY = 300 + thoughtLines * 46 + 30;
+  ctx.strokeStyle = color + '44';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(72, divY); ctx.lineTo(W - 72, divY); ctx.stroke();
+
+  // Insight label
+  ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = color;
+  ctx.fillText('KEY INSIGHT', 72, divY + 44);
+
+  // Insight text
+  const insight = (opts.insight || '').slice(0, 200) + (opts.insight?.length > 200 ? '…' : '');
+  ctx.font = '500 30px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#efefef';
+  wrapText(ctx, insight, 72, divY + 80, W - 144, 44);
+
+  // Bottom URL
+  ctx.font = '22px -apple-system, BlinkMacSystemFont, sans-serif';
+  ctx.fillStyle = '#444444';
+  ctx.fillText('thinkos-production.up.railway.app', 72, H - 60);
+
+  // Bottom accent
+  ctx.fillStyle = color;
+  ctx.fillRect(0, H - 8, W, 8);
+
+  return canvas;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function downloadShareCard(opts = {}) {
+  const canvas = generateShareCard(opts);
+  const link = document.createElement('a');
+  link.download = 'thinkos-insight.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// Wire into existing share buttons on all tool results
+function addShareCardButtons() {
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    if (btn.textContent.includes('Copy') && !btn.dataset.cardAdded) {
+      btn.dataset.cardAdded = '1';
+      const card = document.createElement('button');
+      card.className = 'copy-btn';
+      card.style.background = 'var(--surface2)';
+      card.textContent = '🖼 Download Card';
+      card.onclick = () => triggerCardDownload();
+      btn.parentNode.insertBefore(card, btn.nextSibling);
+    }
+  });
+}
+
+function triggerCardDownload() {
+  // Build opts from current active tool result
+  const tool = currentTool;
+  const thought = getThought();
+  const TOOL_META2 = {
+    rei:{ name:'REI Council', icon:'🧠', color:'#f59e0b' },
+    ladder:{ name:'The Ladder', icon:'🪜', color:'#a78bfa' },
+    kingdom:{ name:'Kingdom Lens', icon:'✝️', color:'#fbbf24' },
+    socratic:{ name:'Socratic', icon:'❓', color:'#f472b6' },
+    blind:{ name:'Blind Spot', icon:'🔍', color:'#fb923c' },
+    first_principles:{ name:'First Principles', icon:'🪨', color:'#f59e0b' },
+    inversion:{ name:'Inversion', icon:'🔃', color:'#ef4444' },
+    stoic:{ name:'Stoic', icon:'⚖️', color:'#94a3b8' },
+    future_self:{ name:'Future Self', icon:'🌅', color:'#8b5cf6' },
+    feynman:{ name:'Feynman', icon:'🧒', color:'#06b6d4' },
+    historical:{ name:'Historical', icon:'📜', color:'#d97706' },
+    energy:{ name:'Energy', icon:'⚡', color:'#10b981' },
+    stakeholder:{ name:'Stakeholder', icon:'♟️', color:'#f97316' },
+    systems:{ name:'Systems', icon:'🌐', color:'#3b82f6' },
+    probabilistic:{ name:'Probabilistic', icon:'🎲', color:'#ec4899' },
+  };
+
+  const meta = TOOL_META2[tool] || { name: tool, icon:'💡', color:'#a78bfa' };
+
+  // Try to grab key insight from visible results
+  let insight = '';
+  if (tool === 'rei') insight = document.getElementById('rei-majority')?.textContent || '';
+  else if (tool === 'ladder') insight = document.getElementById('lv-current-text')?.textContent || '';
+  else if (tool === 'blind') insight = document.getElementById('blind-spot')?.textContent || '';
+  else if (tool === 'lens' && window._lastLensResult) insight = window._lastLensResult.result?.synthesis || '';
+  else insight = document.querySelector('.results-wrap.visible .action-question, .results-wrap.visible .ascent-q, .results-wrap.visible .synthesis-text')?.textContent || '';
+  if (!insight) insight = 'See the full analysis at ThinkOS.';
+
+  downloadShareCard({ tool, thought, insight, color: meta.color, icon: meta.icon, toolName: meta.name });
+}
+
+// Auto-add card buttons when results become visible
+const _origStartLoading = startLoading;
+function startLoading(tool) { _origStartLoading(tool); }
+// Hook results visibility: patch results-wrap click-show
+document.addEventListener('click', e => {
+  if (e.target?.classList?.contains('btn-submit') || e.target?.id?.includes('submit')) {
+    setTimeout(addShareCardButtons, 3000);
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+// ── DAILY PUSH NOTIFICATIONS ──────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+
+let _vapidPublicKey = null;
+
+async function initPushNotifications() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+  // Check if already subscribed
+  if (localStorage.getItem('thinkos_push_subscribed')) return;
+
+  // Fetch VAPID public key
+  try {
+    const res = await fetch('/api/vapid-public-key');
+    const data = await res.json();
+    if (!data.key) return;
+    _vapidPublicKey = data.key;
+  } catch(e) { return; }
+
+  // Show a friendly prompt after 2nd session (not immediately)
+  const uses = Object.keys(localStorage).filter(k => k.startsWith('thinkos_uses_')).reduce((s,k) => s + (parseInt(localStorage.getItem(k))||0), 0);
+  if (uses >= 2 && !localStorage.getItem('thinkos_push_dismissed')) {
+    setTimeout(showPushPrompt, 3000);
+  }
+}
+
+function showPushPrompt() {
+  if (document.getElementById('push-prompt')) return;
+  const el = document.createElement('div');
+  el.id = 'push-prompt';
+  el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:360px;background:var(--surface);border:1px solid var(--ladder);border-radius:14px;padding:16px;z-index:8500;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:slideUp 0.3s ease;';
+  el.innerHTML = `
+    <button onclick="this.closest('#push-prompt').remove();localStorage.setItem('thinkos_push_dismissed','1')" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;">×</button>
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">🔔 Daily thinking prompt</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Get one powerful question each morning to kickstart your thinking.</div>
+    <button onclick="subscribeToPush()" style="width:100%;background:var(--ladder);color:#000;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;">Yes, send me daily prompts</button>
+  `;
+  document.body.appendChild(el);
+}
+
+async function subscribeToPush() {
+  const el = document.getElementById('push-prompt');
+  if (el) el.remove();
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      localStorage.setItem('thinkos_push_dismissed', '1');
+      return;
+    }
+
+    const sw = await navigator.serviceWorker.ready;
+    const sub = await sw.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(_vapidPublicKey)
+    });
+
+    await fetch('/api/push-subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subscription: sub.toJSON(),
+        user_id: _sbUser?.id || null
+      })
+    });
+
+    localStorage.setItem('thinkos_push_subscribed', '1');
+    showToast('🔔 Daily prompts enabled! Check in tomorrow morning.', 4000);
+  } catch(e) {
+    console.warn('Push subscription failed:', e);
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = window.atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function showToast(msg, duration = 3000) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:13px;color:var(--text);z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.4);white-space:nowrap;max-width:calc(100% - 32px);text-align:center;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), duration);
+}
+
 // ── PWA: Service Worker ────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

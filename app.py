@@ -357,6 +357,9 @@ def synthesis():
 
 SUPABASE_URL     = os.environ.get('SUPABASE_URL', 'https://plbmidsmtbkggehmoeuf.supabase.co')
 SUPABASE_SERVICE = os.environ.get('SUPABASE_SERVICE_KEY', '')
+VAPID_PUBLIC_KEY  = os.environ.get('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
+VAPID_EMAIL       = os.environ.get('VAPID_EMAIL', 'mailto:support@thinkos.app')
 
 def _sb_headers():
     return {
@@ -985,6 +988,111 @@ def weekly_report():
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
         return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/vapid-public-key', methods=['GET'])
+def get_vapid_key():
+    """Frontend fetches this to set up push subscription."""
+    return jsonify({'key': VAPID_PUBLIC_KEY})
+
+
+@app.route('/api/push-subscribe', methods=['POST'])
+def push_subscribe():
+    """Save a push subscription to Supabase."""
+    if not SUPABASE_SERVICE:
+        return jsonify({'ok': False}), 200
+    try:
+        data = request.get_json() or {}
+        subscription = data.get('subscription', {})
+        user_id      = data.get('user_id', '')
+        if not subscription:
+            return jsonify({'ok': False, 'error': 'No subscription'}), 400
+        payload = {
+            'endpoint':   subscription.get('endpoint', ''),
+            'p256dh':     (subscription.get('keys') or {}).get('p256dh', ''),
+            'auth':       (subscription.get('keys') or {}).get('auth', ''),
+            'user_id':    user_id or None,
+        }
+        # Upsert by endpoint
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/push_subscriptions",
+            headers={**_sb_headers(), 'Prefer': 'resolution=merge-duplicates'},
+            json=payload
+        )
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/send-daily-notifications', methods=['POST'])
+def send_daily_notifications():
+    """Called by Railway cron daily. Sends a thinking prompt to all subscribers."""
+    # Simple auth: require a secret header
+    secret = request.headers.get('X-Cron-Secret', '')
+    if secret != os.environ.get('CRON_SECRET', ''):
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    if not VAPID_PRIVATE_KEY or not SUPABASE_SERVICE:
+        return jsonify({'error': 'Not configured'}), 503
+
+    import json as _json
+    try:
+        from pywebpush import webpush, WebPushException
+
+        # Fetch all subscriptions
+        resp = requests.get(
+            f"{SUPABASE_URL}/rest/v1/push_subscriptions",
+            headers={**_sb_headers(), 'Prefer': 'return=representation'},
+            params={'limit': '1000'}
+        )
+        subs = resp.json() if resp.ok else []
+
+        PROMPTS = [
+            "What's one thing you've been avoiding thinking about?",
+            "What decision have you been putting off? Take 2 minutes with it.",
+            "What would your future self tell you about today?",
+            "What assumption are you making that might not be true?",
+            "Who or what is draining your energy right now?",
+            "What's the real question underneath your biggest worry?",
+            "If you couldn't fail, what would you do today?",
+            "What are you pretending not to know?",
+        ]
+        import random, datetime
+        prompt = PROMPTS[datetime.date.today().toordinal() % len(PROMPTS)]
+
+        sent = 0
+        failed = 0
+        for sub in subs:
+            try:
+                subscription_info = {
+                    'endpoint': sub['endpoint'],
+                    'keys': {'p256dh': sub['p256dh'], 'auth': sub['auth']}
+                }
+                webpush(
+                    subscription_info=subscription_info,
+                    data=_json.dumps({
+                        'title': 'ThinkOS',
+                        'body':  prompt,
+                        'icon':  '/icons/icon-192.png',
+                        'url':   '/'
+                    }),
+                    vapid_private_key=VAPID_PRIVATE_KEY,
+                    vapid_claims={'sub': VAPID_EMAIL}
+                )
+                sent += 1
+            except WebPushException as e:
+                failed += 1
+                # Remove expired/invalid subscriptions
+                if '410' in str(e) or '404' in str(e):
+                    requests.delete(
+                        f"{SUPABASE_URL}/rest/v1/push_subscriptions",
+                        headers=_sb_headers(),
+                        params={'endpoint': f"eq.{sub['endpoint']}"}
+                    )
+
+        return jsonify({'ok': True, 'sent': sent, 'failed': failed})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

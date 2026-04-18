@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThinkOS — Shared Insight</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ThinkOS">
+<meta id="og-title" property="og:title" content="An insight from ThinkOS">
+<meta id="og-desc" property="og:description" content="Structured thinking made shareable.">
+<meta property="og:image" content="/icons/icon-512.png">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0a0a0a; --surface:#141414; --border:#262626; --text:#efefef; --muted:#666;
+  --ladder:#a78bfa; --reason:#34d399; --radius:12px;
+}
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; padding:24px 16px; }
+.container { max-width:680px; margin:0 auto; }
+.brand { display:flex; align-items:center; gap:10px; margin-bottom:32px; }
+.brand-icon { font-size:28px; }
+.brand-name { font-size:20px; font-weight:700; color:var(--ladder); }
+.brand-tag { font-size:13px; color:var(--muted); margin-left:auto; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px; margin-bottom:20px; }
+.thought-label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:10px; }
+.thought-text { font-size:20px; font-weight:600; line-height:1.5; color:var(--text); }
+.lens-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 14px; border-radius:99px; font-size:13px; font-weight:600; margin-top:16px; }
+.panels-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:20px; }
+.panel { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:18px; }
+.panel-label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.panel-text { font-size:14px; line-height:1.6; color:var(--text); }
+.synthesis { background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(52,211,153,.06)); border:1px solid rgba(167,139,250,.2); border-radius:var(--radius); padding:20px; margin-bottom:14px; }
+.synthesis-label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--ladder); margin-bottom:8px; }
+.synthesis-text { font-size:15px; line-height:1.7; }
+.qna-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.qna-box { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+.qna-label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px; }
+.qna-text { font-size:14px; line-height:1.5; }
+.cta { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:28px 32px; text-align:center; }
+.cta h2 { font-size:22px; font-weight:700; margin-bottom:8px; }
+.cta p { color:var(--muted); font-size:14px; margin-bottom:20px; line-height:1.6; }
+.btn { display:inline-block; background:var(--ladder); color:#000; padding:13px 32px; border-radius:99px; font-size:15px; font-weight:700; text-decoration:none; }
+.btn:hover { opacity:.85; }
+.meta { font-size:12px; color:var(--muted); text-align:center; margin-top:16px; }
+.loading { text-align:center; padding:80px 20px; color:var(--muted); font-size:16px; }
+.error { text-align:center; padding:80px 20px; }
+.error h2 { font-size:20px; margin-bottom:8px; }
+.error p { color:var(--muted); font-size:14px; }
+@media(max-width:500px){
+  .qna-row { grid-template-columns:1fr; }
+  .card, .cta { padding:20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand">
+    <span class="brand-icon">🧠</span>
+    <span class="brand-name">ThinkOS</span>
+    <span class="brand-tag">Shared insight</span>
+  </div>
+  <div id="root"><div class="loading">Loading insight…</div></div>
+</div>
+<script>
+(async function() {
+  const root = document.getElementById('root');
+  // Extract share ID from path  /shared/XXXX
+  const shareId = window.location.pathname.split('/').filter(Boolean).pop();
+  if (!shareId) { showError('No share ID found.'); return; }
+
+  try {
+    const res = await fetch('/api/get-shared/' + shareId);
+    if (!res.ok) throw new Error('Not found');
+    const d = await res.json();
+
+    // Update OG meta
+    document.getElementById('og-title').content = d.thought ? `"${d.thought.slice(0,80)}…"` : 'An insight from ThinkOS';
+    document.getElementById('og-desc').content = d.synthesis || 'Structured thinking made shareable.';
+    document.title = 'ThinkOS — ' + (d.lens_name || 'Shared Insight');
+
+    const lensColor = d.lens_color || '#a78bfa';
+    const lensIcon = d.lens_icon || '🧠';
+
+    let panelsHtml = '';
+    if (d.panels && d.panels.length) {
+      panelsHtml = `<div class="panels-grid">` +
+        d.panels.map(p => `
+          <div class="panel">
+            <div class="panel-label">${p.emoji || ''} ${p.label || ''}</div>
+            <div class="panel-text">${esc(p.text || '')}</div>
+          </div>`).join('') +
+        `</div>`;
+    }
+
+    let qnaHtml = '';
+    if (d.question || d.action) {
+      qnaHtml = `<div class="qna-row">
+        ${d.question ? `<div class="qna-box"><div class="qna-label">💬 Key question</div><div class="qna-text">${esc(d.question)}</div></div>` : ''}
+        ${d.action ? `<div class="qna-box"><div class="qna-label">⚡ Next action</div><div class="qna-text">${esc(d.action)}</div></div>` : ''}
+      </div>`;
+    }
+
+    root.innerHTML = `
+      <div class="card">
+        <div class="thought-label">💭 Their thought</div>
+        <div class="thought-text">${esc(d.thought || '')}</div>
+        <span class="lens-badge" style="background:${lensColor}22;color:${lensColor}">
+          ${lensIcon} ${esc(d.lens_name || 'Lens')}
+        </span>
+      </div>
+
+      ${panelsHtml}
+
+      ${d.synthesis ? `<div class="synthesis">
+        <div class="synthesis-label">✦ Synthesis</div>
+        <div class="synthesis-text">${esc(d.synthesis)}</div>
+      </div>` : ''}
+
+      ${qnaHtml}
+
+      <div class="cta">
+        <h2>Think deeper on your own ideas</h2>
+        <p>ThinkOS gives you 15+ thinking lenses — from First Principles to Stoic reframes — to break down any problem clearly.</p>
+        <a class="btn" href="/">Try ThinkOS Free →</a>
+      </div>
+      <p class="meta">Viewed ${(d.view_count || 1).toLocaleString()} time${d.view_count === 1 ? '' : 's'}</p>
+    `;
+  } catch(e) {
+    showError('This insight could not be loaded. It may have been removed.');
+  }
+
+  function showError(msg) {
+    root.innerHTML = `<div class="error"><h2>Not found</h2><p>${msg}</p><br><a class="btn" href="/">Open ThinkOS</a></div>`;
+  }
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+})();
+</script>
+</body>
+</html>
