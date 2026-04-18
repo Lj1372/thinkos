@@ -154,6 +154,21 @@ def parse_json(text):
 def index():
     return send_from_directory('static', 'index.html')
 
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/sw.js')
+def service_worker():
+    response = send_from_directory('static', 'sw.js')
+    response.headers['Service-Worker-Allowed'] = '/'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+@app.route('/icons/<path:filename>')
+def icons(filename):
+    return send_from_directory('static/icons', filename)
+
 
 @app.route('/api/rei', methods=['POST'])
 def rei_council():
