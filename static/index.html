@@ -1241,6 +1241,13 @@ async function onLogin(user) {
     localStorage.setItem('thinkos_paid', 'true');
     localStorage.setItem('thinkos_paid_plan', profile.plan);
   }
+  // Register this user's referral code in Supabase (so their referral link works)
+  if (isPaid()) {
+    const code = btoa(user.id).replace(/[^a-z0-9]/gi,'').slice(0,12);
+    _sb.from('referrals')
+      .upsert({ referrer_user_id: user.id, referrer_code: code }, { onConflict: 'referrer_code', ignoreDuplicates: true })
+      .then(() => {});
+  }
   renderAuthUI();
   toggleInsightsPanel();
   loadSessionHistory();
@@ -2167,10 +2174,11 @@ async function startCheckout() {
   if (!email) { status.textContent = 'Please enter your email.'; return; }
   btn.disabled = true; status.textContent = 'Redirecting to checkout...';
   try {
+    const referral_code = localStorage.getItem('thinkos_referred_by') || '';
     const res  = await fetch('/api/create-checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan: _selectedPlan, email })
+      body: JSON.stringify({ plan: _selectedPlan, email, referral_code })
     });
     const data = await res.json();
     if (data.url) {

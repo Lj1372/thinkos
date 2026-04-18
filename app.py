@@ -355,6 +355,31 @@ def synthesis():
 
 # ─── Stripe Checkout ───────────────────────────────────────────────────────────
 
+SUPABASE_URL     = os.environ.get('SUPABASE_URL', 'https://plbmidsmtbkggehmoeuf.supabase.co')
+SUPABASE_SERVICE = os.environ.get('SUPABASE_SERVICE_KEY', '')
+
+def _sb_headers():
+    return {
+        'apikey': SUPABASE_SERVICE,
+        'Authorization': f'Bearer {SUPABASE_SERVICE}',
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+    }
+
+def _ensure_referral_coupon(stripe):
+    """Create the REFERRAL1MO coupon once if it doesn't exist."""
+    try:
+        stripe.Coupon.retrieve('REFERRAL1MO')
+    except stripe.error.InvalidRequestError:
+        stripe.Coupon.create(
+            id='REFERRAL1MO',
+            duration='once',
+            percent_off=100,
+            name='1 Month Free – Referral Reward',
+            max_redemptions=10000,
+        )
+
+
 @app.route('/api/create-checkout', methods=['POST'])
 def create_checkout():
     if not STRIPE_SECRET_KEY:
@@ -362,9 +387,11 @@ def create_checkout():
     try:
         import stripe
         stripe.api_key = STRIPE_SECRET_KEY
-        data      = request.get_json() or {}
-        plan      = data.get('plan', 'monthly')          # monthly | annual | lifetime
-        email     = data.get('email', '')
+        data         = request.get_json() or {}
+        plan         = data.get('plan', 'monthly')
+        email        = data.get('email', '')
+        referral_code = data.get('referral_code', '').strip()
+
         price_map = {
             'monthly':  STRIPE_PRICE_MONTHLY,
             'annual':   STRIPE_PRICE_ANNUAL,
@@ -379,17 +406,81 @@ def create_checkout():
             payment_method_types=['card'],
             line_items=[{'price': price_id, 'quantity': 1}],
             mode=mode,
-            success_url=f"{APP_URL}/success?session_id={{CHECKOUT_SESSION_ID}}",
+            success_url=f"{APP_URL}/success?session_id={{CHECKOUT_SESSION_ID}}" + (f"&ref={referral_code}" if referral_code else ""),
             cancel_url=f"{APP_URL}/",
             allow_promotion_codes=True,
         )
         if email:
             params['customer_email'] = email
 
+        # Apply 1-month-free coupon for referred users (subscriptions only)
+        if referral_code and mode == 'subscription':
+            _ensure_referral_coupon(stripe)
+            params['discounts'] = [{'coupon': 'REFERRAL1MO'}]
+            params.pop('allow_promotion_codes', None)  # can't mix with discounts
+
         session = stripe.checkout.Session.create(**params)
         return jsonify({'url': session.url})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/process-referral', methods=['POST'])
+def process_referral():
+    """Called from success page. Awards 1 month free to the referrer via Stripe balance credit."""
+    if not STRIPE_SECRET_KEY or not SUPABASE_SERVICE:
+        return jsonify({'ok': False}), 200  # silent fail
+    try:
+        import stripe
+        stripe.api_key = STRIPE_SECRET_KEY
+        data          = request.get_json() or {}
+        referral_code = data.get('referral_code', '').strip()
+        referee_email = data.get('referee_email', '').strip()
+        if not referral_code or not referee_email:
+            return jsonify({'ok': False, 'error': 'Missing params'}), 400
+
+        # Look up referrer in Supabase
+        resp = requests.get(
+            f"{SUPABASE_URL}/rest/v1/referrals",
+            headers={**_sb_headers(), 'Prefer': 'return=representation'},
+            params={'referrer_code': f'eq.{referral_code}', 'status': 'eq.pending', 'limit': '1'}
+        )
+        rows = resp.json() if resp.ok else []
+        if not rows:
+            return jsonify({'ok': False, 'error': 'Referral not found or already used'}), 200
+
+        referral = rows[0]
+        referrer_user_id = referral.get('referrer_user_id')
+
+        # Get referrer's Stripe customer ID from profiles
+        prof_resp = requests.get(
+            f"{SUPABASE_URL}/rest/v1/profiles",
+            headers={**_sb_headers(), 'Prefer': 'return=representation'},
+            params={'id': f'eq.{referrer_user_id}', 'limit': '1'}
+        )
+        profiles = prof_resp.json() if prof_resp.ok else []
+        stripe_customer_id = (profiles[0].get('stripe_customer_id', '') if profiles else '')
+
+        if stripe_customer_id:
+            # Credit A$9 (900 cents AUD) to referrer's Stripe balance — auto-deducts from next invoice
+            stripe.Customer.create_balance_transaction(
+                stripe_customer_id,
+                amount=-900,  # negative = credit
+                currency='aud',
+                description=f'Referral reward: {referee_email} subscribed',
+            )
+
+        # Mark referral as rewarded
+        requests.patch(
+            f"{SUPABASE_URL}/rest/v1/referrals",
+            headers=_sb_headers(),
+            params={'referrer_code': f'eq.{referral_code}'},
+            json={'status': 'rewarded', 'referee_email': referee_email, 'rewarded_at': 'now()'}
+        )
+
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 
 @app.route('/api/verify-session', methods=['POST'])

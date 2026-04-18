@@ -69,6 +69,19 @@ async function verifyAndUnlock() {
           });
         }
       } catch(sbErr) { console.warn('Supabase sync skipped:', sbErr); }
+
+      // Process referral reward (silent — never blocks)
+      try {
+        const refCode = localStorage.getItem('thinkos_referred_by') || params.get('ref') || '';
+        if (refCode && data.email) {
+          await fetch('/api/process-referral', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ referral_code: refCode, referee_email: data.email })
+          });
+          localStorage.removeItem('thinkos_referred_by'); // used, clear it
+        }
+      } catch(refErr) { console.warn('Referral processing skipped:', refErr); }
     } else {
       statusEl.textContent = 'Could not verify payment. Contact support with your receipt.';
       statusEl.className = 'status error';
