@@ -1,4 +1,4 @@
-const CACHE = 'thinkos-v1';
+const CACHE = 'thinkos-v2';
 const STATIC = [
   '/',
   '/static/index.html',

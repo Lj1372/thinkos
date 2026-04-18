@@ -1818,6 +1818,9 @@ function switchTool(tool) {
   if (view) view.classList.add('active');
   const pillMap = { rei:'rei-pill', ladder:'ladder-pill', kingdom:'kingdom-pill', blind:'blind-pill', council:'council-pill' };
   if (pillMap[tool]) renderThoughtPill(pillMap[tool]);
+  // Load analytics/journal content when those tabs are activated
+  if (tool === 'analytics') setTimeout(loadAnalytics, 50);
+  if (tool === 'journal')   setTimeout(renderJournal,  50);
 }
 
 // ── Theme toggle ───────────────────────────────────────────────
@@ -2277,6 +2280,14 @@ function openTemplates() {
 }
 function selectTemplate(id) {
   closeAllModals();
+  // Check extended templates (lens-specific)
+  if (typeof TEMPLATE_EXTRA !== 'undefined' && TEMPLATE_EXTRA[id]) {
+    const extra = TEMPLATE_EXTRA[id];
+    document.getElementById('global-thought').value = extra.thought;
+    if (typeof onThoughtInput === 'function') onThoughtInput();
+    if (typeof activateLens === 'function') activateLens(extra.lens);
+    return;
+  }
   const tmpl = TEMPLATES[id]; if (!tmpl) return;
   const ta = document.getElementById('global-thought');
   if (!ta.value.trim()) ta.placeholder = tmpl.placeholder;
@@ -3249,26 +3260,9 @@ const TEMPLATE_EXTRA = {
   'ethical':         { thought:'I am facing a situation with a genuine ethical dimension where the right answer is not obvious. I need to think through it from multiple perspectives.', lens:'stoic' },
 };
 
-const _origSelectTemplate = selectTemplate;
-function selectTemplate(id) {
-  const extra = TEMPLATE_EXTRA[id];
-  if (extra) {
-    closeAllModals();
-    document.getElementById('global-thought').value = extra.thought;
-    onThoughtInput();
-    activateLens(extra.lens);
-    return;
-  }
-  _origSelectTemplate(id);
-}
+// selectTemplate extended logic is inlined directly in the original function above
 
-// Patch switchTool to load analytics/journal on activate
-const _origSwitchTool = switchTool;
-function switchTool(tool) {
-  _origSwitchTool(tool);
-  if (tool === 'analytics') setTimeout(loadAnalytics, 50);
-  if (tool === 'journal')   setTimeout(renderJournal,  50);
-}
+// analytics/journal hook is inlined directly in switchTool above
 
 // ══════════════════════════════════════════════════════════════
 // ── SHAREABLE CARD GENERATOR (Canvas) ─────────────────────────
@@ -3445,8 +3439,7 @@ function triggerCardDownload() {
 }
 
 // Auto-add card buttons when results become visible
-const _origStartLoading = startLoading;
-function startLoading(tool) { _origStartLoading(tool); }
+// startLoading hook removed — was causing infinite recursion via duplicate function declaration
 // Hook results visibility: patch results-wrap click-show
 document.addEventListener('click', e => {
   if (e.target?.classList?.contains('btn-submit') || e.target?.id?.includes('submit')) {
