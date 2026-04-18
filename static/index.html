@@ -82,6 +82,10 @@ body {
   .fab-council { display: block !important; }
   .tool-header { flex-direction: column; align-items: flex-start; gap: 6px; }
   .btn-submit { width: 100%; }
+  /* Socratic chat — keep input row horizontal, don't stretch Ask button */
+  .chat-input-row .btn-submit { width: auto; min-width: 60px; }
+  .chat-window { min-height: 180px; max-height: 300px; }
+  .chat-input-row textarea { min-height: 50px; font-size: 16px; } /* 16px stops iOS zoom */
 }
 .sidebar-backdrop {
   display: none; position: fixed; inset: 0;
