@@ -232,20 +232,39 @@ Respond ONLY with valid JSON. No markdown, no extra text:
   "blind_spot_question": "..."
 }"""
 
-SYNTHESIS_PROMPT = """You are a Council Synthesist. You have been given the results of four thinking tools applied to the same situation: REI Council (three minds), The Information Ladder (which rung), Kingdom Lens (biblical perspective), and a Blind Spot Detector (missing angle).
+SYNTHESIS_PROMPT = """You are a Council Synthesist. You have been given the results of multiple thinking tools applied to the same situation. These always include REI Council, The Information Ladder, Kingdom Lens, and Blind Spot Detector — and may also include First Principles and Inversion analyses.
 
-Your job: read across all four results and write a synthesis — what do they collectively reveal that none says alone?
+Your job: read across ALL provided results and write a synthesis — what do they collectively reveal that none says alone?
 
 Rules:
-- synthesis: 3-4 sentences. What is the deeper pattern across all four lenses? Be specific to this situation.
-- synthesis_question: ONE question under 25 words that cuts to the heart of what all four lenses are pointing at
-- Do not summarise each tool — synthesise across them
+- synthesis: 3-4 sentences. What is the deeper pattern across ALL lenses? Be specific to this situation.
+- synthesis_question: ONE question under 25 words that cuts to the heart of what all lenses are pointing at
+- Do not summarise each tool — synthesise across them. Find the convergence.
+- If First Principles or Inversion are included, use them to stress-test the synthesis
 - Be direct. No hedging. No "it seems like."
 
 Respond ONLY with valid JSON. No markdown, no extra text:
 {
   "synthesis": "...",
   "synthesis_question": "..."
+}"""
+
+PRO_SYNTHESIS_PROMPT = """You are a Master Synthesist. You have been given the results of multiple thinking lenses applied to the same situation or question. Your job is to find the cross-lens pattern — what emerges when you read them all together that no single lens could reveal alone.
+
+Rules:
+- synthesis: 4-5 sentences. Find the deepest pattern. What are all the lenses converging on? What tension or contradiction do they reveal? What does this mean for the person?
+- synthesis_question: ONE devastating question under 30 words that cuts across everything and forces clarity
+- key_insight: ONE sentence — the single most important thing all these lenses are saying
+- action: The one concrete next step that is supported by the most lenses
+- Be ruthlessly specific to this situation. No generic advice.
+- Do not summarise — synthesise. Find what none of them say alone.
+
+Respond ONLY with valid JSON. No markdown, no extra text:
+{
+  "synthesis": "...",
+  "synthesis_question": "...",
+  "key_insight": "...",
+  "action": "..."
 }"""
 
 KINGDOM_PROMPT = """You are a Kingdom Lens advisor. You help people see their real-life situations through a biblical lens — not piously or with religious clichés, but with the honest, direct wisdom of Scripture applied to actual human experience.
@@ -341,11 +360,47 @@ def synthesis():
     if data.get('blind_spot'):
         b = data['blind_spot']
         parts.append(f"Blind Spot — Missing: {b.get('missing_perspective','')} | Reframe: {b.get('reframe','')}")
+    # Extended lenses (First Principles + Inversion added to Full Council)
+    if data.get('fp'):
+        fp = data['fp']
+        panels_text = ' | '.join([f"{p.get('label','')}={p.get('text','')[:80]}" for p in fp.get('panels', [])[:3]])
+        parts.append(f"First Principles — {fp.get('synthesis','')} [{panels_text}]")
+    if data.get('inversion'):
+        inv = data['inversion']
+        panels_text = ' | '.join([f"{p.get('label','')}={p.get('text','')[:80]}" for p in inv.get('panels', [])[:3]])
+        parts.append(f"Inversion — {inv.get('synthesis','')} [{panels_text}]")
     if not parts:
         return jsonify({'error': 'No tool results provided'}), 400
     combined = '\n\n'.join(parts)
     try:
         text = call_ai(SYNTHESIS_PROMPT, [{'role': 'user', 'content': combined}], max_tokens=512)
+        return jsonify(parse_json(text))
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/pro-synthesis', methods=['POST'])
+def pro_synthesis():
+    """Mega-synthesis across any set of lens results for Pro Council."""
+    data = request.get_json()
+    thought = data.get('thought', '')
+    results = data.get('results', [])  # list of {lens_name, synthesis, question, action, panels}
+    if not results:
+        return jsonify({'error': 'No lens results provided'}), 400
+    parts = [f"The situation/thought: {thought}\n"]
+    for r in results:
+        name = r.get('lens_name', 'Unknown lens')
+        synth = r.get('synthesis', '')
+        question = r.get('question', '')
+        action = r.get('action', '')
+        panels = r.get('panels', [])
+        panel_summary = ' | '.join([f"{p.get('label','')}={p.get('text','')[:70]}" for p in panels[:3]])
+        parts.append(f"{name}:\n  Core insight: {synth}\n  Key question: {question}\n  Action: {action}\n  Detail: [{panel_summary}]")
+    combined = '\n\n'.join(parts)
+    try:
+        text = call_ai(PRO_SYNTHESIS_PROMPT, [{'role': 'user', 'content': combined}], max_tokens=700)
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
         return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
@@ -814,6 +869,31 @@ Respond ONLY with valid JSON:
   "action": "The decision the expected value analysis points to"
 }"""
 
+,'character': """You are a depth psychologist and character analyst working at the intersection of Carl Jung's archetypal theory and Jordan Peterson's synthesis of the Big Five personality model with Jungian archetypes. Analyse the person's situation, decision, or struggle through the lens of who they ARE at a psychological level — their archetype, their personality structure, and the shadow material driving them.
+
+FOUR PANELS to return:
+
+1. JUNGIAN ARCHETYPE — Which of Jung's core archetypes is most active in this person right now? (Hero, Shadow, Anima/Animus, Self, Persona, Trickster, Wise Old Man/Woman, Child, etc.) How is this archetype driving their behaviour or framing? What does the archetype want? What does it fear? (3-4 sentences, specific to the situation)
+
+2. SHADOW MATERIAL — What is the Shadow (the repressed, unconscious part) doing here? What are they projecting onto others? What are they refusing to see in themselves? What quality are they disowning that is actually driving this situation? (3-4 sentences. Be direct. This is the uncomfortable truth.)
+
+3. BIG FIVE PERSONALITY DYNAMICS — Using Peterson's interpretation of Big Five (Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism), what personality traits are most visible in how they've framed this situation? Where is high Agreeableness creating a trap? Where is Neuroticism amplifying the perceived stakes? Where is low Conscientiousness or high Openness complicating the path? (Be specific to what they've written, not generic. 3-4 sentences.)
+
+4. THE INDIVIDUATION CHALLENGE — Jung's concept of individuation is the lifelong process of becoming who you actually are. What is this situation calling this person to integrate or confront as part of their individuation journey? What would a more whole version of themselves — one who has integrated the Shadow — do here? (3-4 sentences)
+
+Respond ONLY with valid JSON:
+{
+  "panels": [
+    {"label":"Jungian Archetype","emoji":"🎭","text":"[Panel 1 content]"},
+    {"label":"Shadow Material","emoji":"🌑","text":"[Panel 2 content]"},
+    {"label":"Big Five Dynamics","emoji":"📊","text":"[Panel 3 content]"},
+    {"label":"Individuation Challenge","emoji":"🌀","text":"[Panel 4 content]"}
+  ],
+  "synthesis": "One sentence capturing the deepest psychological truth this analysis reveals about who this person is and what this situation is asking of them",
+  "question": "The one question about their own psychology they most need to sit with — under 25 words",
+  "action": "The psychological work or concrete step most aligned with their individuation at this moment"
+}"""
+
 }  # end LENS_PROMPTS
 
 
@@ -849,7 +929,7 @@ def suggest_lens():
     thought   = data.get('thought', '').strip()
     if not thought:
         return jsonify({'suggestions': []}), 200
-    all_lenses = 'rei, ladder, kingdom, socratic, blind, first_principles, inversion, stoic, future_self, feynman, historical, energy, stakeholder, systems, probabilistic'
+    all_lenses = 'rei, ladder, kingdom, socratic, blind, first_principles, inversion, stoic, future_self, feynman, historical, energy, stakeholder, systems, probabilistic, character'
     prompt = f"""Given this thought: "{thought}"
 
 Which 2 lenses from this list would be MOST useful: {all_lenses}

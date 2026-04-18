@@ -819,6 +819,7 @@ body {
 
   <div class="sb-divider"></div>
   <button class="btn-templates" onclick="openTemplates()">📋 Templates</button>
+  <button class="btn-templates" onclick="openProCouncil()" style="margin-top:4px;background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(167,139,250,.15));border-color:rgba(236,72,153,.3);color:var(--probabilistic);">🔮 Pro Council</button>
   <button class="btn-templates" onclick="switchTool('analytics')" style="margin-top:4px;">📊 Analytics</button>
   <button class="btn-templates" onclick="switchTool('journal')" style="margin-top:4px;">📔 Decision Journal</button>
   <button class="btn-templates" onclick="openWeeklyReport()" style="margin-top:4px;">🗓 Weekly Report</button>
@@ -1078,7 +1079,7 @@ body {
     <div class="tool-view" id="view-council">
       <div class="tool-header">
         <div class="tool-title" style="color:var(--ladder)">⚡ Full Council</div>
-        <div class="tool-desc">All four lenses in sequence — REI, Ladder, Kingdom, Blind Spot — then a synthesis that reads across all of them.</div>
+        <div class="tool-desc">Six lenses in sequence — REI, Ladder, Kingdom, Blind Spot, First Principles, and Inversion — then a synthesis across all six.</div>
       </div>
       <div id="council-pill"></div>
       <div class="council-view" id="council-view">
@@ -1126,10 +1127,61 @@ body {
           <div class="council-section-body" id="cs-blind-body"></div>
         </div>
 
+        <!-- First Principles section -->
+        <div class="council-section collapsed" id="cs-fp" style="display:none">
+          <div class="council-section-header" onclick="toggleCouncilSection('cs-fp')">
+            <span class="council-section-title" style="color:var(--fp)">🪨 First Principles</span>
+            <span class="council-section-toggle"></span>
+          </div>
+          <div class="council-section-body" id="cs-fp-body"></div>
+        </div>
+
+        <!-- Inversion section -->
+        <div class="council-section collapsed" id="cs-inversion" style="display:none">
+          <div class="council-section-header" onclick="toggleCouncilSection('cs-inversion')">
+            <span class="council-section-title" style="color:var(--inversion)">🔃 Inversion</span>
+            <span class="council-section-toggle"></span>
+          </div>
+          <div class="council-section-body" id="cs-inversion-body"></div>
+        </div>
+
         <!-- Actions -->
         <div class="council-actions" id="council-actions" style="display:none">
           <button class="btn-export" onclick="exportMarkdown()">⬇ Export as Markdown</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ── Pro Council ── -->
+    <div class="tool-view" id="view-procouncil">
+      <div class="tool-header">
+        <div class="tool-title" style="color:var(--probabilistic)">🔮 Pro Council <span style="font-size:12px;background:var(--ladder);color:#000;border-radius:4px;padding:2px 8px;margin-left:8px;vertical-align:middle;font-weight:700;">PRO</span></div>
+        <div class="tool-desc">Choose any combination of lenses. Run them all. Get a mega-synthesis across everything you selected.</div>
+      </div>
+      <div id="procouncil-pill"></div>
+      <div id="pro-lens-selector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;"></div>
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+        <button onclick="selectAllProLenses()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;">Select all</button>
+        <button onclick="clearAllProLenses()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:12px;color:var(--text);cursor:pointer;">Clear all</button>
+        <span id="pro-selected-count" style="font-size:12px;color:var(--muted);align-self:center;"></span>
+      </div>
+      <button class="btn-submit" id="pro-council-btn" onclick="runProCouncil()" style="background:var(--probabilistic);color:#fff;margin-bottom:24px;">🔮 Run Pro Council</button>
+      <div id="pro-council-results">
+        <!-- Synthesis card -->
+        <div class="synthesis-card" id="pro-synthesis" style="display:none">
+          <div class="synthesis-label">🔮 Pro Council Synthesis</div>
+          <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Key Insight</div>
+          <div class="synthesis-text" id="pro-key-insight" style="margin-bottom:16px;"></div>
+          <div class="synthesis-label" style="margin-bottom:8px;">Full Synthesis</div>
+          <div class="synthesis-text" id="pro-synth-text"></div>
+          <div class="synthesis-q" id="pro-synth-q"></div>
+          <div style="margin-top:14px;padding:14px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">⚡ Cross-lens Action</div>
+            <div id="pro-synth-action" style="font-size:14px;"></div>
+          </div>
+        </div>
+        <!-- Individual lens results go here -->
+        <div id="pro-results"></div>
       </div>
     </div>
 
@@ -1852,7 +1904,7 @@ const LOADING_MSGS = {
   kingdom:  ['Searching Scripture...','Finding the parallel...','Applying the lenses...','Weighing eternity...'],
   socratic: ['Sharpening the question...'],
   blind:    ['Scanning for blind spots...','What is nobody saying...','Finding the missing angle...'],
-  council:  ['Consulting REI Council... (1/4)','Climbing the Ladder... (2/4)','Seeing through the Kingdom lens... (3/4)','Detecting blind spots... (4/4)','Synthesising across all lenses...']
+  council:  ['Consulting REI Council... (1/6)','Climbing the Ladder... (2/6)','Seeing through the Kingdom lens... (3/6)','Detecting blind spots... (4/6)','Deconstructing to first principles... (5/6)','Inverting the problem... (6/6)','Synthesising across all six lenses...']
 };
 let _loadingInterval = null;
 let _progressInterval = null;
@@ -2054,7 +2106,7 @@ async function runFullCouncil() {
   if (!input) { document.getElementById('global-thought').focus(); return; }
   switchTool('council');
   renderThoughtPill('council-pill');
-  ['council-synthesis','cs-rei','cs-ladder','cs-kingdom','cs-blind','council-actions']
+  ['council-synthesis','cs-rei','cs-ladder','cs-kingdom','cs-blind','cs-fp','cs-inversion','council-actions']
     .forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
   document.getElementById('full-council-btn').disabled = true;
   startLoading('council');
@@ -2076,18 +2128,39 @@ async function runFullCouncil() {
     lastResults.blind = blind;
     showCouncilSection('cs-blind', renderBlindBody(blind));
 
-    const synth = await callAPI('/api/synthesis', { rei, ladder, kingdom, blind_spot: blind });
+    const fp = await callAPI('/api/lens', { lens_id: 'first_principles', thought: input });
+    lastResults.fp = fp;
+    showCouncilSection('cs-fp', renderGenericLensBody(fp));
+
+    const inversion = await callAPI('/api/lens', { lens_id: 'inversion', thought: input });
+    lastResults.inversion = inversion;
+    showCouncilSection('cs-inversion', renderGenericLensBody(inversion));
+
+    const synth = await callAPI('/api/synthesis', { rei, ladder, kingdom, blind_spot: blind, fp, inversion });
     lastResults.synthesis = synth;
     document.getElementById('synth-text').textContent = synth.synthesis;
     document.getElementById('synth-q').textContent = '\u201c' + synth.synthesis_question + '\u201d';
     document.getElementById('council-synthesis').style.display = 'block';
     document.getElementById('council-actions').style.display = 'flex';
     saveSession();
-    showSavePrompt('council', input, { rei, ladder, kingdom, blind, synthesis: synth });
-    // Count this as a used session (only after full success)
+    showSavePrompt('council', input, { rei, ladder, kingdom, blind, fp, inversion, synthesis: synth });
     if (!isPaid()) incrementCouncilCount();
   } catch(e) { alert('Full Council error: ' + e.message); }
   finally { stopLoading('council'); document.getElementById('full-council-btn').disabled = false; }
+}
+
+// Render a generic lens result (panels + synthesis) as a council section body
+function renderGenericLensBody(d) {
+  if (!d) return '<p style="color:var(--muted);font-size:13px;">No result.</p>';
+  const panels = (d.panels || []).map(p => `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;">${p.emoji||''} ${esc(p.label||'')}</div>
+      <div style="font-size:13px;line-height:1.6;">${esc(p.text||'')}</div>
+    </div>`).join('');
+  const synthesis = d.synthesis ? `<div style="background:var(--surface2);border-radius:8px;padding:14px;margin-top:8px;font-size:13px;line-height:1.6;"><strong style="color:var(--ladder);">💡 Core insight:</strong> ${esc(d.synthesis)}</div>` : '';
+  const question  = d.question  ? `<div style="font-size:12px;color:var(--muted);margin-top:10px;">❓ ${esc(d.question)}</div>` : '';
+  const action    = d.action    ? `<div style="font-size:12px;color:var(--reason);margin-top:6px;">⚡ ${esc(d.action)}</div>` : '';
+  return panels + synthesis + question + action;
 }
 function showCouncilSection(id, html) {
   const el = document.getElementById(id); if (!el) return;
@@ -2150,6 +2223,137 @@ function renderBlindBody(d) {
     <div class="blind-card"><div class="blind-label">The Reframe</div><div class="blind-text">${esc(d.reframe)}</div></div>
   </div>
   <div class="blind-q">\u201c${esc(d.blind_spot_question)}\u201d</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── PRO COUNCIL ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+
+// All 10 extended lenses available in Pro Council
+const PRO_LENS_OPTIONS = [
+  'first_principles','inversion','stoic','future_self','feynman',
+  'historical','energy','stakeholder','systems','probabilistic','character'
+];
+
+let _proSelectedLenses = new Set(PRO_LENS_OPTIONS); // all on by default
+
+function openProCouncil() {
+  if (!isPaid()) { openPaywall('pro-council'); return; }
+  switchTool('procouncil');
+  renderThoughtPill('procouncil-pill');
+  renderProLensSelector();
+}
+
+function renderProLensSelector() {
+  const container = document.getElementById('pro-lens-selector');
+  if (!container) return;
+  container.innerHTML = '';
+  PRO_LENS_OPTIONS.forEach(id => {
+    const cfg = getLensById(id);
+    if (!cfg) return;
+    const on = _proSelectedLenses.has(id);
+    const chip = document.createElement('button');
+    chip.style.cssText = `display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;border:2px solid ${on ? cfg.color : 'var(--border)'};background:${on ? cfg.color + '22' : 'var(--surface2)'};color:${on ? cfg.color : 'var(--muted)'};`;
+    chip.innerHTML = `${cfg.icon} ${cfg.name}`;
+    chip.onclick = () => {
+      if (_proSelectedLenses.has(id)) _proSelectedLenses.delete(id);
+      else _proSelectedLenses.add(id);
+      renderProLensSelector();
+    };
+    container.appendChild(chip);
+  });
+  const count = document.getElementById('pro-selected-count');
+  if (count) count.textContent = `${_proSelectedLenses.size} lens${_proSelectedLenses.size !== 1 ? 'es' : ''} selected`;
+}
+
+function selectAllProLenses() {
+  PRO_LENS_OPTIONS.forEach(id => _proSelectedLenses.add(id));
+  renderProLensSelector();
+}
+function clearAllProLenses() {
+  _proSelectedLenses.clear();
+  renderProLensSelector();
+}
+
+async function runProCouncil() {
+  if (!isPaid()) { openPaywall('pro-council'); return; }
+  const thought = getThought();
+  if (!thought) { document.getElementById('global-thought').focus(); return; }
+  if (_proSelectedLenses.size === 0) { alert('Select at least one lens to run.'); return; }
+
+  const selected = PRO_LENS_OPTIONS.filter(id => _proSelectedLenses.has(id));
+
+  // Reset UI
+  document.getElementById('pro-results').innerHTML = '';
+  document.getElementById('pro-synthesis').style.display = 'none';
+  document.getElementById('pro-council-btn').disabled = true;
+  renderThoughtPill('procouncil-pill');
+
+  // Progress tracking
+  let done = 0;
+  const total = selected.length + 1; // +1 for synthesis
+  const updateBtn = () => {
+    const pct = Math.round((done / total) * 100);
+    document.getElementById('pro-council-btn').textContent = `Running... ${pct}%`;
+  };
+  updateBtn();
+
+  const allResults = [];
+
+  for (const lensId of selected) {
+    const cfg = getLensById(lensId);
+    if (!cfg) continue;
+    // Show skeleton
+    const skeleton = document.createElement('div');
+    skeleton.id = 'pro-cs-' + lensId;
+    skeleton.className = 'council-section collapsed';
+    skeleton.style.opacity = '0.5';
+    skeleton.innerHTML = `
+      <div class="council-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <span class="council-section-title" style="color:${cfg.color}">${cfg.icon} ${cfg.name}</span>
+        <span class="council-section-toggle"></span>
+      </div>
+      <div class="council-section-body" id="pro-cs-${lensId}-body">
+        <div style="color:var(--muted);font-size:13px;padding:8px 0;">Running…</div>
+      </div>`;
+    document.getElementById('pro-results').appendChild(skeleton);
+
+    try {
+      const result = await callAPI('/api/lens', { lens_id: lensId, thought });
+      document.getElementById('pro-cs-' + lensId + '-body').innerHTML = renderGenericLensBody(result);
+      skeleton.style.opacity = '1';
+      allResults.push({
+        lens_name: cfg.name,
+        lens_id: lensId,
+        synthesis: result.synthesis || '',
+        question:  result.question  || '',
+        action:    result.action    || '',
+        panels:    result.panels    || []
+      });
+    } catch(e) {
+      document.getElementById('pro-cs-' + lensId + '-body').innerHTML = `<div style="color:#f87171;font-size:13px;">${lensId} failed: ${e.message}</div>`;
+      skeleton.style.opacity = '0.6';
+    }
+    done++;
+    updateBtn();
+  }
+
+  // Mega synthesis
+  if (allResults.length > 0) {
+    try {
+      const synth = await callAPI('/api/pro-synthesis', { thought, results: allResults });
+      document.getElementById('pro-key-insight').textContent  = synth.key_insight || '';
+      document.getElementById('pro-synth-text').textContent   = synth.synthesis   || '';
+      document.getElementById('pro-synth-q').textContent      = synth.synthesis_question ? '\u201c' + synth.synthesis_question + '\u201d' : '';
+      document.getElementById('pro-synth-action').textContent = synth.action      || '';
+      const synthEl = document.getElementById('pro-synthesis');
+      synthEl.style.display = 'block';
+      synthEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch(e) { console.warn('Pro synthesis failed:', e); }
+  }
+  done++;
+  document.getElementById('pro-council-btn').disabled = false;
+  document.getElementById('pro-council-btn').textContent = '🔮 Run Pro Council';
 }
 
 // ── Copy ──────────────────────────────────────────────────────
@@ -2733,6 +2937,7 @@ const LENS_CONFIG = [
   { id:'stakeholder',   name:'Stakeholder Map',     icon:'♟️', color:'var(--stakeholder)',  desc:'Who wins/loses in each scenario?',                     core:false, btn:'Map the Players' },
   { id:'systems',       name:'Systems Thinking',    icon:'🌐', color:'var(--systems)',      desc:'Feedback loops, leverage points, unintended consequences.',core:false, btn:'Map the System' },
   { id:'probabilistic', name:'Probabilistic',       icon:'🎲', color:'var(--probabilistic)',desc:'Assign probabilities. Calculate expected value.',       core:false, btn:'Run the Numbers' },
+  { id:'character',     name:'Character Analysis',  icon:'🎭', color:'var(--futureself)',   desc:'Jung archetypes + Big Five. Who are you, really?',     core:false, btn:'Analyse My Character' },
 ];
 
 let _activeLens = null; // current extended lens being used
