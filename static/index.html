@@ -783,6 +783,13 @@ body {
   border-radius:99px; padding:2px 8px; color:var(--muted); margin-right:4px; margin-top:4px;
 }
 
+/* ── Home back button ── */
+.home-back-bar { display:none; align-items:center; gap:8px; padding:10px 0 4px; margin-bottom:4px; }
+.home-back-btn { background:none; border:none; cursor:pointer; font-size:12px; font-weight:600; color:var(--muted); padding:5px 10px 5px 6px; border-radius:6px; display:flex; align-items:center; gap:6px; transition:color .15s,background .15s; }
+.home-back-btn:hover { color:var(--text); background:var(--surface2); }
+/* Show back bar on all tool views except home */
+.tool-view.active:not(#view-home) .home-back-bar { display:flex; }
+
 /* ── Help & Feedback ── */
 .help-section { margin-bottom: 28px; }
 .help-section-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -912,6 +919,7 @@ body {
   <button class="btn-full-council" id="full-council-btn" onclick="runFullCouncil()">⚡ Full Council</button>
 
   <div class="sb-divider"></div>
+  <button class="tool-btn" data-tool="home" onclick="switchTool('home')" style="font-weight:700;color:var(--text);margin-bottom:4px;">🏠 Home</button>
   <div class="sb-label">Core Lenses</div>
   <nav class="tool-nav">
     <button class="tool-btn" data-tool="rei"      onclick="switchTool('rei')">🧠 REI Council</button>
@@ -2217,7 +2225,16 @@ function switchTool(tool) {
   });
   document.querySelectorAll('.tool-view').forEach(v => v.classList.remove('active'));
   const view = document.getElementById('view-' + tool);
-  if (view) view.classList.add('active');
+  if (view) {
+    view.classList.add('active');
+    // Inject home back bar if not present and not home view
+    if (tool !== 'home' && !view.querySelector('.home-back-bar')) {
+      const bar = document.createElement('div');
+      bar.className = 'home-back-bar';
+      bar.innerHTML = '<button class="home-back-btn" onclick="switchTool(\'home\')">← Home</button>';
+      view.insertBefore(bar, view.firstChild);
+    }
+  }
   const pillMap = { rei:'rei-pill', ladder:'ladder-pill', kingdom:'kingdom-pill', blind:'blind-pill', council:'council-pill' };
   if (pillMap[tool]) renderThoughtPill(pillMap[tool]);
   // Load content when tabs are activated
@@ -2825,32 +2842,48 @@ function exportMarkdown() {
 }
 
 // ── Templates ─────────────────────────────────────────────────
+// lens: which tool/lens to activate so it's ready when user types
 const TEMPLATES = {
-  'big-decision':      { placeholder: "I'm trying to decide whether to..." },
-  'conflict':          { placeholder: "I'm in conflict with someone about..." },
-  'creative-block':    { placeholder: "I'm stuck on..." },
-  'discernment':       { placeholder: "I'm seeking guidance on..." },
-  'pressure-test':     { placeholder: "I'm considering the idea that..." },
-  'hard-conversation': { placeholder: "I need to have a conversation about..." }
+  'big-decision':      { placeholder: "I'm trying to decide whether to...",       lens: 'council' },
+  'conflict':          { placeholder: "I'm in conflict with someone about...",     lens: 'rei' },
+  'creative-block':    { placeholder: "I'm stuck on...",                           lens: 'ladder' },
+  'discernment':       { placeholder: "I'm seeking guidance on...",               lens: 'kingdom' },
+  'pressure-test':     { placeholder: "I'm considering the idea that...",         lens: 'inversion' },
+  'hard-conversation': { placeholder: "I need to have a conversation about...",   lens: 'socratic' }
 };
 function openTemplates() {
   document.getElementById('templates-modal').classList.add('visible');
 }
 function selectTemplate(id) {
   closeAllModals();
-  // Check extended templates (lens-specific)
+  const ta = document.getElementById('global-thought');
+
+  // TEMPLATE_EXTRA: lens-specific with pre-written starter thought
   if (typeof TEMPLATE_EXTRA !== 'undefined' && TEMPLATE_EXTRA[id]) {
     const extra = TEMPLATE_EXTRA[id];
-    document.getElementById('global-thought').value = extra.thought;
+    ta.value = extra.thought;
     if (typeof onThoughtInput === 'function') onThoughtInput();
+    // Select all text so user can immediately replace or keep it
+    setTimeout(() => { ta.focus(); ta.select(); }, 80);
     if (typeof activateLens === 'function') activateLens(extra.lens);
     return;
   }
-  const tmpl = TEMPLATES[id]; if (!tmpl) return;
-  const ta = document.getElementById('global-thought');
-  if (!ta.value.trim()) ta.placeholder = tmpl.placeholder;
-  ta.focus();
-  if (ta.value.trim()) runFullCouncil();
+
+  // Basic templates: set placeholder, switch to the right lens, focus input
+  const tmpl = TEMPLATES[id];
+  if (!tmpl) return;
+  // Clear any existing placeholder and set the template one
+  ta.placeholder = tmpl.placeholder;
+  // Don't overwrite thought they already typed — just switch the lens
+  // Navigate to the correct tool so it's primed and ready
+  if (tmpl.lens) {
+    if (['rei','ladder','kingdom','socratic','blind','council'].includes(tmpl.lens)) {
+      switchTool(tmpl.lens);
+    } else if (typeof activateLens === 'function') {
+      activateLens(tmpl.lens);
+    }
+  }
+  setTimeout(() => { ta.focus(); }, 80);
 }
 function openSessionsModal() {
   document.getElementById('sessions-modal').classList.add('visible');
@@ -3458,6 +3491,15 @@ function activateLens(lensId) {
   addToExtraLensNav(cfg);
 
   switchTool('lens');
+
+  // Ensure back bar is present in lens view
+  const lv = document.getElementById('view-lens');
+  if (lv && !lv.querySelector('.home-back-bar')) {
+    const bar = document.createElement('div');
+    bar.className = 'home-back-bar';
+    bar.innerHTML = '<button class="home-back-btn" onclick="switchTool(\'home\')">← Home</button>';
+    lv.insertBefore(bar, lv.firstChild);
+  }
 }
 
 function addToExtraLensNav(cfg) {
@@ -3646,8 +3688,15 @@ function openGuidedPaths() {
 
     btn.onclick = () => {
       closeAllModals();
-      if (path.template) { selectTemplate(path.template); return; }
+      if (path.template) {
+        // selectTemplate handles lens switching + focus
+        selectTemplate(path.template);
+        return;
+      }
+      // No template — activate the primary lens and focus input
       activateLens(path.lenses[0]);
+      const ta = document.getElementById('global-thought');
+      setTimeout(() => { ta.focus(); }, 80);
     };
     list.appendChild(btn);
   });
