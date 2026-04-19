@@ -535,6 +535,9 @@ def create_checkout():
             cancel_url=f"{APP_URL}/",
             allow_promotion_codes=True,
         )
+        # 7-day free trial on all subscriptions (not one-time lifetime)
+        if mode == 'subscription':
+            params['subscription_data'] = {'trial_period_days': 7}
         if email:
             params['customer_email'] = email
 

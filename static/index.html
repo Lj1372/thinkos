@@ -949,6 +949,7 @@ body {
   </div>
 
   <div id="usage-badge-wrap"></div>
+  <div id="trial-badge"></div>
 
   <!-- Insights panel — Pro + logged in only -->
   <div id="insights-panel" style="display:none;">
@@ -2695,13 +2696,76 @@ const TOOL_LABELS = {
   blind: 'Blind Spot', socratic: 'Socratic', council: 'Full Council'
 };
 
-function isPaid() {
-  // Owner bypass — visiting with ?owner=1 sets permanent free access
+// ── Trial system ──────────────────────────────────────────────
+const TRIAL_DAYS = 7;
+
+function getTrialStart() {
+  return localStorage.getItem('thinkos_trial_start');
+}
+function startTrial() {
+  if (!getTrialStart() && !isHardPaid()) {
+    localStorage.setItem('thinkos_trial_start', Date.now().toString());
+    renderUsageBadge();
+    renderTrialBadge();
+  }
+}
+function getTrialDaysLeft() {
+  const start = getTrialStart();
+  if (!start) return -1; // not started
+  const elapsed = (Date.now() - parseInt(start)) / (1000 * 60 * 60 * 24);
+  return Math.max(0, Math.ceil(TRIAL_DAYS - elapsed));
+}
+function isTrialActive() {
+  if (isHardPaid()) return false;
+  const start = getTrialStart();
+  if (!start) return false;
+  return getTrialDaysLeft() > 0;
+}
+function isHardPaid() {
+  // Owner bypass
   if (new URLSearchParams(window.location.search).get('owner') === 'jl2026') {
     localStorage.setItem('thinkos_paid', 'true');
     localStorage.setItem('thinkos_paid_plan', 'owner');
   }
   return localStorage.getItem('thinkos_paid') === 'true';
+}
+function isPaid() {
+  return isHardPaid() || isTrialActive();
+}
+
+function renderTrialBadge() {
+  const el = document.getElementById('trial-badge');
+  if (!el) return;
+  if (isHardPaid()) { el.style.display = 'none'; return; }
+  const start = getTrialStart();
+  if (!start) {
+    el.style.display = 'block';
+    el.innerHTML = `<div style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(52,211,153,.1));border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:10px 12px;margin-top:6px;">
+      <div style="font-size:12px;font-weight:700;color:var(--ladder);margin-bottom:3px;">🎁 7-Day Free Trial</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.4;">All Pro features unlocked. No card required.</div>
+      <button onclick="startTrial()" style="margin-top:8px;width:100%;background:var(--ladder);color:#000;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;">Start Free Trial</button>
+    </div>`;
+    return;
+  }
+  const daysLeft = getTrialDaysLeft();
+  if (daysLeft <= 0) {
+    el.style.display = 'block';
+    el.innerHTML = `<div style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:8px;padding:10px 12px;margin-top:6px;">
+      <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:3px;">⏰ Trial Expired</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Upgrade to keep full access.</div>
+      <button onclick="openPaywall('trial-expired')" style="width:100%;background:#f87171;color:#000;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:700;cursor:pointer;">Upgrade to Pro →</button>
+    </div>`;
+    return;
+  }
+  const urgency = daysLeft <= 2 ? '#f59e0b' : 'var(--reason)';
+  el.style.display = 'block';
+  el.innerHTML = `<div style="background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.2);border-radius:8px;padding:9px 12px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-size:11px;font-weight:700;color:${urgency};">🎁 Trial active</div>
+      <div style="font-size:10px;color:var(--muted);">${daysLeft} day${daysLeft!==1?'s':''} left</div>
+    </div>
+    <button onclick="openPaywall('trial-running')" style="background:var(--ladder);color:#000;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">Upgrade</button>
+  </div>`;
 }
 function getToolCount(tool) {
   return parseInt(localStorage.getItem('thinkos_count_' + tool) || '0', 10);
@@ -2728,8 +2792,14 @@ function canRunCouncil() { return canUseTool('council'); }
 function renderUsageBadge() {
   const wrap = document.getElementById('usage-badge-wrap');
   if (!wrap) return;
-  if (isPaid()) {
+  if (isHardPaid()) {
     wrap.innerHTML = `<div class="usage-pro-badge">⚡ Pro — unlimited</div>`;
+    return;
+  }
+  if (isTrialActive()) {
+    const d = getTrialDaysLeft();
+    const col = d <= 2 ? '#f59e0b' : 'var(--reason)';
+    wrap.innerHTML = `<div class="usage-pro-badge" style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);color:${col};">🎁 Trial — ${d} day${d!==1?'s':''} left</div>`;
     return;
   }
   // find the most constrained tool to surface
@@ -2778,21 +2848,33 @@ function showLastUseWarning(tool) {
 }
 
 function openPaywall(source) {
-  const tool = (typeof source === 'string' && FREE_USES[source]) ? source : null;
+  const tool    = (typeof source === 'string' && FREE_USES[source]) ? source : null;
+  const expired = source === 'trial-expired';
   const titleEl = document.getElementById('paywall-title');
   const subEl   = document.getElementById('paywall-sub');
   const lineEl  = document.getElementById('paywall-free-line');
-  if (tool) {
+  const trialNotStarted = !getTrialStart() && !isHardPaid();
+
+  if (trialNotStarted) {
+    // Primary offer: start the free trial (no card)
+    if (titleEl) titleEl.textContent = '🎁 Try Pro Free for 7 Days';
+    if (subEl)   subEl.textContent   = 'Full access to every lens, Pro Council, Decision Planner and more. No card required — just start thinking.';
+    if (lineEl)  lineEl.innerHTML    = '<button onclick="startTrial();closeAllModals();" style="width:100%;background:var(--reason);color:#000;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:8px;">Start 7-Day Free Trial — No Card Needed</button><div style="text-align:center;font-size:11px;color:var(--muted);margin-bottom:4px;">— or subscribe now and skip the trial —</div>';
+  } else if (expired) {
+    if (titleEl) titleEl.textContent = '⏰ Your Trial Has Ended';
+    if (subEl)   subEl.textContent   = 'You\'ve experienced everything ThinkOS Pro has to offer. Keep it forever.';
+    if (lineEl)  lineEl.textContent  = '';
+  } else if (tool) {
     const label = TOOL_LABELS[tool];
     const used  = getToolCount(tool);
     const total = FREE_USES[tool];
     if (titleEl) titleEl.textContent = `You've used your free ${label} sessions`;
-    if (subEl)   subEl.textContent   = `You've seen what ${label} can do. Pro unlocks unlimited access to every tool.`;
+    if (subEl)   subEl.textContent   = `Upgrade to Pro for unlimited access to every tool and all 29 lenses.`;
     if (lineEl)  lineEl.textContent  = `${used} of ${total} free ${label} uses`;
   } else {
-    if (titleEl) titleEl.textContent = `Upgrade to Pro`;
-    if (subEl)   subEl.textContent   = `Unlimited access to every tool — think without limits.`;
-    if (lineEl)  lineEl.textContent  = ``;
+    if (titleEl) titleEl.textContent = 'Upgrade to Pro';
+    if (subEl)   subEl.textContent   = 'Unlimited everything — all 29 lenses, Pro Council, Decision Planner, and more.';
+    if (lineEl)  lineEl.textContent  = '';
   }
   document.getElementById('paywall-modal').classList.add('visible');
   document.getElementById('paywall-status').textContent = '';
@@ -2932,10 +3014,15 @@ restoreThought();
 switchTool('home');
 renderSessions();
 renderUsageBadge();
+renderTrialBadge();
 renderAuthUI();
 checkSuccessReturn();
 sbInit();
 checkDisclaimer();
+// Auto-start trial on first visit (silent — no prompt needed)
+if (!getTrialStart() && !isHardPaid()) {
+  setTimeout(() => { startTrial(); }, 500);
+}
 
 // ── Lead Capture ──────────────────────────────────────────────
 let _leadShownThisSession = false;
