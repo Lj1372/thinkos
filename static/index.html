@@ -783,6 +783,47 @@ body {
   border-radius:99px; padding:2px 8px; color:var(--muted); margin-right:4px; margin-top:4px;
 }
 
+/* ── Onboarding ── */
+.onboard-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(6px); z-index:9500; display:flex; align-items:center; justify-content:center; padding:16px; }
+.onboard-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; max-width:520px; width:100%; padding:32px 32px 24px; position:relative; animation:fadeUp .3s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.onboard-step { display:none; }
+.onboard-step.active { display:block; }
+.onboard-emoji { font-size:40px; margin-bottom:12px; }
+.onboard-title { font-size:22px; font-weight:800; color:var(--text); margin-bottom:8px; line-height:1.3; }
+.onboard-body { font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:20px; }
+.onboard-how { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; }
+.onboard-how-step { display:flex; align-items:flex-start; gap:12px; }
+.onboard-step-num { font-size:11px; font-weight:800; color:#000; background:var(--ladder); border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+.onboard-step-text strong { color:var(--text); font-size:13px; display:block; margin-bottom:2px; }
+.onboard-step-text span { font-size:12px; color:var(--muted); }
+.onboard-examples { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+.onboard-example { background:var(--surface2); border:1px solid var(--border); border-radius:99px; padding:6px 12px; font-size:12px; color:var(--muted); }
+.onboard-lens-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+.onboard-lens-card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; cursor:pointer; transition:border-color .15s; }
+.onboard-lens-card:hover { border-color:var(--ladder); }
+.onboard-lens-icon { font-size:20px; margin-bottom:4px; }
+.onboard-lens-name { font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px; }
+.onboard-lens-blurb { font-size:11px; color:var(--muted); line-height:1.5; }
+.onboard-nav { display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+.onboard-dots { display:flex; gap:6px; }
+.onboard-dot { width:6px; height:6px; border-radius:50%; background:var(--border); transition:background .2s; }
+.onboard-dot.active { background:var(--ladder); width:18px; border-radius:3px; }
+.onboard-btn-next { background:var(--ladder); color:#000; border:none; border-radius:99px; padding:10px 24px; font-size:13px; font-weight:700; cursor:pointer; transition:opacity .15s; }
+.onboard-btn-next:hover { opacity:.85; }
+.onboard-btn-skip { background:none; border:none; font-size:12px; color:var(--muted); cursor:pointer; padding:4px 8px; }
+.onboard-btn-skip:hover { color:var(--text); }
+/* Improved home — how it works */
+.home-how { margin:28px 0 24px; }
+.home-how-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:14px; text-align:center; }
+.home-how-steps { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.home-how-card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px 14px; text-align:center; }
+.home-how-num { font-size:10px; font-weight:800; color:var(--ladder); text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px; }
+.home-how-icon { font-size:24px; margin-bottom:6px; }
+.home-how-card-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.home-how-card-desc { font-size:11px; color:var(--muted); line-height:1.6; }
+@media(max-width:640px){ .home-how-steps { grid-template-columns:1fr; gap:8px; } .onboard-box { padding:24px 18px 18px; } .onboard-lens-grid { grid-template-columns:1fr; } }
+
 /* ── Home back button ── */
 .home-back-bar { display:none; align-items:center; gap:8px; padding:10px 0 4px; margin-bottom:4px; }
 .home-back-btn { background:none; border:none; cursor:pointer; font-size:12px; font-weight:600; color:var(--muted); padding:5px 10px 5px 6px; border-radius:6px; display:flex; align-items:center; gap:6px; transition:color .15s,background .15s; }
@@ -1043,12 +1084,38 @@ body {
       <div class="home-hero">
         <div class="home-tagline">Think clearer.<br><span>Decide better.</span></div>
         <div class="home-sub">
-          ThinkOS is a structured thinking companion that helps you examine life's decisions, challenges, and situations through multiple lenses — so you can move forward with clarity and confidence.
+          A structured thinking companion for decisions, problems, and ideas — 29 thinking lenses from the world's best mental frameworks, in one place.
         </div>
-        <div class="home-intent">
-          Whether you're navigating a tough decision, processing an emotion, or trying to understand a situation more deeply — each tool below applies a different thinking framework to your thought. Drop a thought in the top bar and choose a lens to begin.
+
+        <!-- How it works -->
+        <div class="home-how">
+          <div class="home-how-title">How it works</div>
+          <div class="home-how-steps">
+            <div class="home-how-card">
+              <div class="home-how-num">Step 1</div>
+              <div class="home-how-icon">✍️</div>
+              <div class="home-how-card-title">Type your thought</div>
+              <div class="home-how-card-desc">Any decision, problem, feeling, or idea — in plain language. No format needed.</div>
+            </div>
+            <div class="home-how-card">
+              <div class="home-how-num">Step 2</div>
+              <div class="home-how-icon">🔭</div>
+              <div class="home-how-card-title">Pick a lens</div>
+              <div class="home-how-card-desc">Each lens applies a different thinking framework. Not sure? Tap "What are you dealing with?" below.</div>
+            </div>
+            <div class="home-how-card">
+              <div class="home-how-num">Step 3</div>
+              <div class="home-how-icon">💡</div>
+              <div class="home-how-card-title">Get structured insight</div>
+              <div class="home-how-card-desc">ThinkOS doesn't tell you what to think — it helps you see what your thinking is missing.</div>
+            </div>
+          </div>
         </div>
-        <button onclick="openGuidedPaths()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 22px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:24px;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">🗺 What are you dealing with? →</button>
+
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;">
+          <button onclick="openGuidedPaths()" style="background:var(--ladder);border:none;border-radius:10px;padding:10px 22px;color:#000;font-size:13px;font-weight:700;cursor:pointer;transition:opacity 0.15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🗺 What are you dealing with?</button>
+          <button onclick="showOnboarding()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 22px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">❓ How does this work?</button>
+        </div>
 
         <div class="home-tools">
           <div class="home-tool-card" style="--card-accent:var(--instinct)" onclick="switchTool('rei')">
@@ -1621,6 +1688,96 @@ body {
       </button>
     </div>
     <p id="delete-status" style="font-size:12px;color:#f87171;min-height:16px;margin-top:8px;"></p>
+  </div>
+</div>
+
+<!-- ── Onboarding Walkthrough ── -->
+<div class="onboard-overlay" id="onboard-modal" style="display:none;">
+  <div class="onboard-box">
+
+    <!-- Step 1: What is ThinkOS -->
+    <div class="onboard-step active" id="onboard-step-1">
+      <div class="onboard-emoji">🧠</div>
+      <div class="onboard-title">Welcome to ThinkOS</div>
+      <div class="onboard-body">ThinkOS is a structured thinking companion. You bring a decision, problem, conflict, or idea — and it runs your thought through <strong style="color:var(--text);">proven mental frameworks</strong> to surface what your own thinking might be missing.</div>
+      <div class="onboard-how">
+        <div class="onboard-how-step">
+          <div class="onboard-step-num">1</div>
+          <div class="onboard-step-text"><strong>Type your thought</strong><span>Any decision, situation, feeling, or idea — in your own words. No format needed.</span></div>
+        </div>
+        <div class="onboard-how-step">
+          <div class="onboard-step-num">2</div>
+          <div class="onboard-step-text"><strong>Pick a thinking lens</strong><span>Each lens applies a different framework — REI, First Principles, Stoic, Inversion, and 24+ more.</span></div>
+        </div>
+        <div class="onboard-how-step">
+          <div class="onboard-step-num">3</div>
+          <div class="onboard-step-text"><strong>Get structured insight</strong><span>ThinkOS doesn't tell you what to think — it helps you think more clearly so you find the answer yourself.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: What to bring to it -->
+    <div class="onboard-step" id="onboard-step-2">
+      <div class="onboard-emoji">💭</div>
+      <div class="onboard-title">What can you bring to it?</div>
+      <div class="onboard-body">Anything on your mind. Here are things people run through ThinkOS:</div>
+      <div class="onboard-examples">
+        <span class="onboard-example">Should I quit my job?</span>
+        <span class="onboard-example">I'm in conflict with someone I care about</span>
+        <span class="onboard-example">Am I making this decision for the right reasons?</span>
+        <span class="onboard-example">I feel stuck and don't know why</span>
+        <span class="onboard-example">Should I start this business?</span>
+        <span class="onboard-example">I want to pressure-test an idea before committing</span>
+        <span class="onboard-example">What is this situation asking of me?</span>
+        <span class="onboard-example">I'm burning out</span>
+      </div>
+      <div class="onboard-body" style="margin-bottom:0;">Not just big decisions — small ones too. Feelings you can't articulate. Beliefs you've never questioned. Situations where you feel off but can't name why.</div>
+    </div>
+
+    <!-- Step 3: Meet the lenses -->
+    <div class="onboard-step" id="onboard-step-3">
+      <div class="onboard-emoji">🔭</div>
+      <div class="onboard-title">Choose how to think about it</div>
+      <div class="onboard-body">Tap a lens below to start — or just use "What are you dealing with?" on the home screen and we'll suggest the best one for your situation.</div>
+      <div class="onboard-lens-grid">
+        <div class="onboard-lens-card" onclick="finishOnboarding('rei')">
+          <div class="onboard-lens-icon">🧠</div>
+          <div class="onboard-lens-name">REI Council</div>
+          <div class="onboard-lens-blurb">Hear from your Instinct, Emotion, and Reason — then find where they agree. Best starting point.</div>
+        </div>
+        <div class="onboard-lens-card" onclick="finishOnboarding('council')">
+          <div class="onboard-lens-icon">⚡</div>
+          <div class="onboard-lens-name">Full Council</div>
+          <div class="onboard-lens-blurb">Run 6 lenses at once for a 360° breakdown. Best for big decisions.</div>
+        </div>
+        <div class="onboard-lens-card" onclick="finishOnboarding('first_principles')">
+          <div class="onboard-lens-icon">🔩</div>
+          <div class="onboard-lens-name">First Principles</div>
+          <div class="onboard-lens-blurb">Strip back every assumption and rebuild from the ground up.</div>
+        </div>
+        <div class="onboard-lens-card" onclick="finishOnboarding('socratic')">
+          <div class="onboard-lens-icon">❓</div>
+          <div class="onboard-lens-name">Socratic</div>
+          <div class="onboard-lens-blurb">A dialogue that only asks questions — challenges what you actually believe.</div>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <button onclick="finishOnboarding('home')" style="background:none;border:1px solid var(--border);border-radius:99px;padding:9px 20px;font-size:12px;color:var(--muted);cursor:pointer;">Browse all lenses on home screen →</button>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="onboard-nav">
+      <div class="onboard-dots">
+        <div class="onboard-dot active" id="odot-1"></div>
+        <div class="onboard-dot" id="odot-2"></div>
+        <div class="onboard-dot" id="odot-3"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="onboard-btn-skip" onclick="finishOnboarding('home')">Skip</button>
+        <button class="onboard-btn-next" id="onboard-next-btn" onclick="onboardNext()">Next →</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3258,14 +3415,66 @@ function toggleInsightsPanel() {
 function checkDisclaimer() {
   if (!localStorage.getItem('thinkos_disclaimer_accepted')) {
     document.getElementById('disclaimer-modal').classList.add('visible');
+  } else if (!localStorage.getItem('thinkos_onboarded')) {
+    // Returning user who accepted disclaimer but never saw onboarding
+    setTimeout(showOnboarding, 400);
   }
 }
 function acceptDisclaimer() {
   localStorage.setItem('thinkos_disclaimer_accepted', '1');
   document.getElementById('disclaimer-modal').classList.remove('visible');
+  // Show onboarding right after disclaimer on first visit
+  if (!localStorage.getItem('thinkos_onboarded')) {
+    setTimeout(showOnboarding, 300);
+  }
 }
 function showDisclaimer() {
   document.getElementById('disclaimer-modal').classList.add('visible');
+}
+
+// ── Onboarding ────────────────────────────────────────────────
+let _onboardStep = 1;
+const ONBOARD_STEPS = 3;
+
+function showOnboarding() {
+  _onboardStep = 1;
+  renderOnboardStep();
+  document.getElementById('onboard-modal').style.display = 'flex';
+}
+
+function renderOnboardStep() {
+  for (let i = 1; i <= ONBOARD_STEPS; i++) {
+    const el = document.getElementById('onboard-step-' + i);
+    if (el) el.classList.toggle('active', i === _onboardStep);
+    const dot = document.getElementById('odot-' + i);
+    if (dot) dot.classList.toggle('active', i === _onboardStep);
+  }
+  const btn = document.getElementById('onboard-next-btn');
+  if (btn) btn.textContent = _onboardStep === ONBOARD_STEPS ? 'Get started →' : 'Next →';
+}
+
+function onboardNext() {
+  if (_onboardStep < ONBOARD_STEPS) {
+    _onboardStep++;
+    renderOnboardStep();
+  } else {
+    finishOnboarding('home');
+  }
+}
+
+function finishOnboarding(destination) {
+  localStorage.setItem('thinkos_onboarded', '1');
+  document.getElementById('onboard-modal').style.display = 'none';
+  if (destination && destination !== 'home') {
+    // Navigate to the chosen lens
+    if (['rei','ladder','kingdom','socratic','blind','council'].includes(destination)) {
+      switchTool(destination);
+    } else {
+      activateLens(destination);
+    }
+    // Focus the thought input
+    setTimeout(() => document.getElementById('global-thought').focus(), 150);
+  }
 }
 
 // Check if returning from Stripe success page
