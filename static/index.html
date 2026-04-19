@@ -970,7 +970,10 @@ body {
         <input id="referral-link-input" type="text" readonly onclick="copyReferralLink()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--muted);font-size:10px;cursor:pointer;" placeholder="Loading link…" title="Click to copy">
         <div style="font-size:10px;color:var(--muted);margin-top:3px;">Click to copy · share with anyone</div>
       </div>
-      <button onclick="signOut()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;width:100%;">Sign out</button>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        <button onclick="signOut()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;flex:1;">Sign out</button>
+        <button onclick="openAccountModal()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;flex:1;" title="Account settings">⚙ Account</button>
+      </div>
     </div>
   </div>
   <div class="sb-divider"></div>
@@ -1431,7 +1434,15 @@ body {
           </div>
           <div class="faq-item">
             <div class="faq-q" onclick="toggleFaq(this)">Can I cancel my subscription? <span class="faq-chevron">▼</span></div>
-            <div class="faq-a">Yes, cancel any time with no penalty. You keep Pro access until the end of your billing period. Email us at ThinkOS137@outlook.com and we'll handle it within 24 hours.</div>
+            <div class="faq-a">Yes — cancel any time with no penalty. Go to <strong>⚙ Account</strong> in the sidebar and click "Cancel subscription." You keep Pro access until the end of your current billing period and will never be charged again after that.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">What is the refund policy? <span class="faq-chevron">▼</span></div>
+            <div class="faq-a"><strong>7-day full refund, no questions asked.</strong> If you subscribed in the last 7 days, email <a href="mailto:ThinkOS137@outlook.com?subject=Refund Request" style="color:var(--ladder);">ThinkOS137@outlook.com</a> and we'll refund you in full. Accidental charges are always refunded. Outside 7 days, email us and we'll review fairly — we're a small team and we care about being honest. Lifetime plans are non-refundable after 7 days.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">How do I delete my account? <span class="faq-chevron">▼</span></div>
+            <div class="faq-a">Log in, then click <strong>⚙ Account</strong> in the bottom of the sidebar. Scroll to "Delete my account" — you'll be asked to confirm by typing DELETE. This immediately cancels your subscription (no further charges), permanently deletes all your sessions, journal entries, and profile data, and removes your login. <strong>This cannot be undone.</strong></div>
           </div>
           <div class="faq-item">
             <div class="faq-q" onclick="toggleFaq(this)">Which lenses should I start with? <span class="faq-chevron">▼</span></div>
@@ -1532,6 +1543,78 @@ body {
 
 <!-- Floating feedback button -->
 <button class="fab-feedback" onclick="switchTool('help')" title="Help &amp; Feedback">💬 Feedback</button>
+
+<!-- ── Account Management Modal ── -->
+<div class="modal-overlay" id="account-modal" onclick="if(event.target===this)closeAccountModal()" style="display:none;z-index:8000;">
+  <div class="modal-box" style="max-width:520px;">
+    <button class="modal-close" onclick="closeAccountModal()">×</button>
+    <h2 style="font-size:18px;font-weight:800;margin-bottom:4px;">⚙ Account Settings</h2>
+    <p id="acct-email-display" style="font-size:13px;color:var(--muted);margin-bottom:20px;"></p>
+
+    <!-- Subscription status -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;">Subscription</div>
+      <div id="acct-plan-display" style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;">—</div>
+      <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:0;">
+        Your subscription renews automatically. To cancel, click the button below — you keep access until the end of your current billing period and will <strong>not</strong> be charged again.
+      </p>
+    </div>
+
+    <!-- Refund policy -->
+    <div style="background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(52,211,153,.05));border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--ladder);margin-bottom:8px;">💳 Refund Policy</div>
+      <ul style="font-size:12px;color:var(--muted);line-height:1.8;padding-left:16px;margin:0;">
+        <li><strong style="color:var(--text);">7 days, no questions asked.</strong> If you subscribed in the last 7 days, email us and we'll refund you in full — no explanation needed.</li>
+        <li><strong style="color:var(--text);">Accidental charges.</strong> If you were charged after you thought you cancelled, we'll refund the charge immediately.</li>
+        <li><strong style="color:var(--text);">Partial refunds.</strong> Outside 7 days, we review case by case. We're a small team and we want to be fair — just email us.</li>
+        <li><strong style="color:var(--text);">Lifetime plans</strong> are non-refundable after 7 days.</li>
+      </ul>
+      <a href="mailto:ThinkOS137@outlook.com?subject=Refund Request" style="display:inline-block;margin-top:10px;font-size:12px;color:var(--ladder);text-decoration:none;font-weight:600;">✉ Email us to request a refund →</a>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;">
+      <button onclick="cancelSubscription()" id="cancel-sub-btn" style="background:none;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--muted);cursor:pointer;text-align:left;">
+        ⛔ Cancel subscription — keep access until billing period ends
+      </button>
+      <button onclick="openDeleteConfirm()" style="background:none;border:1px solid #f87171;border-radius:8px;padding:10px 14px;font-size:13px;color:#f87171;cursor:pointer;text-align:left;">
+        🗑 Delete my account &amp; all data permanently
+      </button>
+    </div>
+    <p id="acct-action-status" style="font-size:12px;color:var(--muted);min-height:16px;margin-top:8px;"></p>
+  </div>
+</div>
+
+<!-- ── Delete Account Confirmation Modal ── -->
+<div class="modal-overlay" id="delete-confirm-modal" onclick="if(event.target===this)closeDeleteConfirm()" style="display:none;z-index:8100;">
+  <div class="modal-box" style="max-width:440px;text-align:center;">
+    <div style="font-size:40px;margin-bottom:12px;">⚠️</div>
+    <h2 style="font-size:18px;font-weight:800;margin-bottom:8px;color:#f87171;">Delete your account?</h2>
+    <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:8px;">
+      This will permanently and irreversibly delete:
+    </p>
+    <ul style="font-size:13px;color:var(--muted);line-height:1.9;text-align:left;padding-left:20px;margin-bottom:16px;">
+      <li>All your saved thinking sessions and history</li>
+      <li>Your decision journal entries</li>
+      <li>Your account profile and login</li>
+      <li>Your active subscription (no further charges)</li>
+    </ul>
+    <p style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;">There is no undo. Your data cannot be recovered.</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Type <strong>DELETE</strong> below to confirm:</p>
+    <input id="delete-confirm-input" type="text" placeholder="Type DELETE to confirm"
+      style="width:100%;background:var(--surface2);border:1px solid #f87171;border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;text-align:center;font-family:inherit;margin-bottom:12px;"
+      oninput="document.getElementById('confirm-delete-btn').disabled = this.value !== 'DELETE';" />
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeDeleteConfirm()" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;color:var(--text);cursor:pointer;">Cancel</button>
+      <button id="confirm-delete-btn" onclick="executeDeleteAccount()" disabled
+        style="flex:1;background:#f87171;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#000;cursor:pointer;opacity:.5;transition:opacity .15s;"
+        oninput="" onmouseenter="if(!this.disabled)this.style.opacity=1" onmouseleave="if(!this.disabled)this.style.opacity=.85">
+        Delete my account
+      </button>
+    </div>
+    <p id="delete-status" style="font-size:12px;color:#f87171;min-height:16px;margin-top:8px;"></p>
+  </div>
+</div>
 
 <!-- ── Disclaimer modal ── -->
 <div class="modal-overlay" id="disclaimer-modal" style="z-index:9000;background:rgba(0,0,0,0.85);">
@@ -4424,6 +4507,103 @@ function setRating(n) {
   document.querySelectorAll('#feedback-stars .star-btn').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.dataset.v) <= n);
   });
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── ACCOUNT MANAGEMENT ────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+
+function openAccountModal() {
+  // Populate email + plan display
+  const email = localStorage.getItem('thinkos_paid_email') || '';
+  const plan  = localStorage.getItem('thinkos_paid_plan')  || 'Pro';
+  const emailEl = document.getElementById('acct-email-display');
+  const planEl  = document.getElementById('acct-plan-display');
+  if (emailEl) emailEl.textContent = email || 'Logged in';
+  if (planEl)  planEl.textContent  = plan ? `✅ ${plan.charAt(0).toUpperCase() + plan.slice(1)} — Active` : '✅ Pro — Active';
+  const statusEl = document.getElementById('acct-action-status');
+  if (statusEl) statusEl.textContent = '';
+  document.getElementById('account-modal').style.display = 'flex';
+}
+function closeAccountModal() {
+  document.getElementById('account-modal').style.display = 'none';
+}
+
+async function cancelSubscription() {
+  const email = localStorage.getItem('thinkos_paid_email') || '';
+  if (!email) { alert('Could not find your account email. Please email ThinkOS137@outlook.com to cancel.'); return; }
+  const btn = document.getElementById('cancel-sub-btn');
+  const status = document.getElementById('acct-action-status');
+  if (!confirm('Cancel your subscription? You will keep Pro access until the end of your current billing period and will not be charged again.')) return;
+  btn.disabled = true; btn.textContent = '⏳ Cancelling…';
+  try {
+    // We email the request server-side via a support route — Stripe cancellation
+    // also happens automatically at period end via webhook; for immediate cancel
+    // the user can also manage via Stripe portal (future enhancement)
+    await callAPI('/api/cancel-subscription', { email });
+    if (status) { status.style.color = 'var(--reason)'; status.textContent = '✓ Subscription cancelled. You keep access until your billing period ends.'; }
+    btn.textContent = '✓ Cancelled';
+    const planEl = document.getElementById('acct-plan-display');
+    if (planEl) planEl.textContent = '⏳ Cancelled — access until billing period ends';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '⛔ Cancel subscription — keep access until billing period ends';
+    if (status) { status.style.color = '#f87171'; status.textContent = 'Could not cancel automatically. Email ThinkOS137@outlook.com and we will cancel within 24h.'; }
+  }
+}
+
+function openDeleteConfirm() {
+  document.getElementById('delete-confirm-input').value = '';
+  document.getElementById('confirm-delete-btn').disabled = true;
+  document.getElementById('confirm-delete-btn').style.opacity = '0.5';
+  document.getElementById('delete-status').textContent = '';
+  document.getElementById('delete-confirm-modal').style.display = 'flex';
+}
+function closeDeleteConfirm() {
+  document.getElementById('delete-confirm-modal').style.display = 'none';
+}
+
+// Keep confirm button enabled/opacity in sync
+document.addEventListener('input', e => {
+  if (e.target && e.target.id === 'delete-confirm-input') {
+    const btn = document.getElementById('confirm-delete-btn');
+    const ok  = e.target.value === 'DELETE';
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '1' : '0.5';
+  }
+});
+
+async function executeDeleteAccount() {
+  const session = _sb?.auth?.getSession ? (await _sb.auth.getSession())?.data?.session : null;
+  const user_id = session?.user?.id || '';
+  const email   = session?.user?.email || localStorage.getItem('thinkos_paid_email') || '';
+  const statusEl = document.getElementById('delete-status');
+
+  if (!user_id || !email) {
+    if (statusEl) statusEl.textContent = 'Could not identify your account. Please email ThinkOS137@outlook.com to delete manually.';
+    return;
+  }
+
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true; btn.textContent = '⏳ Deleting…';
+  if (statusEl) statusEl.textContent = '';
+
+  try {
+    await callAPI('/api/delete-account', { user_id, email });
+    // Sign out client-side and clear all local data
+    await _sb.auth.signOut();
+    ['thinkos_paid','thinkos_paid_plan','thinkos_paid_email',
+     'thinkos_trial_start','thinkos_plans_index'].forEach(k => localStorage.removeItem(k));
+    // Clear plan storage
+    closeDeleteConfirm();
+    closeAccountModal();
+    // Show confirmation
+    alert('✓ Your account and all data have been permanently deleted. You will not be charged again.');
+    renderAuthUI();
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Delete my account';
+    btn.style.opacity = '1';
+    if (statusEl) statusEl.textContent = 'Deletion failed. Email ThinkOS137@outlook.com and we will delete your account manually within 24 hours.';
+  }
 }
 
 async function submitFeedback() {

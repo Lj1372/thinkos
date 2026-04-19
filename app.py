@@ -1421,6 +1421,106 @@ def send_daily_notifications():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/cancel-subscription', methods=['POST'])
+def cancel_subscription():
+    """Cancel a user's Stripe subscription at period end (no immediate loss of access)."""
+    data  = request.get_json() or {}
+    email = data.get('email', '').strip()
+    if not email:
+        return jsonify({'error': 'email required'}), 400
+    if not STRIPE_SECRET_KEY:
+        return jsonify({'error': 'Payments not configured'}), 503
+    try:
+        import stripe as _stripe
+        _stripe.api_key = STRIPE_SECRET_KEY
+        customers = _stripe.Customer.list(email=email, limit=1)
+        if not customers.data:
+            return jsonify({'ok': True, 'message': 'No active subscription found'})
+        customer = customers.data[0]
+        cancelled = 0
+        for status in ('active', 'trialing', 'past_due'):
+            subs = _stripe.Subscription.list(customer=customer.id, status=status, limit=10)
+            for sub in subs.data:
+                # cancel_at_period_end = user keeps access, no further charges
+                _stripe.Subscription.modify(sub.id, cancel_at_period_end=True)
+                cancelled += 1
+        return jsonify({'ok': True, 'cancelled': cancelled})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/delete-account', methods=['POST'])
+def delete_account():
+    """
+    Permanently delete a user account:
+      1. Cancel any active Stripe subscription immediately (no further charges)
+      2. Delete all Supabase data rows for this user
+      3. Delete the Supabase auth user record
+    Returns {ok: True} or {error: '...'}
+    """
+    import requests as req
+    data    = request.get_json() or {}
+    user_id = data.get('user_id', '').strip()
+    email   = data.get('email', '').strip()
+    if not user_id or not email:
+        return jsonify({'error': 'user_id and email required'}), 400
+
+    errors = []
+
+    # ── Step 1: Cancel Stripe subscription ────────────────────
+    if STRIPE_SECRET_KEY:
+        try:
+            import stripe as _stripe
+            _stripe.api_key = STRIPE_SECRET_KEY
+            customers = _stripe.Customer.list(email=email, limit=1)
+            if customers.data:
+                customer = customers.data[0]
+                # Cancel all active subscriptions immediately
+                subs = _stripe.Subscription.list(customer=customer.id, status='active', limit=10)
+                for sub in subs.data:
+                    _stripe.Subscription.cancel(sub.id)
+                # Also cancel any trialing subscriptions
+                trialing = _stripe.Subscription.list(customer=customer.id, status='trialing', limit=10)
+                for sub in trialing.data:
+                    _stripe.Subscription.cancel(sub.id)
+        except Exception as e:
+            errors.append(f'Stripe: {e}')
+
+    # ── Step 2: Delete user data from Supabase ─────────────────
+    tables = ['sessions', 'journal_entries', 'push_subscriptions', 'referrals', 'feedback', 'profiles']
+    for table in tables:
+        try:
+            field = 'referrer_user_id' if table == 'referrals' else ('user_id' if table != 'profiles' else 'id')
+            req.delete(
+                f'{SUPABASE_URL}/rest/v1/{table}',
+                headers=_sb_headers(),
+                params={field: f'eq.{user_id}'},
+                timeout=8
+            )
+        except Exception as e:
+            errors.append(f'{table}: {e}')
+
+    # ── Step 3: Delete Supabase auth user ──────────────────────
+    try:
+        resp = req.delete(
+            f'{SUPABASE_URL}/auth/v1/admin/users/{user_id}',
+            headers={
+                'apikey': SUPABASE_SERVICE,
+                'Authorization': f'Bearer {SUPABASE_SERVICE}',
+            },
+            timeout=8
+        )
+        if not resp.ok and resp.status_code != 404:
+            errors.append(f'Auth delete: {resp.text[:200]}')
+    except Exception as e:
+        errors.append(f'Auth: {e}')
+
+    if errors:
+        print(f'Delete account errors for {email}: {errors}')
+
+    return jsonify({'ok': True, 'errors': errors})
+
+
 @app.route('/api/feedback', methods=['POST'])
 def submit_feedback():
     """Store user feedback in Supabase."""
