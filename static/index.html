@@ -968,6 +968,108 @@ body {
   background:var(--border);
 }
 
+/* ── Continue bar (shown after every result) ── */
+.continue-bar {
+  margin-top: 28px;
+  padding: 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.continue-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); margin-bottom: 10px;
+}
+.continue-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.continue-chip {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: border-color .13s, background .13s, transform .1s;
+}
+.continue-chip:hover {
+  border-color: var(--ladder);
+  background: rgba(139,92,246,.08);
+  transform: translateY(-1px);
+}
+.continue-chip.more { color: var(--muted); border-style: dashed; }
+.continue-planner-cta {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.continue-planner-btn {
+  width: 100%;
+  background: linear-gradient(135deg,rgba(45,212,191,.18),rgba(56,189,248,.12));
+  border: 1.5px solid rgba(45,212,191,.4);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--secondorder);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.continue-planner-btn:hover { border-color: var(--secondorder); background: rgba(45,212,191,.25); }
+
+/* ── Lens Library multi-select ── */
+.ll-modal { padding: 0 !important; display: flex; flex-direction: column; max-height: 88vh; max-width: 760px; }
+.ll-header { padding: 20px 24px 0; flex-shrink: 0; }
+.ll-scroll { flex: 1; overflow-y: auto; padding: 0 24px 12px; }
+.ll-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 12px 24px 18px;
+  background: var(--surface);
+  display: none;
+}
+.ll-footer.visible { display: block; }
+.ll-lineup-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 8px; }
+.ll-lineup { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.ll-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(139,92,246,.15);
+  border: 1.5px solid var(--ladder);
+  border-radius: 8px;
+  padding: 5px 8px 5px 10px;
+  font-size: 12px; font-weight: 600; color: var(--text);
+}
+.ll-chip-remove {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 15px; padding: 0; line-height: 1;
+  transition: color .1s;
+}
+.ll-chip-remove:hover { color: var(--text); }
+.ll-run-btn {
+  width: 100%; padding: 13px; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 800; background: var(--ladder);
+  color: #000; cursor: pointer; font-family: inherit;
+  transition: opacity .15s;
+}
+.ll-run-btn:hover { opacity: .85; }
+.lens-card.ll-selected {
+  border-color: var(--ladder) !important;
+  background: rgba(139,92,246,.12);
+  box-shadow: 0 0 0 1px var(--ladder);
+}
+.lens-card.ll-selected::after {
+  content: '✓';
+  position: absolute; top: 8px; right: 10px;
+  font-size: 12px; font-weight: 800; color: var(--ladder);
+}
+.lens-card { position: relative; }
+
 /* ── Lens Picker Modal ── */
 .lp-modal { max-width:600px; padding:0 !important; display:flex; flex-direction:column; max-height:88vh; }
 .lp-modal .modal-close { position:sticky; top:0; left:100%; z-index:2; background:var(--surface2); }
@@ -1364,32 +1466,32 @@ body {
         <div class="home-divider-label">Or jump straight to a lens</div>
 
         <div class="home-tools">
-          <div class="home-tool-card" style="--card-accent:var(--instinct)" onclick="switchTool('rei')">
+          <div class="home-tool-card" style="--card-accent:var(--instinct)" onclick="launchLens('rei')">
             <div class="home-tool-icon">🧠</div>
             <div class="home-tool-name">REI Council</div>
             <div class="home-tool-blurb">Split your situation into Instinct, Emotion, and Reason — then find where they agree.</div>
           </div>
-          <div class="home-tool-card" style="--card-accent:var(--ladder)" onclick="switchTool('ladder')">
+          <div class="home-tool-card" style="--card-accent:var(--ladder)" onclick="launchLens('ladder')">
             <div class="home-tool-icon">🪜</div>
             <div class="home-tool-name">The Ladder</div>
             <div class="home-tool-blurb">Locate your question on a 5-rung hierarchy from physics to meaning — and see what opens one rung higher.</div>
           </div>
-          <div class="home-tool-card" style="--card-accent:var(--kingdom)" onclick="switchTool('kingdom')">
+          <div class="home-tool-card" style="--card-accent:var(--kingdom)" onclick="launchLens('kingdom')">
             <div class="home-tool-icon">✝️</div>
             <div class="home-tool-name">Kingdom Lens</div>
             <div class="home-tool-blurb">See your situation through a biblical lens — perspectives, analogy, and Scripture applied to your situation.</div>
           </div>
-          <div class="home-tool-card" style="--card-accent:var(--socratic)" onclick="switchTool('socratic')">
+          <div class="home-tool-card" style="--card-accent:var(--socratic)" onclick="launchLens('socratic')">
             <div class="home-tool-icon">❓</div>
             <div class="home-tool-name">Socratic</div>
             <div class="home-tool-blurb">A guided questioning dialogue that challenges assumptions and reveals what you actually believe.</div>
           </div>
-          <div class="home-tool-card" style="--card-accent:var(--blind)" onclick="switchTool('blind')">
+          <div class="home-tool-card" style="--card-accent:var(--blind)" onclick="launchLens('blind')">
             <div class="home-tool-icon">🔍</div>
             <div class="home-tool-name">Blind Spot</div>
             <div class="home-tool-blurb">Surface the hidden biases, fears, and assumptions that might be distorting how you see the situation.</div>
           </div>
-          <div class="home-tool-card" style="--card-accent:#e879f9" onclick="runFullCouncil()">
+          <div class="home-tool-card" style="--card-accent:#e879f9" onclick="launchLens('council')">
             <div class="home-tool-icon">⚡</div>
             <div class="home-tool-name">Full Council</div>
             <div class="home-tool-blurb">Run all lenses at once for a complete 360° breakdown of your thought.</div>
@@ -2162,19 +2264,29 @@ body {
 
 <!-- ── Lens Library Modal ── -->
 <div class="modal-overlay" id="lens-library-modal" onclick="if(event.target===this)closeAllModals()">
-  <div class="modal-box" style="max-width:760px;">
-    <button class="modal-close" onclick="closeAllModals()">×</button>
-    <div class="modal-title">🔭 Lens Library</div>
-    <div class="modal-subtitle">Choose any lens to apply to your current thought</div>
-    <div class="lens-section-title">Core Lenses</div>
-    <div class="lens-library-grid" id="lens-grid-core"></div>
-    <div class="lens-section-title">Extended Lenses</div>
-    <div class="lens-library-grid" id="lens-grid-extended"></div>
-    <div class="lens-section-title" style="display:flex;align-items:center;justify-content:space-between;">
-      Custom Lenses
-      <button onclick="openCustomLensBuilder()" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);cursor:pointer;">+ Build Your Own</button>
+  <div class="modal-box ll-modal">
+    <div class="ll-header">
+      <button class="modal-close" onclick="closeAllModals()" style="float:right;margin:-4px -4px 0 0;">×</button>
+      <div class="modal-title">🔭 Lens Library</div>
+      <div class="modal-subtitle">Pick one or build a lineup — then run them all at once</div>
     </div>
-    <div id="lens-grid-custom" class="lens-library-grid"></div>
+    <div class="ll-scroll">
+      <div class="lens-section-title">Core Lenses</div>
+      <div class="lens-library-grid" id="lens-grid-core"></div>
+      <div class="lens-section-title">Extended Lenses</div>
+      <div class="lens-library-grid" id="lens-grid-extended"></div>
+      <div class="lens-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+        Custom Lenses
+        <button onclick="openCustomLensBuilder()" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);cursor:pointer;">+ Build Your Own</button>
+      </div>
+      <div id="lens-grid-custom" class="lens-library-grid"></div>
+    </div>
+    <!-- Lineup footer — shown when ≥1 lens selected -->
+    <div class="ll-footer" id="ll-footer">
+      <div class="ll-lineup-label">Your lineup</div>
+      <div class="ll-lineup" id="ll-lineup"></div>
+      <button class="ll-run-btn" id="ll-run-btn" onclick="runLibraryLineup()">Run lineup →</button>
+    </div>
   </div>
 </div>
 
@@ -2804,6 +2916,7 @@ async function submitREI() {
     saveSession();
     showSavePrompt('rei', input, d);
     trackUseAndMaybeCapture('rei');
+    injectContinueBar('rei-results', 'rei');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('rei'); }
 }
@@ -2840,6 +2953,7 @@ async function submitLadder() {
     saveSession();
     showSavePrompt('ladder', input, d);
     trackUseAndMaybeCapture('ladder');
+    injectContinueBar('ladder-results', 'ladder');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('ladder'); }
 }
@@ -2875,6 +2989,7 @@ async function submitKingdom() {
     saveSession();
     showSavePrompt('kingdom', input, d);
     trackUseAndMaybeCapture('kingdom');
+    injectContinueBar('kingdom-results', 'kingdom');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('kingdom'); }
 }
@@ -2902,6 +3017,7 @@ async function submitBlind() {
     saveSession();
     showSavePrompt('blind', input, d);
     trackUseAndMaybeCapture('blind');
+    injectContinueBar('blind-results', 'blind');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('blind'); }
 }
@@ -2982,6 +3098,7 @@ async function runFullCouncil() {
     saveSession();
     showSavePrompt('council', input, { rei, ladder, kingdom, blind, fp, inversion, synthesis: synth });
     if (!isPaid()) incrementCouncilCount();
+    injectContinueBar('council-results', 'council');
   } catch(e) { alert('Full Council error: ' + e.message); }
   finally { stopLoading('council'); document.getElementById('full-council-btn').disabled = false; }
 }
@@ -3066,8 +3183,12 @@ function renderBlindBody(d) {
 // ── PRO COUNCIL ───────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════
 
-// All 10 extended lenses available in Pro Council
+// Core + all extended lenses available in Pro Council
+const PRO_CORE_IDS = ['rei','ladder','kingdom','blind'];
 const PRO_LENS_OPTIONS = [
+  // Core lenses first
+  'rei','ladder','kingdom','blind',
+  // Extended
   'first_principles','inversion','stoic','future_self','feynman',
   'historical','energy','stakeholder','systems','probabilistic','character',
   'antifragile','kahneman','regret','mimetic','frankl',
@@ -3115,6 +3236,58 @@ function clearAllProLenses() {
   renderProLensSelector();
 }
 
+// Normalise core lens API responses into the generic panels format
+// used by Pro Council synthesis
+function _normaliseCoreResult(id, d) {
+  switch (id) {
+    case 'rei':
+      return {
+        panels: [
+          { header: '🧠 Instinct', body: d.instinct || '' },
+          { header: '💜 Emotion',  body: d.emotion  || '' },
+          { header: '🧮 Reason',   body: d.reason   || '' },
+        ],
+        synthesis: d.majority_view    || '',
+        question:  d.action_question  || '',
+        action:    d.alignment        || ''
+      };
+    case 'ladder':
+      return {
+        panels: [
+          { header: `Rung ${d.current_rung || ''}: ${d.rung_name || ''}`, body: d.current_view || '' },
+          { header: 'One rung higher', body: d.above_view || '' },
+        ],
+        synthesis: d.current_view   || '',
+        question:  d.ascent_question || '',
+        action: ''
+      };
+    case 'kingdom':
+      return {
+        panels: [
+          { header: '👑 Kingdom View',   body: d.kingdom        || '' },
+          { header: '🧍 The Person',     body: d.the_person     || '' },
+          { header: '✨ Eternal Weight', body: d.eternal_weight || '' },
+          { header: '🛤 The Path',       body: d.the_path       || '' },
+        ],
+        synthesis: d.kingdom          || '',
+        question:  d.kingdom_question || '',
+        action: d.biblical_analogy ? (d.biblical_analogy.person_or_story || '') : ''
+      };
+    case 'blind':
+      return {
+        panels: [
+          { header: '🔍 Missing Perspective', body: d.missing_perspective || '' },
+          { header: '❓ Why It\'s Missing',   body: d.why_its_missing     || '' },
+          { header: '🔄 Reframe',             body: d.reframe             || '' },
+        ],
+        synthesis: d.reframe             || '',
+        question:  d.blind_spot_question || '',
+        action: ''
+      };
+    default: return { panels: [], synthesis: '', question: '', action: '' };
+  }
+}
+
 async function runProCouncil() {
   if (!isPaid()) { openPaywall('pro-council'); return; }
   const thought = getThought();
@@ -3159,7 +3332,21 @@ async function runProCouncil() {
     document.getElementById('pro-results').appendChild(skeleton);
 
     try {
-      const result = await callAPI('/api/lens', { lens_id: lensId, situation: thought });
+      let result;
+      if (PRO_CORE_IDS.includes(lensId)) {
+        // Core lenses have dedicated endpoints
+        const coreEndpoints = {
+          'rei':    ['/api/rei',      { situation: thought }],
+          'ladder': ['/api/ladder',   { question: thought }],
+          'kingdom':['/api/kingdom',  { situation: thought }],
+          'blind':  ['/api/blindspot',{ situation: thought, context: '' }],
+        };
+        const [ep, body] = coreEndpoints[lensId];
+        const raw = await callAPI(ep, body);
+        result = _normaliseCoreResult(lensId, raw);
+      } else {
+        result = await callAPI('/api/lens', { lens_id: lensId, situation: thought });
+      }
       document.getElementById('pro-cs-' + lensId + '-body').innerHTML = renderGenericLensBody(result);
       skeleton.style.opacity = '1';
       allResults.push({
@@ -3189,6 +3376,20 @@ async function runProCouncil() {
       const synthEl = document.getElementById('pro-synthesis');
       synthEl.style.display = 'block';
       synthEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Decision Planner CTA after Pro Council synthesis
+      let proPlanner = document.getElementById('pro-planner-cta');
+      if (!proPlanner) {
+        proPlanner = document.createElement('div');
+        proPlanner.id = 'pro-planner-cta';
+        proPlanner.className = 'continue-planner-cta';
+        proPlanner.style.marginTop = '20px';
+        const b = document.createElement('button');
+        b.className = 'continue-planner-btn';
+        b.innerHTML = '🗺️ Ready to act? Turn this synthesis into a Decision Plan →';
+        b.onclick = () => switchTool('planner');
+        proPlanner.appendChild(b);
+        synthEl.parentElement.appendChild(proPlanner);
+      }
     } catch(e) { console.warn('Pro synthesis failed:', e); }
   }
   done++;
@@ -4020,8 +4221,17 @@ let _activeLens = null; // current extended lens being used
 function getLensById(id) { return LENS_CONFIG.find(l => l.id === id); }
 
 // ── Open Lens Library ──────────────────────────────────────────
+let _librarySelected = new Set();
+
 function openLensLibrary() {
   closeSidebar();
+  _librarySelected.clear();
+  _renderLibraryGrids();
+  _updateLibraryFooter();
+  document.getElementById('lens-library-modal').classList.add('visible');
+}
+
+function _renderLibraryGrids() {
   const coreLenses     = LENS_CONFIG.filter(l => l.core);
   const extendedLenses = LENS_CONFIG.filter(l => !l.core && !l.custom);
   const customLenses   = getCustomLenses();
@@ -4031,7 +4241,8 @@ function openLensLibrary() {
     grid.innerHTML = '';
     lenses.forEach(l => {
       const card = document.createElement('div');
-      card.className = 'lens-card' + (_activeLens === l.id ? ' active-lens' : '');
+      const sel  = _librarySelected.has(l.id);
+      card.className = 'lens-card' + (sel ? ' ll-selected' : '');
       card.style.setProperty('--lc', l.color);
       card.innerHTML = `
         <div class="lens-card-icon">${l.icon}</div>
@@ -4039,22 +4250,90 @@ function openLensLibrary() {
         <div class="lens-card-desc">${l.desc}</div>
         ${l.new ? '<div class="lens-card-badge">NEW</div>' : ''}
       `;
-      card.onclick = () => { activateLens(l.id); closeAllModals(); };
+      card.onclick = () => {
+        if (_librarySelected.has(l.id)) {
+          _librarySelected.delete(l.id);
+        } else {
+          _librarySelected.add(l.id);
+        }
+        _renderLibraryGrids();
+        _updateLibraryFooter();
+      };
       grid.appendChild(card);
     });
   }
 
   renderGrid(coreLenses, 'lens-grid-core');
-  renderGrid(extendedLenses.concat(customLenses.map(cl => ({
-    id: 'custom_' + cl.id, name: cl.name, icon: cl.icon || '🔧', color:'var(--ladder)', desc: cl.desc, custom:true
-  }))), 'lens-grid-extended');
+  renderGrid(extendedLenses, 'lens-grid-extended');
 
   const customGrid = document.getElementById('lens-grid-custom');
   customGrid.innerHTML = customLenses.length
     ? ''
     : '<div style="font-size:12px;color:var(--muted);padding:8px 0;">No custom lenses yet. Build your first one →</div>';
+  customLenses.forEach(cl => {
+    const l = { id: 'custom_' + cl.id, name: cl.name, icon: cl.icon || '🔧', color:'var(--ladder)', desc: cl.desc };
+    const card = document.createElement('div');
+    card.className = 'lens-card' + (_librarySelected.has(l.id) ? ' ll-selected' : '');
+    card.style.setProperty('--lc', l.color);
+    card.innerHTML = `<div class="lens-card-icon">${l.icon}</div><div class="lens-card-name">${l.name}</div><div class="lens-card-desc">${l.desc}</div>`;
+    card.onclick = () => {
+      _librarySelected.has(l.id) ? _librarySelected.delete(l.id) : _librarySelected.add(l.id);
+      _renderLibraryGrids(); _updateLibraryFooter();
+    };
+    customGrid.appendChild(card);
+  });
+}
 
-  document.getElementById('lens-library-modal').classList.add('visible');
+function _updateLibraryFooter() {
+  const footer  = document.getElementById('ll-footer');
+  const lineup  = document.getElementById('ll-lineup');
+  const runBtn  = document.getElementById('ll-run-btn');
+  const n       = _librarySelected.size;
+  if (n === 0) { footer.classList.remove('visible'); return; }
+  footer.classList.add('visible');
+
+  lineup.innerHTML = '';
+  [..._librarySelected].forEach(id => {
+    const cfg = getLensById(id) || { id, name: id, icon: '🔧' };
+    const chip = document.createElement('div');
+    chip.className = 'll-chip';
+    chip.innerHTML = `<span>${cfg.icon}</span><span>${cfg.name}</span>`;
+    const rm = document.createElement('button');
+    rm.className = 'll-chip-remove';
+    rm.textContent = '×';
+    rm.onclick = (e) => { e.stopPropagation(); _librarySelected.delete(id); _renderLibraryGrids(); _updateLibraryFooter(); };
+    chip.appendChild(rm);
+    lineup.appendChild(chip);
+  });
+
+  runBtn.textContent = n === 1
+    ? `Run ${[..._librarySelected].map(id => getLensById(id)?.name || id)[0]} →`
+    : `Run ${n} lenses →`;
+}
+
+function runLibraryLineup() {
+  const lenses = [..._librarySelected];
+  if (!lenses.length) return;
+  closeAllModals();
+
+  if (lenses.length === 1) {
+    const id = lenses[0];
+    launchLens(id);
+    return;
+  }
+
+  // Multiple — use Pro Council for extended, Full Council if all core
+  const extIds  = lenses.filter(id => !CORE_LENS_SUBMIT[id] || id === 'council');
+  const coreIds = lenses.filter(id =>  CORE_LENS_SUBMIT[id] && id !== 'council');
+
+  if (isPaid()) {
+    // Set Pro Council selection to all picked lenses and run
+    _proSelectedLenses = new Set(lenses.filter(id => id !== 'council'));
+    openProCouncil();
+  } else {
+    // Free: set in lens picker so user can see, or just run Full Council
+    launchLens('council');
+  }
 }
 
 function activateLens(lensId) {
@@ -4143,6 +4422,7 @@ async function submitLens() {
     renderLensResult(d, cfg);
     document.getElementById('lens-results').classList.add('visible');
     trackUseAndMaybeCapture('lens');
+    injectContinueBar('lens-results', _activeLens?.id || 'lens');
   } catch(e) {
     alert('Error: ' + e.message);
   } finally {
@@ -4387,6 +4667,85 @@ const CORE_LENS_SUBMIT = {
   'blind':   () => { switchTool('blind');   setTimeout(submitBlind,   120); },
   'council': () => { setTimeout(runFullCouncil, 80); },
 };
+
+// ── launchLens — smart launcher used by home cards + continue bar ──
+// If thought already exists → navigate + auto-run in one step
+// If no thought → just navigate so user can type
+function launchLens(id) {
+  const thought = getThought();
+  if (CORE_LENS_SUBMIT[id]) {
+    if (thought && id !== 'socratic') {
+      CORE_LENS_SUBMIT[id](); // includes switchTool + submit
+    } else {
+      switchTool(id);
+    }
+  } else {
+    activateLens(id);
+    if (thought) setTimeout(submitLens, 200);
+  }
+}
+
+// ── Continue bar — injected below every result ──
+const CONTINUE_AFTER = {
+  'rei':      ['blind', 'first_principles', 'inversion'],
+  'ladder':   ['feynman', 'socratic', 'first_principles'],
+  'kingdom':  ['stoic', 'future_self', 'virtue'],
+  'blind':    ['rei', 'inversion', 'premortem'],
+  'council':  ['first_principles', 'regret', 'future_self'],
+  'socratic': ['rei', 'blind', 'steelman'],
+};
+
+function injectContinueBar(resultsWrapId, lensId) {
+  const wrap = document.getElementById(resultsWrapId);
+  if (!wrap) return;
+  wrap.querySelector('.continue-bar')?.remove();
+
+  const related = (CONTINUE_AFTER[lensId] ||
+    CONTINUE_AFTER['_lens_' + lensId] ||
+    ['rei', 'inversion', 'blind']
+  ).filter(id => id !== lensId);
+
+  const bar = document.createElement('div');
+  bar.className = 'continue-bar';
+  const label = document.createElement('div');
+  label.className = 'continue-label';
+  label.textContent = 'Continue exploring this thought';
+  bar.appendChild(label);
+
+  const chips = document.createElement('div');
+  chips.className = 'continue-chips';
+
+  related.forEach(id => {
+    const cfg = getLensById(id) || LP_CORE_LENSES.find(l => l.id === id);
+    if (!cfg) return;
+    const btn = document.createElement('button');
+    btn.className = 'continue-chip';
+    btn.innerHTML = `<span>${cfg.icon}</span>${cfg.name}`;
+    btn.onclick = () => launchLens(id);
+    chips.appendChild(btn);
+  });
+
+  // "+ All lenses" shortcut
+  const more = document.createElement('button');
+  more.className = 'continue-chip more';
+  more.textContent = '+ All lenses';
+  more.onclick = () => openLensLibrary();
+  chips.appendChild(more);
+
+  bar.appendChild(chips);
+
+  // Decision Planner CTA
+  const planDiv = document.createElement('div');
+  planDiv.className = 'continue-planner-cta';
+  const planBtn = document.createElement('button');
+  planBtn.className = 'continue-planner-btn';
+  planBtn.innerHTML = '🗺️ Ready to act on this? Turn the insight into a Decision Plan →';
+  planBtn.onclick = () => { switchTool('planner'); };
+  planDiv.appendChild(planBtn);
+  bar.appendChild(planDiv);
+
+  wrap.appendChild(bar);
+}
 
 function runPickedLenses() {
   const lenses = [..._pickedLenses];
