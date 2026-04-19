@@ -408,46 +408,20 @@ def pro_synthesis():
         return jsonify({'error': str(e)}), 500
 
 
-ACTION_PLAN_PROMPT = """You are a world-class executive coach, strategic planner, and decision facilitator. Take someone's situation, decision, or goal and produce a complete, actionable implementation plan with clear paths, phases, steps, timelines, and success metrics.
+ACTION_PLAN_PROMPT = """You are an executive coach. Turn the user's situation into a concrete action plan.
 
-Be concrete and specific. No generic advice. Every step must be something a person can actually DO.
+STRICT RULES — keep ALL text SHORT to fit within token limits:
+- title: 5 words max
+- desired_outcome: 1 sentence
+- paths: exactly 2. description: 1 sentence. pros/cons: 2 items each, 8 words max each
+- phases: exactly 4 (Immediate 0-7d, Short-term 1-4wk, Medium-term 1-3mo, Long-term 3-12mo)
+- Each phase: exactly 2 steps. action: 10 words max. purpose: 8 words max. difficulty: easy|medium|hard
+- success_metrics: exactly 3 items, 8 words max each
+- key_risks: exactly 2 items, 8 words max each
+- first_step: 15 words max, something doable today
 
-Rules:
-- paths: 2-3 distinct strategic options within the space of action. Mark one as recommended.
-- phases: exactly 4 — Immediate (0-7 days), Short-term (1-4 weeks), Medium-term (1-3 months), Long-term (3-12 months)
-- Each phase: 2-4 concrete steps. Each step: action (what to do), purpose (why it matters), difficulty (easy/medium/hard), id (unique short string like "i1","i2","s1","m1","l1" etc)
-- success_metrics: 3-4 specific, observable signs this is working
-- key_risks: 2-3 honest failure modes to watch for
-- first_step: single most important thing to do TODAY — specific, concrete, under 2 hours
-- desired_outcome: one sentence — what success looks like in 12 months
-
-Respond ONLY with valid JSON, no markdown:
-{
-  "title": "Short title (under 8 words)",
-  "desired_outcome": "...",
-  "paths": [
-    {"name": "Path name 3-5 words", "description": "2 sentences on what this path looks like", "pros": ["...", "..."], "cons": ["...", "..."], "recommended": true},
-    {"name": "...", "description": "...", "pros": ["...", "..."], "cons": ["...", "..."], "recommended": false}
-  ],
-  "phases": [
-    {"name": "Immediate", "timeframe": "0-7 days", "steps": [
-      {"id":"i1","action":"...","purpose":"...","difficulty":"easy"},
-      {"id":"i2","action":"...","purpose":"...","difficulty":"hard"}
-    ]},
-    {"name": "Short-term", "timeframe": "1-4 weeks", "steps": [
-      {"id":"s1","action":"...","purpose":"...","difficulty":"medium"}
-    ]},
-    {"name": "Medium-term", "timeframe": "1-3 months", "steps": [
-      {"id":"m1","action":"...","purpose":"...","difficulty":"medium"}
-    ]},
-    {"name": "Long-term", "timeframe": "3-12 months", "steps": [
-      {"id":"l1","action":"...","purpose":"...","difficulty":"hard"}
-    ]}
-  ],
-  "success_metrics": ["...", "...", "..."],
-  "key_risks": ["...", "..."],
-  "first_step": "..."
-}"""
+Respond ONLY with valid JSON — no markdown, no extra text, nothing outside the JSON:
+{"title":"...","desired_outcome":"...","paths":[{"name":"...","description":"...","pros":["...","..."],"cons":["...","..."],"recommended":true},{"name":"...","description":"...","pros":["...","..."],"cons":["...","..."],"recommended":false}],"phases":[{"name":"Immediate","timeframe":"0-7 days","steps":[{"id":"i1","action":"...","purpose":"...","difficulty":"easy"},{"id":"i2","action":"...","purpose":"...","difficulty":"medium"}]},{"name":"Short-term","timeframe":"1-4 weeks","steps":[{"id":"s1","action":"...","purpose":"...","difficulty":"medium"},{"id":"s2","action":"...","purpose":"...","difficulty":"medium"}]},{"name":"Medium-term","timeframe":"1-3 months","steps":[{"id":"m1","action":"...","purpose":"...","difficulty":"medium"},{"id":"m2","action":"...","purpose":"...","difficulty":"hard"}]},{"name":"Long-term","timeframe":"3-12 months","steps":[{"id":"l1","action":"...","purpose":"...","difficulty":"hard"},{"id":"l2","action":"...","purpose":"...","difficulty":"hard"}]}],"success_metrics":["...","...","..."],"key_risks":["...","..."],"first_step":"..."}"""
 
 
 @app.route('/api/action-plan', methods=['POST'])
@@ -460,19 +434,24 @@ def action_plan():
     user_msg = f"Situation/Decision/Goal: {situation}"
     if context:
         user_msg += f"\n\nAdditional context from thinking tools:\n{context}"
-    try:
-        text = call_ai(ACTION_PLAN_PROMPT, [{'role': 'user', 'content': user_msg}], max_tokens=1800)
-        result = parse_json(text)
-        # Ensure step IDs are present
-        for phase in result.get('phases', []):
-            for i, step in enumerate(phase.get('steps', [])):
-                if not step.get('id'):
-                    step['id'] = phase['name'][:1].lower() + str(i+1)
-        return jsonify(result)
-    except json.JSONDecodeError:
-        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    for attempt in range(2):
+        try:
+            tokens = 2200 if attempt == 0 else 2600
+            text = call_ai(ACTION_PLAN_PROMPT, [{'role': 'user', 'content': user_msg}], max_tokens=tokens)
+            result = parse_json(text)
+            # Ensure step IDs are present
+            for phase in result.get('phases', []):
+                for i, step in enumerate(phase.get('steps', [])):
+                    if not step.get('id'):
+                        step['id'] = phase['name'][:1].lower() + str(i+1)
+            return jsonify(result)
+        except json.JSONDecodeError:
+            if attempt == 1:
+                return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
+            # retry with more tokens
+            continue
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 
 # ─── Stripe Checkout ───────────────────────────────────────────────────────────
