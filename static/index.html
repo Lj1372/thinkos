@@ -50,6 +50,19 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   --stakeholder:#f97316;
   --systems:   #3b82f6;
   --probabilistic:#ec4899;
+  --antifragile: #ff6b35;
+  --kahneman:    #38bdf8;
+  --regret:      #facc15;
+  --mimetic:     #c084fc;
+  --frankl:      #fb7185;
+  --secondorder: #2dd4bf;
+  --premortem:   #f87171;
+  --steelman:    #78716c;
+  --naval:       #818cf8;
+  --competence:  #a3e635;
+  --mentor:      #e879f9;
+  --virtue:      #fde68a;
+  --memento:     #71717a;
   --radius:    10px;
   --sb-width:  240px;
 }
@@ -2232,7 +2245,10 @@ function renderBlindBody(d) {
 // All 10 extended lenses available in Pro Council
 const PRO_LENS_OPTIONS = [
   'first_principles','inversion','stoic','future_self','feynman',
-  'historical','energy','stakeholder','systems','probabilistic','character'
+  'historical','energy','stakeholder','systems','probabilistic','character',
+  'antifragile','kahneman','regret','mimetic','frankl',
+  'secondorder','premortem','steelman','naval','competence',
+  'mentor','virtue','memento'
 ];
 
 let _proSelectedLenses = new Set(PRO_LENS_OPTIONS); // all on by default
@@ -2937,7 +2953,21 @@ const LENS_CONFIG = [
   { id:'stakeholder',   name:'Stakeholder Map',     icon:'♟️', color:'var(--stakeholder)',  desc:'Who wins/loses in each scenario?',                     core:false, btn:'Map the Players' },
   { id:'systems',       name:'Systems Thinking',    icon:'🌐', color:'var(--systems)',      desc:'Feedback loops, leverage points, unintended consequences.',core:false, btn:'Map the System' },
   { id:'probabilistic', name:'Probabilistic',       icon:'🎲', color:'var(--probabilistic)',desc:'Assign probabilities. Calculate expected value.',       core:false, btn:'Run the Numbers' },
-  { id:'character',     name:'Character Analysis',  icon:'🎭', color:'var(--futureself)',   desc:'Jung archetypes + Big Five. Who are you, really?',     core:false, btn:'Analyse My Character' },
+  { id:'character',     name:'Character Analysis',  icon:'🎭', color:'var(--futureself)',    desc:'Jung archetypes + Big Five. Who are you, really?',          core:false, btn:'Analyse My Character' },
+  // Great Minds
+  { id:'antifragile',   name:'Antifragility',        icon:'💥', color:'var(--antifragile)',   desc:'Taleb: does this make you fragile, resilient, or stronger?',  core:false, btn:'Test Antifragility' },
+  { id:'kahneman',      name:'System 1 vs 2',         icon:'🤔', color:'var(--kahneman)',      desc:'Kahneman: fast brain vs slow brain — which biases are running this?', core:false, btn:'Check My Thinking' },
+  { id:'regret',        name:'Regret Minimisation',   icon:'🪑', color:'var(--regret)',        desc:'Bezos: from age 80, which path do you regret more?',          core:false, btn:'Ask My 80-Year-Old Self' },
+  { id:'mimetic',       name:'Mimetic Desire',         icon:'👁️', color:'var(--mimetic)',       desc:'Girard: is this your desire — or are you imitating someone?', core:false, btn:'Find the Mediator' },
+  { id:'frankl',        name:'Meaning & Logotherapy',  icon:'✨', color:'var(--frankl)',        desc:'Frankl: what meaning is available through this difficulty?',  core:false, btn:'Find the Meaning' },
+  { id:'secondorder',   name:'Second-Order Thinking',  icon:'🔭', color:'var(--secondorder)',   desc:'Marks: think past the obvious — what are the effects of effects?', core:false, btn:'Think Two Steps Ahead' },
+  { id:'premortem',     name:'Pre-mortem',             icon:'🛡️', color:'var(--premortem)',     desc:'Klein: assume it failed — work backwards to find why.',       core:false, btn:'Run the Pre-mortem' },
+  { id:'steelman',      name:'Steel Man',              icon:'⚔️', color:'var(--steelman)',      desc:'Build the strongest opposing argument. Then answer it.',      core:false, btn:'Steel Man It' },
+  { id:'naval',         name:'Naval Framework',        icon:'🦅', color:'var(--naval)',         desc:'Ravikant: specific knowledge, leverage, long games, freedom.', core:false, btn:'Find the Leverage' },
+  { id:'competence',    name:'Circle of Competence',   icon:'🎯', color:'var(--competence)',    desc:'Munger/Buffett: know what you know vs. what you think you know.', core:false, btn:'Map My Circle' },
+  { id:'mentor',        name:'Inner Mentor',           icon:'🌿', color:'var(--mentor)',        desc:'What would the wisest version of you say right now?',         core:false, btn:'Ask My Mentor' },
+  { id:'virtue',        name:'Virtue Ethics',          icon:'🏛️', color:'var(--virtue)',        desc:'Aristotle: what would a person of excellent character do?',   core:false, btn:'Apply Virtue Ethics' },
+  { id:'memento',       name:'Memento Mori',           icon:'⏳', color:'var(--memento)',       desc:'You will die. Does that change this decision?',               core:false, btn:'Face Mortality' },
 ];
 
 let _activeLens = null; // current extended lens being used
