@@ -1157,13 +1157,17 @@ def run_lens():
         prompt = LENS_PROMPTS.get(lens_id)
     if not prompt:
         return jsonify({'error': f'Unknown lens: {lens_id}'}), 400
-    try:
-        text = call_ai(prompt, [{'role': 'user', 'content': f'Situation / decision / thought: {situation}'}], max_tokens=900)
-        return jsonify(parse_json(text))
-    except json.JSONDecodeError:
-        return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    for attempt in range(2):
+        try:
+            tokens = 1300 if attempt == 0 else 1700
+            text = call_ai(prompt, [{'role': 'user', 'content': f'Situation / decision / thought: {situation}'}], max_tokens=tokens)
+            return jsonify(parse_json(text))
+        except json.JSONDecodeError:
+            if attempt == 1:
+                return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
+            continue
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/suggest-lens', methods=['POST'])
