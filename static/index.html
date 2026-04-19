@@ -519,8 +519,40 @@ body {
   background: var(--surface2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 16px; cursor: pointer; transition: all 0.15s;
 }
-.template-card:hover { border-color: var(--ladder); background: #1a1530; }
-[data-theme="light"] .template-card:hover { background: #f0eaff; }
+.template-card:hover { border-color: rgba(167,139,250,.4); background: #1a1530; }
+.template-card.tmpl-selected { border-color: var(--ladder); background: #1a1530; box-shadow: 0 0 0 1px var(--ladder); }
+[data-theme="light"] .template-card:hover, [data-theme="light"] .template-card.tmpl-selected { background: #f0eaff; }
+/* Template lens preview panel */
+.tmpl-preview { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px; display: none; animation: fadeUp .2s ease; }
+.tmpl-preview.visible { display: block; }
+.tmpl-preview-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 10px; }
+.tmpl-lens-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.tmpl-lens-row { display: flex; align-items: flex-start; gap: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.tmpl-lens-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.tmpl-lens-info strong { font-size: 13px; color: var(--text); display: block; margin-bottom: 2px; }
+.tmpl-lens-info span { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.tmpl-start-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity .15s; background: var(--ladder); color: #000; }
+.tmpl-start-btn:hover { opacity: .85; }
+/* Guided paths accordion */
+.gpath-item { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: border-color .15s; }
+.gpath-item.open { border-color: var(--ladder); }
+.gpath-trigger { width: 100%; background: var(--surface2); border: none; padding: 14px 16px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: background .15s; }
+.gpath-trigger:hover { background: #1a1530; }
+.gpath-item.open .gpath-trigger { background: #1a1530; }
+.gpath-trigger-left { display: flex; flex-direction: column; gap: 3px; }
+.gpath-trigger-label { font-size: 14px; font-weight: 600; color: var(--text); }
+.gpath-trigger-hint { font-size: 11px; color: var(--muted); }
+.gpath-chevron { font-size: 11px; color: var(--muted); transition: transform .2s; flex-shrink: 0; }
+.gpath-item.open .gpath-chevron { transform: rotate(180deg); }
+.gpath-body { display: none; padding: 12px; background: var(--bg); border-top: 1px solid var(--border); animation: fadeUp .15s ease; }
+.gpath-item.open .gpath-body { display: block; }
+.gpath-lens-cards { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.gpath-lens-card { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; }
+.gpath-lens-card-icon { font-size: 18px; flex-shrink: 0; }
+.gpath-lens-card strong { font-size: 13px; color: var(--text); display: block; margin-bottom: 2px; }
+.gpath-lens-card span { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.gpath-go-btn { width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; background: var(--ladder); color: #000; transition: opacity .15s; }
+.gpath-go-btn:hover { opacity: .85; }
 .template-name { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
 .template-desc { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
 .template-chain { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -824,6 +856,212 @@ body {
 .home-how-card-desc { font-size:11px; color:var(--muted); line-height:1.6; }
 @media(max-width:640px){ .home-how-steps { grid-template-columns:1fr; gap:8px; } .onboard-box { padding:24px 18px 18px; } .onboard-lens-grid { grid-template-columns:1fr; } }
 
+/* ── Home hero input ── */
+.home-input-wrap {
+  background: var(--surface2);
+  border: 2px solid var(--ladder);
+  border-radius: 16px;
+  padding: 16px 16px 12px;
+  margin: 0 0 12px;
+  box-shadow: 0 0 0 4px rgba(139,92,246,.12), 0 6px 28px rgba(0,0,0,.35);
+  transition: box-shadow .2s, border-color .2s;
+}
+.home-input-wrap:focus-within {
+  box-shadow: 0 0 0 5px rgba(139,92,246,.22), 0 8px 36px rgba(0,0,0,.45);
+}
+[data-theme="light"] .home-input-wrap { background:#fff; box-shadow: 0 0 0 4px rgba(139,92,246,.10), 0 4px 20px rgba(0,0,0,.10); }
+.home-input {
+  width: 100%;
+  min-height: 96px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  line-height: 1.65;
+  resize: none;
+  padding: 0;
+  margin-bottom: 10px;
+  caret-color: var(--ladder);
+}
+.home-input::placeholder { color: var(--muted); opacity: 0.75; font-size: 15px; }
+.home-input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.home-input-left { display:flex; align-items:center; gap:6px; }
+.home-char-hint { font-size:11px; color:var(--muted); opacity:0; transition:opacity .2s; }
+.home-input-wrap:focus-within .home-char-hint { opacity:1; }
+.home-send-btn {
+  background: var(--ladder);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+  letter-spacing: .01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.home-send-btn:hover { opacity: .85; }
+.home-send-btn:active { transform: scale(.96); }
+.home-send-btn.shake { animation: inputShake .35s ease; }
+@keyframes inputShake {
+  0%,100% { transform:translateX(0); }
+  20%      { transform:translateX(-7px); }
+  60%      { transform:translateX(7px); }
+  80%      { transform:translateX(-4px); }
+}
+/* Example chips */
+.home-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 22px;
+}
+.home-example-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.4;
+  transition: border-color .15s, color .15s, background .15s, transform .1s;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+}
+.home-example-chip:hover {
+  border-color: var(--ladder);
+  color: var(--text);
+  background: rgba(139,92,246,.07);
+  transform: translateX(2px);
+}
+.home-example-chip span { flex-shrink:0; font-size:15px; }
+.home-divider-label {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.home-divider-label::before,.home-divider-label::after {
+  content:'';
+  flex:1;
+  height:1px;
+  background:var(--border);
+}
+
+/* ── Lens Picker Modal ── */
+.lp-modal { max-width:600px; padding:0 !important; display:flex; flex-direction:column; max-height:88vh; }
+.lp-modal .modal-close { position:sticky; top:0; left:100%; z-index:2; background:var(--surface2); }
+.lp-header { padding:20px 24px 0; }
+.lp-thought-preview {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0 0;
+  line-height: 1.5;
+  font-style: italic;
+  word-break: break-word;
+}
+.lp-scroll { flex:1; overflow-y:auto; padding:4px 24px 0; }
+.lp-section-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted);
+  margin: 16px 0 9px;
+  display: flex; align-items: center; gap: 8px;
+}
+.lp-section-label .lp-pro-tag {
+  font-size: 9px; font-weight: 800; background: var(--ladder);
+  color: #000; padding: 1px 6px; border-radius: 4px; letter-spacing:.05em;
+}
+.lp-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+@media(max-width:500px) { .lp-grid { grid-template-columns: repeat(2,1fr); } }
+.lp-chip {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 8px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color .13s, background .13s, transform .1s, box-shadow .13s;
+  user-select: none;
+}
+.lp-chip:hover:not(.lp-locked) {
+  border-color: var(--ladder);
+  background: rgba(139,92,246,.07);
+  transform: translateY(-1px);
+}
+.lp-chip.lp-selected {
+  border-color: var(--ladder);
+  background: rgba(139,92,246,.18);
+  box-shadow: 0 0 0 1px var(--ladder);
+}
+.lp-chip.lp-locked { opacity: .45; cursor: default; }
+.lp-chip-icon { font-size: 22px; margin-bottom: 5px; line-height: 1; }
+.lp-chip-name { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.lp-chip.lp-selected .lp-chip-name { color: var(--ladder); }
+.lp-footer {
+  padding: 14px 24px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.lp-run-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  background: var(--ladder);
+  color: #000;
+  transition: opacity .15s, transform .1s;
+  letter-spacing: .01em;
+}
+.lp-run-btn:hover:not(:disabled) { opacity: .85; }
+.lp-run-btn:active:not(:disabled) { transform: scale(.97); }
+.lp-run-btn:disabled { opacity: .3; cursor: not-allowed; background: var(--surface2); color: var(--muted); }
+.lp-multiselect-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.lp-suggested-badge {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--ladder);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: 5px;
+}
+.lp-chip:not(.lp-selected) .lp-suggested-badge { animation: lp-pulse 2s ease infinite; }
+@keyframes lp-pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .45; }
+}
+
 /* ── Home back button ── */
 .home-back-bar { display:none; align-items:center; gap:8px; padding:10px 0 4px; margin-bottom:4px; }
 .home-back-btn { background:none; border:none; cursor:pointer; font-size:12px; font-weight:600; color:var(--muted); padding:5px 10px 5px 6px; border-radius:6px; display:flex; align-items:center; gap:6px; transition:color .15s,background .15s; }
@@ -1083,39 +1321,46 @@ body {
     <div class="tool-view" id="view-home">
       <div class="home-hero">
         <div class="home-tagline">Think clearer.<br><span>Decide better.</span></div>
-        <div class="home-sub">
-          A structured thinking companion for decisions, problems, and ideas — 29 thinking lenses from the world's best mental frameworks, in one place.
-        </div>
 
-        <!-- How it works -->
-        <div class="home-how">
-          <div class="home-how-title">How it works</div>
-          <div class="home-how-steps">
-            <div class="home-how-card">
-              <div class="home-how-num">Step 1</div>
-              <div class="home-how-icon">✍️</div>
-              <div class="home-how-card-title">Type your thought</div>
-              <div class="home-how-card-desc">Any decision, problem, feeling, or idea — in plain language. No format needed.</div>
+        <!-- ── Hero input ── -->
+        <div class="home-input-wrap" id="home-input-wrap">
+          <textarea
+            class="home-input"
+            id="home-input"
+            placeholder="Drop any decision, problem, or idea here…"
+            oninput="onHomeInputChange()"
+            rows="4"
+          ></textarea>
+          <div class="home-input-footer">
+            <div class="home-input-left">
+              <button class="btn-voice" id="home-voice-btn" onclick="toggleVoice()" title="Voice input">🎙️</button>
+              <span class="home-char-hint" id="home-char-hint">Start typing…</span>
             </div>
-            <div class="home-how-card">
-              <div class="home-how-num">Step 2</div>
-              <div class="home-how-icon">🔭</div>
-              <div class="home-how-card-title">Pick a lens</div>
-              <div class="home-how-card-desc">Each lens applies a different thinking framework. Not sure? Tap "What are you dealing with?" below.</div>
-            </div>
-            <div class="home-how-card">
-              <div class="home-how-num">Step 3</div>
-              <div class="home-how-icon">💡</div>
-              <div class="home-how-card-title">Get structured insight</div>
-              <div class="home-how-card-desc">ThinkOS doesn't tell you what to think — it helps you see what your thinking is missing.</div>
-            </div>
+            <button class="home-send-btn" id="home-send-btn" onclick="openLensPicker()">Start →</button>
           </div>
         </div>
 
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;">
-          <button onclick="openGuidedPaths()" style="background:var(--ladder);border:none;border-radius:10px;padding:10px 22px;color:#000;font-size:13px;font-weight:700;cursor:pointer;transition:opacity 0.15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">🗺 What are you dealing with?</button>
-          <button onclick="showOnboarding()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 22px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">❓ How does this work?</button>
+        <!-- ── Example thoughts ── -->
+        <div class="home-examples">
+          <button class="home-example-chip" onclick="fillExample(this.dataset.t)" data-t="Should I quit my job and move to Bali?">
+            <span>💭</span>"Should I quit my job and move to Bali?"
+          </button>
+          <button class="home-example-chip" onclick="fillExample(this.dataset.t)" data-t="How do I handle this difficult conversation with my co-founder?">
+            <span>💭</span>"How do I handle this difficult conversation with my co-founder?"
+          </button>
+          <button class="home-example-chip" onclick="fillExample(this.dataset.t)" data-t="Is this business idea actually good, or am I just excited about it?">
+            <span>💭</span>"Is this business idea actually good, or am I just excited about it?"
+          </button>
         </div>
+
+        <!-- ── Secondary CTAs ── -->
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px;">
+          <button onclick="openGuidedPaths()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 18px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">🗺 What are you dealing with?</button>
+          <button onclick="showOnboarding()" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 18px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">❓ How does this work?</button>
+        </div>
+
+        <!-- ── Pick a lens directly ── -->
+        <div class="home-divider-label">Or jump straight to a lens</div>
 
         <div class="home-tools">
           <div class="home-tool-card" style="--card-accent:var(--instinct)" onclick="switchTool('rei')">
@@ -1814,73 +2059,102 @@ body {
   <span onclick="showDisclaimer()" style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;pointer-events:auto;">Not health advice</span>
 </div>
 
+<!-- ── Lens Picker Modal ── -->
+<div class="modal-overlay" id="lens-picker-modal" onclick="if(event.target===this)closeAllModals()">
+  <div class="modal-box lp-modal">
+    <button class="modal-close" onclick="closeAllModals()" style="margin:12px 12px 0 auto;display:block;">×</button>
+    <div class="lp-header">
+      <div class="modal-title" style="margin:0;">Choose your lens</div>
+      <div class="modal-subtitle" style="margin:4px 0 0;">Select one lens — or multiple for Pro</div>
+      <div class="lp-thought-preview" id="lp-thought-preview"></div>
+    </div>
+    <div class="lp-scroll">
+      <div class="lp-section-label">Core lenses</div>
+      <div class="lp-grid" id="lp-grid-core"></div>
+      <div class="lp-section-label">Extended lenses <span class="lp-pro-tag">PRO</span></div>
+      <div class="lp-grid" id="lp-grid-extended"></div>
+      <div style="height:8px;"></div>
+    </div>
+    <div class="lp-footer">
+      <button class="lp-run-btn" id="lp-run-btn" onclick="runPickedLenses()" disabled>Pick a lens above</button>
+      <div class="lp-multiselect-hint" id="lp-multiselect-hint"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Templates modal ── -->
 <div class="modal-overlay" id="templates-modal" onclick="if(event.target===this)closeAllModals()">
   <div class="modal-box" style="max-width:680px;">
     <button class="modal-close" onclick="closeAllModals()">×</button>
     <div class="modal-title">Choose a Template</div>
     <div class="modal-subtitle">Pre-built thinking sequences for common situations</div>
-    <div class="template-grid">
-      <div class="template-card" onclick="selectTemplate('big-decision')">
+    <div class="template-grid" id="template-grid">
+      <div class="template-card" data-tmpl="big-decision" onclick="previewTemplate('big-decision')">
         <div class="template-name">🔮 Big Life Decision</div>
         <div class="template-desc">Major choices with long-term consequences</div>
         <div class="template-chain"><span class="chain-tag ct-rei">REI</span><span class="chain-tag ct-ladder">Ladder</span><span class="chain-tag ct-kingdom">Kingdom</span><span class="chain-tag ct-blind">Blind Spot</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('conflict')">
+      <div class="template-card" data-tmpl="conflict" onclick="previewTemplate('conflict')">
         <div class="template-name">⚡ Conflict with Someone</div>
         <div class="template-desc">Tension or breakdown in a relationship</div>
         <div class="template-chain"><span class="chain-tag ct-rei">REI</span><span class="chain-tag ct-socratic">Socratic</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('creative-block')">
+      <div class="template-card" data-tmpl="creative-block" onclick="previewTemplate('creative-block')">
         <div class="template-name">🎨 Creative Block</div>
         <div class="template-desc">Stuck on a project or creative decision</div>
         <div class="template-chain"><span class="chain-tag ct-ladder">Ladder</span><span class="chain-tag ct-socratic">Socratic</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('discernment')">
+      <div class="template-card" data-tmpl="discernment" onclick="previewTemplate('discernment')">
         <div class="template-name">✝️ Spiritual Discernment</div>
         <div class="template-desc">Faith-based direction and calling</div>
         <div class="template-chain"><span class="chain-tag ct-kingdom">Kingdom</span><span class="chain-tag ct-socratic">Socratic</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('pressure-test')">
+      <div class="template-card" data-tmpl="pressure-test" onclick="previewTemplate('pressure-test')">
         <div class="template-name">🧠 Pressure Test an Idea</div>
         <div class="template-desc">Challenge an idea before committing</div>
         <div class="template-chain"><span class="chain-tag ct-rei">REI</span><span class="chain-tag ct-blind">Blind Spot</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('hard-conversation')">
+      <div class="template-card" data-tmpl="hard-conversation" onclick="previewTemplate('hard-conversation')">
         <div class="template-name">💬 Hard Conversation</div>
         <div class="template-desc">Preparing for a difficult talk</div>
         <div class="template-chain"><span class="chain-tag ct-rei">REI</span><span class="chain-tag ct-socratic">Socratic</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('career-pivot')">
+      <div class="template-card" data-tmpl="career-pivot" onclick="previewTemplate('career-pivot')">
         <div class="template-name">🚀 Career Pivot / Quit Job</div>
         <div class="template-desc">Leaving stability for something new</div>
         <div class="template-chain"><span class="chain-tag ct-rei">REI</span><span class="chain-tag" style="background:#1a1a1a;color:#f59e0b;">1st Principles</span><span class="chain-tag" style="background:#1a1a1a;color:#8b5cf6;">Future Self</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('product-launch')">
+      <div class="template-card" data-tmpl="product-launch" onclick="previewTemplate('product-launch')">
         <div class="template-name">🛠 Indie Product Launch</div>
         <div class="template-desc">Validate before you build or launch</div>
         <div class="template-chain"><span class="chain-tag" style="background:#1a1a1a;color:#ef4444;">Inversion</span><span class="chain-tag ct-blind">Blind Spot</span><span class="chain-tag" style="background:#1a1a1a;color:#06b6d4;">Feynman</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('burnout')">
+      <div class="template-card" data-tmpl="burnout" onclick="previewTemplate('burnout')">
         <div class="template-name">🔋 Burnout Recovery</div>
         <div class="template-desc">Energy reset and path back to flow</div>
         <div class="template-chain"><span class="chain-tag" style="background:#1a1a1a;color:#10b981;">Energy</span><span class="chain-tag ct-rei">REI</span><span class="chain-tag ct-socratic">Socratic</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('financial')">
+      <div class="template-card" data-tmpl="financial" onclick="previewTemplate('financial')">
         <div class="template-name">💰 Big Financial Decision</div>
         <div class="template-desc">Invest, buy, or major money move</div>
         <div class="template-chain"><span class="chain-tag" style="background:#1a1a1a;color:#ec4899;">Probabilistic</span><span class="chain-tag" style="background:#1a1a1a;color:#ef4444;">Inversion</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('scaling')">
+      <div class="template-card" data-tmpl="scaling" onclick="previewTemplate('scaling')">
         <div class="template-name">📈 Scale Side Project</div>
         <div class="template-desc">From hobby to real business</div>
         <div class="template-chain"><span class="chain-tag" style="background:#1a1a1a;color:#3b82f6;">Systems</span><span class="chain-tag" style="background:#1a1a1a;color:#f97316;">Stakeholder</span></div>
       </div>
-      <div class="template-card" onclick="selectTemplate('ethical')">
+      <div class="template-card" data-tmpl="ethical" onclick="previewTemplate('ethical')">
         <div class="template-name">⚖️ Ethical Dilemma</div>
         <div class="template-desc">When the right thing isn't clear</div>
         <div class="template-chain"><span class="chain-tag" style="background:#1a1a1a;color:#94a3b8;">Stoic</span><span class="chain-tag ct-kingdom">Kingdom</span><span class="chain-tag" style="background:#1a1a1a;color:#f97316;">Stakeholder</span></div>
       </div>
+    </div>
+    <!-- Template lens preview panel -->
+    <div id="tmpl-preview-panel" class="tmpl-preview">
+      <div class="tmpl-preview-label">Lenses activated for this template</div>
+      <div class="tmpl-lens-rows" id="tmpl-lens-rows"></div>
+      <button class="tmpl-start-btn" id="tmpl-start-btn">Start with this template →</button>
     </div>
   </div>
 </div>
@@ -2324,6 +2598,9 @@ function onThoughtInput() {
   const val = document.getElementById('global-thought').value;
   const mob = document.getElementById('mobile-thought');
   if (mob) mob.value = val;
+  // Sync back to hero input (voice fills global-thought first)
+  const hero = document.getElementById('home-input');
+  if (hero && hero.value !== val) hero.value = val;
   localStorage.setItem('thinkos_thought', val);
   const pillMap = { rei:'rei-pill', ladder:'ladder-pill', kingdom:'kingdom-pill', blind:'blind-pill', council:'council-pill' };
   if (pillMap[currentTool]) renderThoughtPill(pillMap[currentTool]);
@@ -2338,6 +2615,33 @@ function restoreThought() {
   document.getElementById('global-thought').value = saved;
   const mob = document.getElementById('mobile-thought');
   if (mob) mob.value = saved;
+  const hero = document.getElementById('home-input');
+  if (hero) hero.value = saved;
+}
+
+// ── Home hero input ────────────────────────────────────────────
+function onHomeInputChange() {
+  const val = document.getElementById('home-input').value;
+  document.getElementById('global-thought').value = val;
+  // Update char hint
+  const hint = document.getElementById('home-char-hint');
+  if (hint) hint.textContent = val.trim().length ? val.trim().length + ' chars' : 'Start typing…';
+  onThoughtInput();
+}
+
+function fillExample(text) {
+  const hero = document.getElementById('home-input');
+  if (!hero) return;
+  hero.value = text;
+  hero.selectionStart = hero.selectionEnd = text.length;
+  onHomeInputChange();
+  // Open the lens picker immediately so they can pick and go
+  openLensPicker();
+}
+
+function sendHomeThought() {
+  // Alias — the Start button now calls openLensPicker() directly
+  openLensPicker();
 }
 
 // ── Thought pill ──────────────────────────────────────────────
@@ -2398,6 +2702,13 @@ function switchTool(tool) {
   if (tool === 'analytics') setTimeout(loadAnalytics,    50);
   if (tool === 'journal')   setTimeout(renderJournal,    50);
   if (tool === 'planner')   setTimeout(renderSavedPlans, 50);
+  // Focus hero input when returning home (desktop only)
+  if (tool === 'home' && window.innerWidth >= 768) {
+    setTimeout(() => {
+      const hero = document.getElementById('home-input');
+      if (hero) hero.focus();
+    }, 80);
+  }
 }
 
 // ── Theme toggle ───────────────────────────────────────────────
@@ -3008,7 +3319,55 @@ const TEMPLATES = {
   'pressure-test':     { placeholder: "I'm considering the idea that...",         lens: 'inversion' },
   'hard-conversation': { placeholder: "I need to have a conversation about...",   lens: 'socratic' }
 };
+
+// Which lenses to preview for each template (shown before user commits)
+const TEMPLATE_LENSES = {
+  'big-decision':      ['first_principles', 'inversion', 'future_self', 'regret'],
+  'conflict':          ['rei', 'stakeholder', 'socratic'],
+  'creative-block':    ['ladder', 'feynman', 'socratic'],
+  'discernment':       ['kingdom', 'stoic', 'future_self'],
+  'pressure-test':     ['inversion', 'first_principles', 'premortem'],
+  'hard-conversation': ['rei', 'stakeholder', 'socratic'],
+  'career-pivot':      ['first_principles', 'future_self', 'regret'],
+  'product-launch':    ['inversion', 'premortem', 'feynman'],
+  'burnout':           ['energy', 'rei', 'stoic'],
+  'financial':         ['probabilistic', 'inversion', 'regret'],
+  'scaling':           ['systems', 'stakeholder', 'secondorder'],
+  'ethical':           ['stoic', 'virtue', 'kingdom'],
+};
+
+let _selectedTemplate = null;
+function previewTemplate(id) {
+  _selectedTemplate = id;
+  // Highlight the selected card
+  document.querySelectorAll('#template-grid .template-card').forEach(c => {
+    c.classList.toggle('tmpl-selected', c.dataset.tmpl === id);
+  });
+  const panel  = document.getElementById('tmpl-preview-panel');
+  const rows   = document.getElementById('tmpl-lens-rows');
+  const btn    = document.getElementById('tmpl-start-btn');
+  const lenses = TEMPLATE_LENSES[id] || [];
+  rows.innerHTML = '';
+  lenses.forEach(lensId => {
+    const cfg = getLensById(lensId);
+    if (!cfg) return;
+    const row = document.createElement('div');
+    row.className = 'tmpl-lens-row';
+    row.innerHTML = `<div class="tmpl-lens-icon">${cfg.icon}</div><div class="tmpl-lens-info"><strong>${cfg.name}</strong><span>${cfg.desc}</span></div>`;
+    rows.appendChild(row);
+  });
+  btn.onclick = () => selectTemplate(id);
+  panel.classList.add('visible');
+  // Scroll preview into view on small screens
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
 function openTemplates() {
+  // Reset preview panel state each time
+  const panel = document.getElementById('tmpl-preview-panel');
+  if (panel) panel.classList.remove('visible');
+  document.querySelectorAll('#template-grid .template-card').forEach(c => c.classList.remove('tmpl-selected'));
+  _selectedTemplate = null;
   document.getElementById('templates-modal').classList.add('visible');
 }
 function selectTemplate(id) {
@@ -3067,15 +3426,20 @@ function closeAllModals() {
 
 // ── Voice input ────────────────────────────────────────────────
 let recognition = null;
+function _setVoiceListening(on) {
+  ['voice-btn','home-voice-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('listening', on);
+  });
+}
 function toggleVoice() {
-  const btn = document.getElementById('voice-btn');
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
     alert('Voice input not supported in this browser. Try Chrome.');
     return;
   }
   if (recognition) {
     recognition.stop(); recognition = null;
-    btn.classList.remove('listening'); return;
+    _setVoiceListening(false); return;
   }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
@@ -3084,12 +3448,12 @@ function toggleVoice() {
     const transcript = Array.from(e.results).map(r => r[0].transcript).join(' ');
     const ta = document.getElementById('global-thought');
     ta.value = (ta.value ? ta.value + ' ' : '') + transcript;
-    onThoughtInput();
+    onThoughtInput(); // this syncs back to home-input automatically
   };
-  recognition.onerror = () => { recognition = null; btn.classList.remove('listening'); };
-  recognition.onend   = () => { recognition = null; btn.classList.remove('listening'); };
+  recognition.onerror = () => { recognition = null; _setVoiceListening(false); };
+  recognition.onend   = () => { recognition = null; _setVoiceListening(false); };
   recognition.start();
-  btn.classList.add('listening');
+  _setVoiceListening(true);
 }
 
 // ── Keyboard shortcuts ─────────────────────────────────────────
@@ -3472,8 +3836,14 @@ function finishOnboarding(destination) {
     } else {
       activateLens(destination);
     }
-    // Focus the thought input
+    // Focus the sidebar thought input
     setTimeout(() => document.getElementById('global-thought').focus(), 150);
+  } else {
+    // Staying on home — focus the hero input
+    setTimeout(() => {
+      const hero = document.getElementById('home-input');
+      if (hero) hero.focus();
+    }, 150);
   }
 }
 
@@ -3500,6 +3870,14 @@ renderAuthUI();
 checkSuccessReturn();
 sbInit();
 checkDisclaimer();
+// Auto-focus hero input on desktop after short settle delay
+setTimeout(() => {
+  const isMobile = window.innerWidth < 768;
+  if (!isMobile) {
+    const hero = document.getElementById('home-input');
+    if (hero) hero.focus();
+  }
+}, 400);
 // Auto-start trial on first visit (silent — no prompt needed)
 if (!getTrialStart() && !isHardPaid()) {
   setTimeout(() => { startTrial(); }, 500);
@@ -3870,6 +4248,172 @@ if (_sbThoughtEl) {
   _sbThoughtEl.addEventListener('input', () => triggerAutoSuggest(getThought()), { passive:true });
 }
 
+// ── Lens Picker ────────────────────────────────────────────────
+let _pickedLenses    = new Set();
+let _suggestedLenses = new Set();
+
+const LP_CORE_LENSES = [
+  { id:'rei',      name:'REI Council',  icon:'🧠' },
+  { id:'ladder',   name:'The Ladder',   icon:'🪜' },
+  { id:'kingdom',  name:'Kingdom Lens', icon:'✝️' },
+  { id:'socratic', name:'Socratic',     icon:'❓' },
+  { id:'blind',    name:'Blind Spot',   icon:'🔍' },
+  { id:'council',  name:'Full Council', icon:'⚡' },
+];
+
+function openLensPicker() {
+  const thought = (document.getElementById('home-input')?.value || '').trim();
+  if (!thought) {
+    const btn = document.getElementById('home-send-btn');
+    btn.classList.add('shake');
+    setTimeout(() => btn.classList.remove('shake'), 380);
+    document.getElementById('home-input').focus();
+    return;
+  }
+  document.getElementById('global-thought').value = thought;
+  onThoughtInput();
+
+  _pickedLenses.clear();
+  _suggestedLenses.clear();
+
+  // Thought preview
+  const preview = document.getElementById('lp-thought-preview');
+  const trunc = thought.length > 130 ? thought.slice(0, 130) + '…' : thought;
+  preview.textContent = '"' + trunc + '"';
+
+  // Build core grid
+  _buildLpGrid(document.getElementById('lp-grid-core'), LP_CORE_LENSES, false);
+
+  // Build extended grid (locked for free users)
+  const extLenses = LENS_CONFIG.filter(l => !l.core).map(l => ({ id:l.id, name:l.name, icon:l.icon }));
+  const locked = !isPaid();
+  _buildLpGrid(document.getElementById('lp-grid-extended'), extLenses, locked);
+
+  updateLpRunBtn();
+
+  // Hint for free vs Pro
+  const hint = document.getElementById('lp-multiselect-hint');
+  hint.textContent = isPaid() ? 'Pro: tap multiple lenses to run them together' : '';
+
+  document.getElementById('lens-picker-modal').classList.add('visible');
+
+  // Fetch AI suggestions in background and highlight recommended chips
+  _fetchLpSuggestions(thought);
+}
+
+function _buildLpGrid(container, lenses, locked) {
+  container.innerHTML = '';
+  lenses.forEach(l => {
+    const chip = document.createElement('div');
+    chip.className = 'lp-chip' + (locked ? ' lp-locked' : '');
+    chip.dataset.lpId = l.id;
+    chip.innerHTML = `<div class="lp-chip-icon">${l.icon}</div><div class="lp-chip-name">${l.name}</div>`;
+    if (!locked) {
+      chip.addEventListener('click', () => _toggleLpChip(l.id));
+    } else {
+      chip.title = 'Upgrade to Pro';
+      chip.addEventListener('click', () => openPaywall('lens'));
+    }
+    container.appendChild(chip);
+  });
+}
+
+function _toggleLpChip(id) {
+  const free = !isPaid();
+  if (_pickedLenses.has(id)) {
+    _pickedLenses.delete(id);
+  } else {
+    if (free) _pickedLenses.clear(); // free = single-select
+    _pickedLenses.add(id);
+  }
+  // Update visual state for all chips
+  document.querySelectorAll('#lens-picker-modal .lp-chip').forEach(el => {
+    const elId = el.dataset.lpId;
+    if (!el.classList.contains('lp-locked')) {
+      el.classList.toggle('lp-selected', _pickedLenses.has(elId));
+    }
+  });
+  updateLpRunBtn();
+}
+
+function updateLpRunBtn() {
+  const btn  = document.getElementById('lp-run-btn');
+  const n    = _pickedLenses.size;
+  if (n === 0) {
+    btn.textContent = 'Pick a lens above';
+    btn.disabled = true;
+    return;
+  }
+  btn.disabled = false;
+  if (n === 1) {
+    const id  = [..._pickedLenses][0];
+    const cfg = getLensById(id) || LP_CORE_LENSES.find(l => l.id === id);
+    const name = cfg?.name || id;
+    btn.textContent = `Analyse with ${name} →`;
+  } else {
+    btn.textContent = `Analyse with ${n} lenses →`;
+  }
+}
+
+async function _fetchLpSuggestions(thought) {
+  try {
+    const res  = await fetch('/api/suggest-lens', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ thought })
+    });
+    const data = await res.json();
+    const ids  = (data.suggestions || []).slice(0, 3);
+    if (!ids.length) return;
+    _suggestedLenses = new Set(ids);
+    // Add a subtle "✦ Suggested" badge to recommended chips
+    ids.forEach(id => {
+      const chip = document.querySelector(`#lens-picker-modal .lp-chip[data-lp-id="${id}"]`);
+      if (chip && !chip.querySelector('.lp-suggested-badge')) {
+        const badge = document.createElement('div');
+        badge.className = 'lp-suggested-badge';
+        badge.textContent = '✦ Suggested';
+        chip.appendChild(badge);
+      }
+    });
+  } catch(e) { /* silent — suggestions are optional */ }
+}
+
+const CORE_LENS_SUBMIT = {
+  'rei':     () => { switchTool('rei');     setTimeout(submitREI,     120); },
+  'ladder':  () => { switchTool('ladder');  setTimeout(submitLadder,  120); },
+  'kingdom': () => { switchTool('kingdom'); setTimeout(submitKingdom, 120); },
+  'socratic':() => { switchTool('socratic'); },
+  'blind':   () => { switchTool('blind');   setTimeout(submitBlind,   120); },
+  'council': () => { setTimeout(runFullCouncil, 80); },
+};
+
+function runPickedLenses() {
+  const lenses = [..._pickedLenses];
+  if (!lenses.length) return;
+  closeAllModals();
+
+  if (lenses.length === 1) {
+    const id = lenses[0];
+    if (CORE_LENS_SUBMIT[id]) {
+      CORE_LENS_SUBMIT[id]();
+    } else {
+      activateLens(id);
+      setTimeout(submitLens, 200);
+    }
+    return;
+  }
+
+  // Multiple (Pro) — run extended lenses via Pro Council
+  const extIds = lenses.filter(id => !CORE_LENS_SUBMIT[id]);
+  if (extIds.length) {
+    _proSelectedLenses = new Set(extIds);
+    openProCouncil();
+    return;
+  }
+  // All-core multi-select → Full Council
+  setTimeout(runFullCouncil, 80);
+}
+
 // ── Guided Paths ───────────────────────────────────────────────
 const GUIDED_PATHS = [
   { label:'😰 I\'m anxious or overwhelmed',        lenses:['rei','stoic','feynman'],         template:null },
@@ -3886,29 +4430,63 @@ const GUIDED_PATHS = [
 function openGuidedPaths() {
   const list = document.getElementById('guided-paths-list');
   list.innerHTML = '';
+
   GUIDED_PATHS.forEach(path => {
-    const btn = document.createElement('button');
-    btn.style.cssText = 'width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:left;cursor:pointer;transition:border-color 0.15s;color:var(--text);';
-    btn.onmouseover = () => btn.style.borderColor = 'var(--ladder)';
-    btn.onmouseout  = () => btn.style.borderColor = 'var(--border)';
+    const item = document.createElement('div');
+    item.className = 'gpath-item';
 
-    const lensNames = path.lenses.map(id => getLensById(id)?.name || id).join(' → ');
-    btn.innerHTML = `<div style="font-size:14px;font-weight:600;margin-bottom:4px;">${path.label}</div><div style="font-size:11px;color:var(--muted);">${lensNames}</div>`;
+    // Trigger row
+    const trigger = document.createElement('button');
+    trigger.className = 'gpath-trigger';
+    const lensHints = path.lenses.map(id => {
+      const cfg = getLensById(id);
+      return cfg ? `<span style="display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px;color:var(--muted);margin-right:4px;">${cfg.icon} ${cfg.name}</span>` : '';
+    }).join('');
+    trigger.innerHTML = `<div class="gpath-trigger-left"><span class="gpath-trigger-label">${path.label}</span><div class="gpath-trigger-hint" style="margin-top:4px;">${lensHints}</div></div><span class="gpath-chevron">▼</span>`;
 
-    btn.onclick = () => {
+    // Body
+    const body = document.createElement('div');
+    body.className = 'gpath-body';
+
+    const lensCards = document.createElement('div');
+    lensCards.className = 'gpath-lens-cards';
+    path.lenses.forEach(lensId => {
+      const cfg = getLensById(lensId);
+      if (!cfg) return;
+      const card = document.createElement('div');
+      card.className = 'gpath-lens-card';
+      card.innerHTML = `<div class="gpath-lens-card-icon">${cfg.icon}</div><div><strong>${cfg.name}</strong><span>${cfg.desc}</span></div>`;
+      lensCards.appendChild(card);
+    });
+
+    const goBtn = document.createElement('button');
+    goBtn.className = 'gpath-go-btn';
+    goBtn.textContent = "Let's go →";
+    goBtn.onclick = () => {
       closeAllModals();
       if (path.template) {
-        // selectTemplate handles lens switching + focus
         selectTemplate(path.template);
         return;
       }
-      // No template — activate the primary lens and focus input
       activateLens(path.lenses[0]);
-      const ta = document.getElementById('global-thought');
-      setTimeout(() => { ta.focus(); }, 80);
+      setTimeout(() => { document.getElementById('global-thought').focus(); }, 80);
     };
-    list.appendChild(btn);
+
+    body.appendChild(lensCards);
+    body.appendChild(goBtn);
+
+    // Accordion toggle
+    trigger.onclick = () => {
+      const isOpen = item.classList.contains('open');
+      list.querySelectorAll('.gpath-item').forEach(el => el.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    };
+
+    item.appendChild(trigger);
+    item.appendChild(body);
+    list.appendChild(item);
   });
+
   document.getElementById('guided-paths-modal').classList.add('visible');
 }
 
