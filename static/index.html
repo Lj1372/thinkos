@@ -268,11 +268,48 @@ body {
 }
 .home-tagline span { color: var(--ladder); }
 .home-sub {
-  font-size: 16px;
+  font-size: 15px;
   color: var(--muted);
-  max-width: 520px;
-  margin: 0 auto 10px;
-  line-height: 1.65;
+  max-width: 560px;
+  margin: 0 auto 16px;
+  line-height: 1.7;
+}
+.home-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 auto 16px;
+}
+.home-flow-step {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 14px;
+  white-space: nowrap;
+}
+.home-flow-step.act { border-color: rgba(45,212,191,.5); color: var(--secondorder); }
+.home-flow-arrow { color: var(--muted); font-size: 14px; font-weight: 700; }
+.home-scope-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 auto 22px;
+  max-width: 480px;
+}
+.home-scope-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
 }
 .home-intent {
   font-size: 13px;
@@ -1423,7 +1460,25 @@ body {
     <div class="tool-view" id="view-home">
       <div class="home-hero">
         <div class="home-tagline">Think clearer.<br><span>Decide better.</span></div>
-        <div class="home-sub">A structured thinking companion for decisions, problems, and ideas — 29 thinking lenses from the world's best mental frameworks, in one place.</div>
+        <div class="home-sub">Bring any decision you can't make, emotion you can't name, situation that feels stuck, or idea you want to pressure-test. ThinkOS runs it through 29 of the world's best thinking frameworks — Stoic, Socratic, Systems, Biblical, Probabilistic and more — and surfaces exactly what your own thinking is missing.</div>
+
+        <div class="home-flow">
+          <span class="home-flow-step">✍️ Think</span>
+          <span class="home-flow-arrow">→</span>
+          <span class="home-flow-step">💡 Get insight</span>
+          <span class="home-flow-arrow">→</span>
+          <span class="home-flow-step act">🗺️ Act</span>
+        </div>
+
+        <div class="home-scope-tags">
+          <span class="home-scope-tag">Decisions</span>
+          <span class="home-scope-tag">Emotions</span>
+          <span class="home-scope-tag">Ideas</span>
+          <span class="home-scope-tag">Situations</span>
+          <span class="home-scope-tag">Conflicts</span>
+          <span class="home-scope-tag">Plans</span>
+          <span class="home-scope-tag">Relationships</span>
+        </div>
 
         <!-- ── Hero input ── -->
         <div class="home-input-wrap" id="home-input-wrap">
