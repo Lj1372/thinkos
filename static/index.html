@@ -791,6 +791,62 @@ body {
 .report-card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px; }
 .report-card-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
 .report-card-text { font-size:13px; color:var(--text); line-height:1.6; }
+
+/* ── Decision Planner ── */
+.planner-progress-wrap { background:var(--border); border-radius:99px; height:8px; overflow:hidden; margin-bottom:6px; }
+.planner-progress-bar { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--ladder),var(--reason)); transition:width 0.5s ease; }
+.planner-paths { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:22px; }
+.path-card { border:2px solid var(--border); border-radius:var(--radius); padding:16px; cursor:pointer; transition:all 0.18s; position:relative; }
+.path-card:hover { border-color:var(--muted); }
+.path-card.recommended { border-color:var(--reason); }
+.path-card.path-selected { border-color:var(--ladder); background:rgba(167,139,250,.07); }
+.path-name { font-size:14px; font-weight:700; margin-bottom:6px; }
+.path-desc { font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:10px; }
+.path-proscons { display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:11px; }
+.path-pro-item { color:var(--reason); line-height:1.4; }
+.path-con-item { color:#f87171; line-height:1.4; }
+.path-badge { display:inline-block; font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; padding:2px 8px; border-radius:4px; background:rgba(52,211,153,.15); color:var(--reason); margin-bottom:6px; }
+/* Timeline */
+.planner-timeline { display:flex; align-items:flex-start; margin:22px 0 26px; padding:4px 0; overflow-x:auto; }
+.tl-phase { flex:1; display:flex; flex-direction:column; align-items:center; position:relative; min-width:70px; }
+.tl-phase:not(:last-child)::after { content:''; position:absolute; top:11px; left:calc(50% + 12px); right:calc(-50% + 12px); height:2px; background:var(--border); z-index:0; }
+.tl-phase.tl-done:not(:last-child)::after { background:var(--reason); }
+.tl-dot { width:24px; height:24px; border-radius:50%; border:2px solid var(--border); background:var(--bg); z-index:1; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+.tl-dot.tl-active { border-color:var(--ladder); background:var(--ladder); color:#000; }
+.tl-dot.tl-done { border-color:var(--reason); background:var(--reason); color:#000; }
+.tl-label { font-size:11px; font-weight:600; text-align:center; margin-top:6px; color:var(--text); }
+.tl-tf { font-size:10px; color:var(--muted); text-align:center; margin-top:2px; }
+/* Phases */
+.phase-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; overflow:hidden; }
+.phase-header { padding:13px 18px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
+.phase-header:hover { background:var(--surface2); }
+.phase-htitle { font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
+.phase-hmeta { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--muted); }
+.phase-body { padding:4px 18px 14px; }
+.step-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
+.step-row:last-child { border-bottom:none; }
+.step-cb { width:20px; height:20px; min-width:20px; border:2px solid var(--border); border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-top:3px; transition:all 0.15s; }
+.step-cb.cb-done { background:var(--reason); border-color:var(--reason); color:#000; font-size:11px; }
+.step-text { flex:1; }
+.step-action { font-size:14px; font-weight:500; line-height:1.4; transition:opacity 0.2s; }
+.step-action.s-done { opacity:.4; text-decoration:line-through; }
+.step-why { font-size:12px; color:var(--muted); margin-top:3px; line-height:1.5; }
+.step-diff { font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:4px; min-width:fit-content; margin-top:4px; display:inline-block; }
+.diff-easy   { background:rgba(52,211,153,.15); color:var(--reason); }
+.diff-medium { background:rgba(251,191,36,.15); color:#fbbf24; }
+.diff-hard   { background:rgba(248,113,113,.15); color:#f87171; }
+/* Footer */
+.planner-footer-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+@media(max-width:560px){ .planner-footer-grid { grid-template-columns:1fr; } }
+.pf-card { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
+.pf-label { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:8px; font-weight:700; }
+.pf-item { font-size:13px; line-height:1.5; padding:3px 0; display:flex; gap:8px; align-items:flex-start; }
+.first-step-cta { background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(52,211,153,.08)); border:1px solid rgba(167,139,250,.3); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+.fsc-label { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ladder); font-weight:700; margin-bottom:8px; }
+.fsc-text { font-size:15px; font-weight:600; line-height:1.5; }
+.planner-saved-list { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+.saved-plan-row { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:border-color 0.15s; }
+.saved-plan-row:hover { border-color:var(--ladder); }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -833,6 +889,7 @@ body {
   <div class="sb-divider"></div>
   <button class="btn-templates" onclick="openTemplates()">📋 Templates</button>
   <button class="btn-templates" onclick="openProCouncil()" style="margin-top:4px;background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(167,139,250,.15));border-color:rgba(236,72,153,.3);color:var(--probabilistic);">🔮 Pro Council</button>
+  <button class="btn-templates" onclick="switchTool('planner')" style="margin-top:4px;background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(56,189,248,.08));border-color:rgba(45,212,191,.3);color:var(--secondorder);">🗺️ Decision Planner</button>
   <button class="btn-templates" onclick="switchTool('analytics')" style="margin-top:4px;">📊 Analytics</button>
   <button class="btn-templates" onclick="switchTool('journal')" style="margin-top:4px;">📔 Decision Journal</button>
   <button class="btn-templates" onclick="openWeeklyReport()" style="margin-top:4px;">🗓 Weekly Report</button>
@@ -1260,6 +1317,46 @@ body {
       <div id="journal-content">
         <button onclick="openNewDecision()" style="width:100%;background:var(--futureself);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:20px;">+ Log a New Decision</button>
         <div id="journal-list"></div>
+      </div>
+    </div>
+
+    <!-- ── Decision Planner ── -->
+    <div class="tool-view" id="view-planner">
+      <div class="tool-header">
+        <div class="tool-title" style="color:var(--secondorder)">🗺️ Decision Planner</div>
+        <div class="tool-desc">Turn any decision or situation into a visual, interactive action plan — paths, phases, milestones, and a step-by-step guide to the outcome you want.</div>
+      </div>
+      <div id="planner-pill"></div>
+      <div id="planner-saved-section" style="margin-bottom:4px;"><div id="planner-saved-list" class="planner-saved-list"></div></div>
+      <button class="btn-submit" id="planner-btn" onclick="runPlanner()" style="background:var(--secondorder);color:#000;margin-bottom:24px;">🗺️ Build My Action Plan</button>
+      <div id="planner-results" style="display:none;">
+        <div style="margin-bottom:20px;">
+          <div id="planner-title" style="font-size:20px;font-weight:800;margin-bottom:4px;"></div>
+          <div id="planner-outcome" style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;"></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;"><div class="planner-progress-wrap"><div class="planner-progress-bar" id="planner-prog-bar" style="width:0%"></div></div></div>
+            <div id="planner-prog-text" style="font-size:12px;color:var(--muted);min-width:64px;text-align:right;">0% done</div>
+          </div>
+        </div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;">Choose Your Path</div>
+        <div class="planner-paths" id="planner-paths"></div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;">Timeline</div>
+        <div class="planner-timeline" id="planner-timeline"></div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;">Step-by-Step Plan</div>
+        <div id="planner-phases"></div>
+        <div class="first-step-cta">
+          <div class="fsc-label">⚡ Start Here — Do This Today</div>
+          <div class="fsc-text" id="planner-first-step-text"></div>
+        </div>
+        <div class="planner-footer-grid">
+          <div class="pf-card"><div class="pf-label">🎯 Success looks like</div><div id="planner-metrics"></div></div>
+          <div class="pf-card"><div class="pf-label">⚠️ Watch out for</div><div id="planner-risks"></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <button class="copy-btn" onclick="savePlan()" style="background:var(--ladder);color:#000;">💾 Save Plan</button>
+          <button class="copy-btn" onclick="exportCurrentPDF()">⬇ Export PDF</button>
+          <button class="copy-btn" onclick="runPlanner()">↺ Regenerate</button>
+        </div>
       </div>
     </div>
 
@@ -1883,9 +1980,10 @@ function switchTool(tool) {
   if (view) view.classList.add('active');
   const pillMap = { rei:'rei-pill', ladder:'ladder-pill', kingdom:'kingdom-pill', blind:'blind-pill', council:'council-pill' };
   if (pillMap[tool]) renderThoughtPill(pillMap[tool]);
-  // Load analytics/journal content when those tabs are activated
-  if (tool === 'analytics') setTimeout(loadAnalytics, 50);
-  if (tool === 'journal')   setTimeout(renderJournal,  50);
+  // Load content when tabs are activated
+  if (tool === 'analytics') setTimeout(loadAnalytics,    50);
+  if (tool === 'journal')   setTimeout(renderJournal,    50);
+  if (tool === 'planner')   setTimeout(renderSavedPlans, 50);
 }
 
 // ── Theme toggle ───────────────────────────────────────────────
@@ -3487,6 +3585,253 @@ const TEMPLATE_EXTRA = {
 // selectTemplate extended logic is inlined directly in the original function above
 
 // analytics/journal hook is inlined directly in switchTool above
+
+// ══════════════════════════════════════════════════════════════
+// ── DECISION PLANNER ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+
+let _currentPlan = null;   // the last generated plan object
+let _currentPlanId = null; // localStorage key for current plan
+
+function getPlannerKey(id) { return 'thinkos_plan_' + id; }
+function getPlannerIndex()  { return JSON.parse(localStorage.getItem('thinkos_plans_index') || '[]'); }
+function savePlannerIndex(arr) { localStorage.setItem('thinkos_plans_index', JSON.stringify(arr)); }
+
+async function runPlanner() {
+  const thought = getThought();
+  if (!thought) { document.getElementById('global-thought').focus(); return; }
+
+  const btn = document.getElementById('planner-btn');
+  btn.disabled = true; btn.textContent = '⏳ Building your plan…';
+  renderThoughtPill('planner-pill');
+
+  try {
+    const plan = await callAPI('/api/action-plan', { situation: thought });
+    _currentPlan = plan;
+    _currentPlanId = 'plan_' + Date.now();
+    renderPlannerResults(plan, thought, _currentPlanId, {});
+    document.getElementById('planner-results').style.display = 'block';
+    document.getElementById('planner-results').scrollIntoView({ behavior:'smooth', block:'start' });
+  } catch(e) {
+    alert('Planner error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '🗺️ Build My Action Plan';
+  }
+}
+
+function renderPlannerResults(plan, thought, planId, completedSteps) {
+  // Title + outcome
+  document.getElementById('planner-title').textContent = plan.title || 'Your Action Plan';
+  document.getElementById('planner-outcome').textContent = '🎯 Goal: ' + (plan.desired_outcome || '');
+
+  // Paths
+  const pathsEl = document.getElementById('planner-paths');
+  pathsEl.innerHTML = '';
+  (plan.paths || []).forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'path-card' + (p.recommended ? ' recommended' : '') + (i === 0 ? ' path-selected' : '');
+    card.dataset.path = i;
+    const prosHtml = (p.pros || []).map(x => `<div class="path-pro-item">✓ ${esc(x)}</div>`).join('');
+    const consHtml = (p.cons || []).map(x => `<div class="path-con-item">✗ ${esc(x)}</div>`).join('');
+    card.innerHTML = `
+      ${p.recommended ? '<div class="path-badge">★ Recommended</div>' : ''}
+      <div class="path-name">${esc(p.name)}</div>
+      <div class="path-desc">${esc(p.description)}</div>
+      <div class="path-proscons">
+        <div>${prosHtml}</div>
+        <div>${consHtml}</div>
+      </div>`;
+    card.onclick = () => {
+      pathsEl.querySelectorAll('.path-card').forEach(c => c.classList.remove('path-selected'));
+      card.classList.add('path-selected');
+    };
+    pathsEl.appendChild(card);
+  });
+
+  // Timeline
+  const tlEl = document.getElementById('planner-timeline');
+  tlEl.innerHTML = '';
+  const phases = plan.phases || [];
+  phases.forEach((ph, i) => {
+    const allSteps = ph.steps || [];
+    const doneCount = allSteps.filter(s => completedSteps[planId + '_' + s.id]).length;
+    const phaseDone = doneCount === allSteps.length && allSteps.length > 0;
+    const isActive = !phaseDone && (i === 0 || phases.slice(0, i).every(p2 => {
+      const s2 = p2.steps || [];
+      return s2.length > 0 && s2.every(s => completedSteps[planId + '_' + s.id]);
+    }));
+    const div = document.createElement('div');
+    div.className = 'tl-phase' + (phaseDone ? ' tl-done' : '');
+    div.innerHTML = `
+      <div class="tl-dot ${phaseDone ? 'tl-done' : (isActive ? 'tl-active' : '')}">${phaseDone ? '✓' : (i+1)}</div>
+      <div class="tl-label">${esc(ph.name)}</div>
+      <div class="tl-tf">${esc(ph.timeframe || '')}</div>`;
+    tlEl.appendChild(div);
+  });
+
+  // Phases with steps
+  const phasesEl = document.getElementById('planner-phases');
+  phasesEl.innerHTML = '';
+  phases.forEach((ph, pi) => {
+    const steps = ph.steps || [];
+    const doneCount = steps.filter(s => completedSteps[planId + '_' + s.id]).length;
+    const section = document.createElement('div');
+    section.className = 'phase-section';
+    section.id = 'ps-' + pi;
+    const stepsHtml = steps.map(step => {
+      const sid = planId + '_' + step.id;
+      const done = !!completedSteps[sid];
+      return `<div class="step-row" id="sr-${sid}">
+        <div class="step-cb ${done ? 'cb-done' : ''}" onclick="togglePlanStep('${planId}','${step.id}','${pi}')">${done ? '✓' : ''}</div>
+        <div class="step-text">
+          <div class="step-action ${done ? 's-done' : ''}">${esc(step.action)}</div>
+          <div class="step-why">${esc(step.purpose || '')}</div>
+          <span class="step-diff diff-${step.difficulty || 'medium'}">${step.difficulty || 'medium'}</span>
+        </div>
+      </div>`;
+    }).join('');
+    section.innerHTML = `
+      <div class="phase-header" onclick="this.parentElement.querySelector('.phase-body').style.display=this.parentElement.querySelector('.phase-body').style.display==='none'?'block':'none'">
+        <div class="phase-htitle">
+          <span style="font-size:18px;">${['🚀','📈','🔧','🏆'][pi] || '•'}</span>
+          <span>${esc(ph.name)}</span>
+        </div>
+        <div class="phase-hmeta">
+          <span>${esc(ph.timeframe || '')}</span>
+          <span style="color:var(--reason)">${doneCount}/${steps.length}</span>
+          <span style="color:var(--muted);font-size:12px;">▼</span>
+        </div>
+      </div>
+      <div class="phase-body" style="display:${pi===0?'block':'none'}">${stepsHtml}</div>`;
+    phasesEl.appendChild(section);
+  });
+
+  // First step CTA
+  document.getElementById('planner-first-step-text').textContent = plan.first_step || '';
+
+  // Success metrics
+  document.getElementById('planner-metrics').innerHTML = (plan.success_metrics || [])
+    .map(m => `<div class="pf-item"><span style="color:var(--reason)">✓</span><span>${esc(m)}</span></div>`).join('');
+
+  // Risks
+  document.getElementById('planner-risks').innerHTML = (plan.key_risks || [])
+    .map(r => `<div class="pf-item"><span style="color:#f87171">!</span><span>${esc(r)}</span></div>`).join('');
+
+  // Progress
+  updatePlannerProgress(planId, plan, completedSteps);
+}
+
+function togglePlanStep(planId, stepId, phaseIdx) {
+  const sid = planId + '_' + stepId;
+  // Load current state
+  const stored = JSON.parse(localStorage.getItem(getPlannerKey(planId)) || '{}');
+  const completed = stored.completedSteps || {};
+  completed[sid] = !completed[sid];
+  stored.completedSteps = completed;
+  localStorage.setItem(getPlannerKey(planId), JSON.stringify(stored));
+
+  // Update UI
+  const cb = document.querySelector(`#sr-${sid} .step-cb`);
+  const action = document.querySelector(`#sr-${sid} .step-action`);
+  if (cb) { cb.classList.toggle('cb-done', !!completed[sid]); cb.textContent = completed[sid] ? '✓' : ''; }
+  if (action) action.classList.toggle('s-done', !!completed[sid]);
+
+  // Update phase counter
+  if (_currentPlan) {
+    const ph = _currentPlan.phases[phaseIdx];
+    if (ph) {
+      const doneCount = (ph.steps || []).filter(s => completed[planId + '_' + s.id]).length;
+      const meta = document.querySelector(`#ps-${phaseIdx} .phase-hmeta span:nth-child(2)`);
+      if (meta) meta.textContent = doneCount + '/' + (ph.steps || []).length;
+    }
+    updatePlannerProgress(planId, _currentPlan, completed);
+    rerenderTimeline(planId, _currentPlan, completed);
+  }
+}
+
+function updatePlannerProgress(planId, plan, completedSteps) {
+  const allSteps = (plan.phases || []).flatMap(ph => ph.steps || []);
+  const total = allSteps.length;
+  const done = allSteps.filter(s => completedSteps[planId + '_' + s.id]).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const bar = document.getElementById('planner-prog-bar');
+  const txt = document.getElementById('planner-prog-text');
+  if (bar) bar.style.width = pct + '%';
+  if (txt) txt.textContent = pct + '% done';
+}
+
+function rerenderTimeline(planId, plan, completedSteps) {
+  const tlEl = document.getElementById('planner-timeline');
+  if (!tlEl) return;
+  const phases = plan.phases || [];
+  tlEl.querySelectorAll('.tl-phase').forEach((div, i) => {
+    const ph = phases[i]; if (!ph) return;
+    const allSteps = ph.steps || [];
+    const phaseDone = allSteps.length > 0 && allSteps.every(s => completedSteps[planId + '_' + s.id]);
+    const isActive = !phaseDone && phases.slice(0, i).every(p2 => {
+      const s2 = p2.steps || [];
+      return s2.length > 0 && s2.every(s => completedSteps[planId + '_' + s.id]);
+    });
+    div.className = 'tl-phase' + (phaseDone ? ' tl-done' : '');
+    const dot = div.querySelector('.tl-dot');
+    if (dot) { dot.className = 'tl-dot ' + (phaseDone ? 'tl-done' : (isActive ? 'tl-active' : '')); dot.textContent = phaseDone ? '✓' : (i+1); }
+  });
+}
+
+function savePlan() {
+  if (!_currentPlan || !_currentPlanId) return;
+  const thought = document.getElementById('global-thought')?.value || '';
+  const stored = JSON.parse(localStorage.getItem(getPlannerKey(_currentPlanId)) || '{}');
+  stored.id = _currentPlanId;
+  stored.thought = thought;
+  stored.title = _currentPlan.title || 'Action Plan';
+  stored.plan = _currentPlan;
+  stored.created = stored.created || new Date().toLocaleDateString();
+  if (!stored.completedSteps) stored.completedSteps = {};
+  localStorage.setItem(getPlannerKey(_currentPlanId), JSON.stringify(stored));
+
+  const idx = getPlannerIndex();
+  if (!idx.includes(_currentPlanId)) { idx.unshift(_currentPlanId); savePlannerIndex(idx); }
+
+  renderSavedPlans();
+  const btn = document.querySelector('[onclick="savePlan()"]');
+  if (btn) { btn.textContent = '✓ Saved!'; setTimeout(() => btn.textContent = '💾 Save Plan', 2000); }
+}
+
+function renderSavedPlans() {
+  const el = document.getElementById('planner-saved-list');
+  if (!el) return;
+  const idx = getPlannerIndex();
+  if (!idx.length) { el.innerHTML = ''; return; }
+  el.innerHTML = idx.slice(0, 5).map(id => {
+    const s = JSON.parse(localStorage.getItem(getPlannerKey(id)) || 'null');
+    if (!s) return '';
+    const allSteps = (s.plan?.phases || []).flatMap(ph => ph.steps || []);
+    const done = allSteps.filter(st => (s.completedSteps || {})[id + '_' + st.id]).length;
+    const pct = allSteps.length ? Math.round((done / allSteps.length) * 100) : 0;
+    return `<div class="saved-plan-row" onclick="loadSavedPlan('${id}')">
+      <div>
+        <div style="font-size:13px;font-weight:600;">${esc(s.title || 'Plan')}</div>
+        <div style="font-size:11px;color:var(--muted);">${esc(s.created || '')} · ${esc((s.thought||'').slice(0,50))}…</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:13px;font-weight:700;color:${pct===100?'var(--reason)':'var(--muted)'}">${pct}%</div>
+        <div style="font-size:10px;color:var(--muted);">${done}/${allSteps.length} steps</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadSavedPlan(id) {
+  const s = JSON.parse(localStorage.getItem(getPlannerKey(id)) || 'null');
+  if (!s || !s.plan) return;
+  _currentPlan = s.plan;
+  _currentPlanId = id;
+  if (s.thought) document.getElementById('global-thought').value = s.thought;
+  renderPlannerResults(s.plan, s.thought || '', id, s.completedSteps || {});
+  document.getElementById('planner-results').style.display = 'block';
+  document.getElementById('planner-results').scrollIntoView({ behavior:'smooth', block:'start' });
+}
 
 // ══════════════════════════════════════════════════════════════
 // ── SHAREABLE CARD GENERATOR (Canvas) ─────────────────────────
