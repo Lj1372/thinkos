@@ -783,6 +783,44 @@ body {
   border-radius:99px; padding:2px 8px; color:var(--muted); margin-right:4px; margin-top:4px;
 }
 
+/* ── Help & Feedback ── */
+.help-section { margin-bottom: 28px; }
+.help-section-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.help-section-title span { font-size: 18px; }
+.install-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 8px; }
+.install-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.install-card-icon { font-size: 28px; margin-bottom: 8px; }
+.install-card-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.install-card-steps { list-style: none; padding: 0; margin: 0; }
+.install-card-steps li { font-size: 12px; color: var(--muted); line-height: 1.7; display: flex; gap: 6px; align-items: flex-start; }
+.install-card-steps li::before { content: attr(data-n); font-weight: 700; color: var(--ladder); flex-shrink: 0; min-width: 14px; }
+.install-tip { background: linear-gradient(135deg, rgba(167,139,250,.08), rgba(52,211,153,.06)); border: 1px solid rgba(167,139,250,.2); border-radius: 10px; padding: 12px 14px; font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 8px; }
+.help-faq { display: flex; flex-direction: column; gap: 8px; }
+.faq-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.faq-q { font-size: 13px; font-weight: 600; color: var(--text); padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+.faq-q:hover { background: rgba(255,255,255,.03); }
+.faq-chevron { transition: transform .2s; color: var(--muted); font-size: 11px; }
+.faq-a { font-size: 13px; color: var(--muted); line-height: 1.7; padding: 0 14px 12px; display: none; }
+.faq-item.open .faq-a { display: block; }
+.faq-item.open .faq-chevron { transform: rotate(180deg); }
+.feedback-form { display: flex; flex-direction: column; gap: 10px; }
+.feedback-stars { display: flex; gap: 6px; margin-bottom: 2px; }
+.star-btn { font-size: 22px; background: none; border: none; cursor: pointer; opacity: .4; transition: opacity .15s, transform .1s; padding: 0; }
+.star-btn.active, .star-btn:hover { opacity: 1; transform: scale(1.15); }
+.feedback-textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 13px; line-height: 1.6; resize: vertical; min-height: 90px; font-family: inherit; }
+.feedback-textarea:focus { outline: none; border-color: var(--ladder); }
+.feedback-email { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; color: var(--text); font-size: 13px; font-family: inherit; }
+.feedback-email:focus { outline: none; border-color: var(--ladder); }
+.feedback-submit { background: var(--ladder); color: #000; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 700; cursor: pointer; align-self: flex-start; transition: opacity .15s; }
+.feedback-submit:hover { opacity: .85; }
+.contact-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.contact-link { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13px; color: var(--text); text-decoration: none; transition: border-color .15s; }
+.contact-link:hover { border-color: var(--ladder); color: var(--ladder); }
+/* Floating feedback button */
+.fab-feedback { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,.3); display: flex; align-items: center; gap: 6px; transition: color .15s, border-color .15s; }
+.fab-feedback:hover { color: var(--text); border-color: var(--ladder); }
+@media(max-width:640px) { .fab-feedback { bottom: 72px; right: 14px; padding: 9px 13px; font-size: 12px; } }
+
 /* ── Weekly Report ── */
 .report-headline { font-size:22px; font-weight:800; margin-bottom:8px; line-height:1.3; }
 .report-quote { font-size:14px; color:var(--muted); font-style:italic; border-left:3px solid var(--ladder); padding-left:12px; margin:16px 0; }
@@ -961,6 +999,7 @@ body {
 
   <div class="sb-bottom">
     <button class="btn-theme" onclick="toggleTheme()" id="theme-btn" title="Toggle theme">🌓</button>
+    <button onclick="switchTool('help')" title="Help &amp; Feedback" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px 6px;opacity:.55;transition:opacity .15s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.55">❓</button>
   </div>
 </aside>
 
@@ -1321,6 +1360,120 @@ body {
       </div>
     </div>
 
+    <!-- ── Help & Feedback ── -->
+    <div class="tool-view" id="view-help">
+      <div class="tool-header">
+        <div class="tool-title" style="color:var(--ladder)">❓ Help &amp; Feedback</div>
+        <div class="tool-desc">Install ThinkOS on your device, get answers to common questions, and share your feedback with us.</div>
+      </div>
+
+      <!-- Install instructions -->
+      <div class="help-section">
+        <div class="help-section-title"><span>📲</span> Save ThinkOS to your home screen</div>
+        <div class="install-cards">
+
+          <div class="install-card">
+            <div class="install-card-icon">🍎</div>
+            <div class="install-card-title">iPhone &amp; iPad</div>
+            <ul class="install-card-steps">
+              <li data-n="1">Open ThinkOS in <strong>Safari</strong> (not Chrome)</li>
+              <li data-n="2">Tap the <strong>Share</strong> button at the bottom (box with arrow up)</li>
+              <li data-n="3">Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+              <li data-n="4">Tap <strong>Add</strong> — done! Opens like an app</li>
+            </ul>
+          </div>
+
+          <div class="install-card">
+            <div class="install-card-icon">🤖</div>
+            <div class="install-card-title">Android</div>
+            <ul class="install-card-steps">
+              <li data-n="1">Open ThinkOS in <strong>Chrome</strong></li>
+              <li data-n="2">Tap the <strong>⋮ menu</strong> (top right)</li>
+              <li data-n="3">Tap <strong>"Add to Home Screen"</strong></li>
+              <li data-n="4">Tap <strong>Add</strong> — ThinkOS installs instantly</li>
+            </ul>
+          </div>
+
+          <div class="install-card">
+            <div class="install-card-icon">💻</div>
+            <div class="install-card-title">Desktop (Chrome / Edge)</div>
+            <ul class="install-card-steps">
+              <li data-n="1">Open ThinkOS in Chrome or Edge</li>
+              <li data-n="2">Look for the <strong>install icon</strong> in the address bar (⊕ or computer icon)</li>
+              <li data-n="3">Click it and select <strong>"Install"</strong></li>
+              <li data-n="4">ThinkOS opens as a standalone app with no browser chrome</li>
+            </ul>
+          </div>
+
+        </div>
+        <div class="install-tip">💡 <strong>Why install it?</strong> ThinkOS works offline once installed, loads instantly, and sits on your home screen so it's always one tap away — like a native app, no app store needed.</div>
+      </div>
+
+      <!-- FAQ -->
+      <div class="help-section">
+        <div class="help-section-title"><span>💬</span> Frequently asked questions</div>
+        <div class="help-faq">
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">What is ThinkOS? <span class="faq-chevron">▼</span></div>
+            <div class="faq-a">ThinkOS is a thinking companion that helps you break down any decision, problem, or idea using proven mental frameworks — First Principles, Stoicism, Inversion, and 24+ other lenses. It doesn't give you answers; it helps you think more clearly so you arrive at better ones yourself.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">What does Pro include? <span class="faq-chevron">▼</span></div>
+            <div class="faq-a">Pro unlocks all 24+ extended thinking lenses, Pro Council (run any combination of all lenses simultaneously), the Decision Planner, cloud session history synced across devices, session analytics, the weekly thinking report, and priority access to new features as they ship.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">Is my data private? <span class="faq-chevron">▼</span></div>
+            <div class="faq-a">Your thoughts are sent to our AI model to generate responses and are not stored beyond your session unless you're logged in with Pro (where sessions are saved to your account only). We never sell or share your data. You can delete your account and all data at any time.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">How does the 7-day free trial work? <span class="faq-chevron">▼</span></div>
+            <div class="faq-a">Your 7-day Pro trial starts automatically on your first visit — no card required. You get full access to every Pro feature. After 7 days you can upgrade to keep access. If you subscribe, Stripe also gives you a 7-day no-charge period before your first billing.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">Can I cancel my subscription? <span class="faq-chevron">▼</span></div>
+            <div class="faq-a">Yes, cancel any time with no penalty. You keep Pro access until the end of your billing period. Email us at john_lund_137@hotmail.com and we'll handle it within 24 hours.</div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">Which lenses should I start with? <span class="faq-chevron">▼</span></div>
+            <div class="faq-a">For most decisions, start with <strong>REI Council</strong> (gut check), then <strong>Inversion</strong> (what could go wrong), then <strong>First Principles</strong> (strip back assumptions). For big life questions, try <strong>Full Council</strong> which runs all six core lenses in sequence. Not sure? Use the <strong>Suggest a Lens</strong> button — it reads your situation and recommends the best two lenses automatically.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback form -->
+      <div class="help-section">
+        <div class="help-section-title"><span>⭐</span> Share your feedback</div>
+        <div class="feedback-form" id="feedback-form">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">How would you rate ThinkOS?</div>
+            <div class="feedback-stars" id="feedback-stars">
+              <button class="star-btn" data-v="1" onclick="setRating(1)">★</button>
+              <button class="star-btn" data-v="2" onclick="setRating(2)">★</button>
+              <button class="star-btn" data-v="3" onclick="setRating(3)">★</button>
+              <button class="star-btn" data-v="4" onclick="setRating(4)">★</button>
+              <button class="star-btn" data-v="5" onclick="setRating(5)">★</button>
+            </div>
+          </div>
+          <textarea class="feedback-textarea" id="feedback-text" placeholder="What's working well? What could be better? What lenses or features do you wish existed?"></textarea>
+          <input class="feedback-email" id="feedback-email" type="email" placeholder="Your email (optional — if you'd like a reply)" />
+          <button class="feedback-submit" onclick="submitFeedback()">Send Feedback →</button>
+          <p id="feedback-status" style="font-size:12px;color:var(--muted);min-height:16px;"></p>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="help-section">
+        <div class="help-section-title"><span>📬</span> Contact &amp; support</div>
+        <div class="contact-links">
+          <a class="contact-link" href="mailto:john_lund_137@hotmail.com">✉️ john_lund_137@hotmail.com</a>
+          <a class="contact-link" href="mailto:john_lund_137@hotmail.com?subject=Feature Request">💡 Request a feature</a>
+          <a class="contact-link" href="mailto:john_lund_137@hotmail.com?subject=Bug Report">🐛 Report a bug</a>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.6;">We read every message. Typical response time is under 24 hours. For subscription issues, billing questions, or account deletion requests, email us directly.</p>
+      </div>
+
+    </div>
+
     <!-- ── Decision Planner ── -->
     <div class="tool-view" id="view-planner">
       <div class="tool-header">
@@ -1376,6 +1529,9 @@ body {
 
 <!-- Full Council FAB for mobile -->
 <button class="fab-council" onclick="runFullCouncil()">⚡ Full Council</button>
+
+<!-- Floating feedback button -->
+<button class="fab-feedback" onclick="switchTool('help')" title="Help &amp; Feedback">💬 Feedback</button>
 
 <!-- ── Disclaimer modal ── -->
 <div class="modal-overlay" id="disclaimer-modal" style="z-index:9000;background:rgba(0,0,0,0.85);">
@@ -1619,7 +1775,7 @@ body {
     <p id="paywall-status" style="font-size:13px;color:var(--muted);min-height:18px;margin-bottom:10px;"></p>
     <p class="paywall-fine">
       🔒 Secure payment via Stripe &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp;
-      <a href="mailto:support@thinkos.app">support@thinkos.app</a>
+      <a href="mailto:john_lund_137@hotmail.com">john_lund_137@hotmail.com</a>
     </p>
 
     <!-- Referral section -->
@@ -4252,6 +4408,41 @@ window.addEventListener('appinstalled', () => {
   const banner = document.getElementById('pwa-banner');
   if (banner) banner.remove();
 });
+
+// ══════════════════════════════════════════════════════════════
+// ── HELP & FEEDBACK ───────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+
+function toggleFaq(qEl) {
+  const item = qEl.closest('.faq-item');
+  item.classList.toggle('open');
+}
+
+let _selectedRating = 0;
+function setRating(n) {
+  _selectedRating = n;
+  document.querySelectorAll('#feedback-stars .star-btn').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.dataset.v) <= n);
+  });
+}
+
+async function submitFeedback() {
+  const msg   = (document.getElementById('feedback-text')?.value || '').trim();
+  const email = (document.getElementById('feedback-email')?.value || '').trim();
+  const status = document.getElementById('feedback-status');
+  if (!msg) { if (status) status.textContent = 'Please write a message before sending.'; return; }
+  try {
+    if (status) status.textContent = 'Sending…';
+    await callAPI('/api/feedback', { message: msg, email, rating: _selectedRating || null });
+    if (status) { status.style.color = 'var(--reason)'; status.textContent = '✓ Feedback received — thank you!'; }
+    document.getElementById('feedback-text').value = '';
+    document.getElementById('feedback-email').value = '';
+    _selectedRating = 0;
+    document.querySelectorAll('#feedback-stars .star-btn').forEach(b => b.classList.remove('active'));
+  } catch(e) {
+    if (status) { status.style.color = '#f87171'; status.textContent = 'Something went wrong. Email us directly at john_lund_137@hotmail.com'; }
+  }
+}
 </script>
 </body>
 </html>

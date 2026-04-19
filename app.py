@@ -1421,6 +1421,31 @@ def send_daily_notifications():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/feedback', methods=['POST'])
+def submit_feedback():
+    """Store user feedback in Supabase."""
+    data    = request.get_json() or {}
+    message = data.get('message', '').strip()
+    email   = data.get('email', '').strip()
+    rating  = data.get('rating', None)
+    if not message:
+        return jsonify({'error': 'message required'}), 400
+    try:
+        if SUPABASE_URL and SUPABASE_SERVICE:
+            import requests as req
+            req.post(
+                f'{SUPABASE_URL}/rest/v1/feedback',
+                headers=_sb_headers(),
+                json={'message': message, 'email': email or None, 'rating': rating},
+                timeout=5
+            )
+        return jsonify({'ok': True})
+    except Exception as e:
+        # Don't fail the user if storage fails — log and return ok
+        print(f'Feedback store error: {e}')
+        return jsonify({'ok': True})
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f'\n  ThinkOS running at http://localhost:{port}\n')
