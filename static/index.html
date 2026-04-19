@@ -2240,11 +2240,11 @@ async function runFullCouncil() {
     lastResults.blind = blind;
     showCouncilSection('cs-blind', renderBlindBody(blind));
 
-    const fp = await callAPI('/api/lens', { lens_id: 'first_principles', thought: input });
+    const fp = await callAPI('/api/lens', { lens_id: 'first_principles', situation: input });
     lastResults.fp = fp;
     showCouncilSection('cs-fp', renderGenericLensBody(fp));
 
-    const inversion = await callAPI('/api/lens', { lens_id: 'inversion', thought: input });
+    const inversion = await callAPI('/api/lens', { lens_id: 'inversion', situation: input });
     lastResults.inversion = inversion;
     showCouncilSection('cs-inversion', renderGenericLensBody(inversion));
 
@@ -2434,7 +2434,7 @@ async function runProCouncil() {
     document.getElementById('pro-results').appendChild(skeleton);
 
     try {
-      const result = await callAPI('/api/lens', { lens_id: lensId, thought });
+      const result = await callAPI('/api/lens', { lens_id: lensId, situation: thought });
       document.getElementById('pro-cs-' + lensId + '-body').innerHTML = renderGenericLensBody(result);
       skeleton.style.opacity = '1';
       allResults.push({
