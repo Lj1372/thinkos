@@ -1144,7 +1144,7 @@ Respond ONLY with valid JSON:
 @app.route('/api/lens', methods=['POST'])
 def run_lens():
     """Generic endpoint for all new lenses."""
-    data      = request.get_json() or {}
+    data      = request.get_json(force=True, silent=True) or {}
     lens_id   = data.get('lens_id', '').strip()
     situation = data.get('situation', '').strip()
     if not lens_id or not situation:

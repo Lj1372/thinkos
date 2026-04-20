@@ -176,13 +176,23 @@ body {
 .btn-voice.listening { color: var(--socratic); border-color: var(--socratic); animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
+.council-btn-pair {
+  display: flex; gap: 6px; flex-shrink: 0;
+}
 .btn-full-council {
-  background: var(--ladder); color: #000; border: none; border-radius: var(--radius);
-  padding: 10px; font-size: 13px; font-weight: 700; cursor: pointer;
-  transition: opacity 0.15s; width: 100%; flex-shrink: 0;
+  flex: 1; background: var(--ladder); color: #000; border: none; border-radius: var(--radius);
+  padding: 10px 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: opacity 0.15s;
 }
 .btn-full-council:hover { opacity: 0.85; }
 .btn-full-council:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-pro-council-nav {
+  flex: 1; background: var(--probabilistic); color: #fff; border: none; border-radius: var(--radius);
+  padding: 10px 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: opacity 0.15s; position: relative;
+}
+.btn-pro-council-nav:hover { opacity: 0.85; }
+.btn-pro-council-nav.locked { opacity: 0.65; }
 
 .sb-divider { height: 1px; background: var(--border); flex-shrink: 0; }
 
@@ -1334,7 +1344,10 @@ body {
     <div class="suggest-bar" id="suggest-bar" style="display:none;"></div>
   </div>
 
-  <button class="btn-full-council" id="full-council-btn" onclick="runFullCouncil()">⚡ Full Council</button>
+  <div class="council-btn-pair">
+    <button class="btn-full-council" id="full-council-btn" onclick="runFullCouncil()">⚡ Core Council</button>
+    <button class="btn-pro-council-nav" id="pro-council-nav-btn" onclick="openProCouncilGated()">🔮 Pro Council</button>
+  </div>
 
   <div class="sb-divider"></div>
   <button class="tool-btn" data-tool="home" onclick="switchTool('home')" style="font-weight:700;color:var(--text);margin-bottom:4px;">🏠 Home</button>
@@ -1411,7 +1424,7 @@ body {
   <div class="shortcuts-hint">
     <span class="shortcut-key">⌘K</span> focus thought &nbsp;
     <span class="shortcut-key">⌘↵</span> run tool &nbsp;
-    <span class="shortcut-key">⌘⇧F</span> Full Council<br>
+    <span class="shortcut-key">⌘⇧F</span> Full Core Council<br>
     <span class="shortcut-key">⌘1–5</span> switch tool
   </div>
 
@@ -1548,8 +1561,8 @@ body {
           </div>
           <div class="home-tool-card" style="--card-accent:#e879f9" onclick="launchLens('council')">
             <div class="home-tool-icon">⚡</div>
-            <div class="home-tool-name">Full Council</div>
-            <div class="home-tool-blurb">Run all lenses at once for a complete 360° breakdown of your thought.</div>
+            <div class="home-tool-name">Full Core Council</div>
+            <div class="home-tool-blurb">Run all 6 core lenses at once — REI, Ladder, Kingdom, Blind Spot, First Principles, Inversion — then a synthesis.</div>
           </div>
         </div>
       </div>
@@ -1666,11 +1679,11 @@ body {
       </div>
     </div>
 
-    <!-- ── Full Council ── -->
+    <!-- ── Full Core Council ── -->
     <div class="tool-view" id="view-council">
       <div class="tool-header">
-        <div class="tool-title" style="color:var(--ladder)">⚡ Full Council</div>
-        <div class="tool-desc">Six lenses in sequence — REI, Ladder, Kingdom, Blind Spot, First Principles, and Inversion — then a synthesis across all six.</div>
+        <div class="tool-title" style="color:var(--ladder)">⚡ Full Core Council</div>
+        <div class="tool-desc">Six core lenses in sequence — REI, Ladder, Kingdom, Blind Spot, First Principles, and Inversion — then a synthesis across all six. Want to pick your own lens combination? Use <strong>🔮 Pro Council</strong>.</div>
       </div>
       <div id="council-pill"></div>
       <div class="council-view" id="council-view">
@@ -1746,8 +1759,8 @@ body {
     <!-- ── Pro Council ── -->
     <div class="tool-view" id="view-procouncil">
       <div class="tool-header">
-        <div class="tool-title" style="color:var(--probabilistic)">🔮 Pro Council <span style="font-size:12px;background:var(--ladder);color:#000;border-radius:4px;padding:2px 8px;margin-left:8px;vertical-align:middle;font-weight:700;">PRO</span></div>
-        <div class="tool-desc">Choose any combination of lenses. Run them all. Get a mega-synthesis across everything you selected.</div>
+        <div class="tool-title" style="color:var(--probabilistic)">🔮 Pro Council <span style="font-size:12px;background:var(--probabilistic);color:#fff;border-radius:4px;padding:2px 8px;margin-left:8px;vertical-align:middle;font-weight:700;">PRO</span></div>
+        <div class="tool-desc"><strong>Your custom lens combination.</strong> Pick any mix from all 29 lenses, run them together, and get a mega-synthesis across everything you selected. Unlike Full Core Council (fixed 6 lenses), you decide the lineup.</div>
       </div>
       <div id="procouncil-pill"></div>
       <div id="pro-lens-selector" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;"></div>
@@ -1924,7 +1937,7 @@ body {
           </div>
           <div class="faq-item">
             <div class="faq-q" onclick="toggleFaq(this)">Which lenses should I start with? <span class="faq-chevron">▼</span></div>
-            <div class="faq-a">For most decisions, start with <strong>REI Council</strong> (gut check), then <strong>Inversion</strong> (what could go wrong), then <strong>First Principles</strong> (strip back assumptions). For big life questions, try <strong>Full Council</strong> which runs all six core lenses in sequence. Not sure? Use the <strong>Suggest a Lens</strong> button — it reads your situation and recommends the best two lenses automatically.</div>
+            <div class="faq-a">For most decisions, start with <strong>REI Council</strong> (gut check), then <strong>Inversion</strong> (what could go wrong), then <strong>First Principles</strong> (strip back assumptions). For big life questions, try <strong>Full Core Council</strong> which runs all six core lenses in sequence. Not sure? Use the <strong>Suggest a Lens</strong> button — it reads your situation and recommends the best two lenses automatically.</div>
           </div>
         </div>
       </div>
@@ -2016,8 +2029,8 @@ body {
   <button class="bnav-btn" onclick="openLensLibrary()"><span class="bnav-icon">🔭</span>Lenses</button>
 </nav>
 
-<!-- Full Council FAB for mobile -->
-<button class="fab-council" onclick="runFullCouncil()">⚡ Full Council</button>
+<!-- Full Core Council FAB for mobile -->
+<button class="fab-council" onclick="runFullCouncil()">⚡ Full Core Council</button>
 
 <!-- Floating feedback button -->
 <button class="fab-feedback" onclick="switchTool('help')" title="Help &amp; Feedback">💬 Feedback</button>
@@ -2150,8 +2163,8 @@ body {
         </div>
         <div class="onboard-lens-card" onclick="finishOnboarding('council')">
           <div class="onboard-lens-icon">⚡</div>
-          <div class="onboard-lens-name">Full Council</div>
-          <div class="onboard-lens-blurb">Run 6 lenses at once for a 360° breakdown. Best for big decisions.</div>
+          <div class="onboard-lens-name">Full Core Council</div>
+          <div class="onboard-lens-blurb">Run 6 core lenses at once for a 360° breakdown. Best for big decisions.</div>
         </div>
         <div class="onboard-lens-card" onclick="finishOnboarding('first_principles')">
           <div class="onboard-lens-icon">🔩</div>
@@ -2433,7 +2446,7 @@ body {
     <!-- Feature list -->
     <div class="paywall-features">
       <div class="paywall-feat"><span class="tick">✓</span> Unlimited all tools</div>
-      <div class="paywall-feat"><span class="tick">✓</span> Full Council (all lenses)</div>
+      <div class="paywall-feat"><span class="tick">✓</span> Full Core Council + Pro Council</div>
       <div class="paywall-feat"><span class="tick">✓</span> Save &amp; revisit sessions</div>
       <div class="paywall-feat"><span class="tick">✓</span> Thinking Patterns insights</div>
       <div class="paywall-feat"><span class="tick">✓</span> Cloud sync across devices</div>
@@ -3107,7 +3120,22 @@ function resetSocratic() {
   document.getElementById('chat-window').innerHTML = '<div class="chat-empty" id="chat-empty">Type a thought, problem, or belief.<br>The Socratic will ask you a question you won\'t expect.</div>';
 }
 
-// ── Full Council ───────────────────────────────────────────────
+// ── Retry wrapper for /api/lens (guards against transient backend failures) ──
+async function _lensWithRetry(lensId, situation, attempts = 2) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await callAPI('/api/lens', { lens_id: lensId, situation });
+    } catch(e) {
+      if (i < attempts - 1) {
+        await new Promise(r => setTimeout(r, 800)); // brief pause before retry
+      } else {
+        throw e;
+      }
+    }
+  }
+}
+
+// ── Full Core Council ──────────────────────────────────────────
 async function runFullCouncil() {
   if (!canRunCouncil()) { openPaywall('limit'); return; }
   const input = getThought();
@@ -3136,11 +3164,11 @@ async function runFullCouncil() {
     lastResults.blind = blind;
     showCouncilSection('cs-blind', renderBlindBody(blind));
 
-    const fp = await callAPI('/api/lens', { lens_id: 'first_principles', situation: input });
+    const fp = await _lensWithRetry('first_principles', input);
     lastResults.fp = fp;
     showCouncilSection('cs-fp', renderGenericLensBody(fp));
 
-    const inversion = await callAPI('/api/lens', { lens_id: 'inversion', situation: input });
+    const inversion = await _lensWithRetry('inversion', input);
     lastResults.inversion = inversion;
     showCouncilSection('cs-inversion', renderGenericLensBody(inversion));
 
@@ -3743,7 +3771,7 @@ const FREE_USES = {
 
 const TOOL_LABELS = {
   rei: 'REI Council', ladder: 'The Ladder', kingdom: 'Kingdom Lens',
-  blind: 'Blind Spot', socratic: 'Socratic', council: 'Full Council'
+  blind: 'Blind Spot', socratic: 'Socratic', council: 'Full Core Council'
 };
 
 // ── Trial system ──────────────────────────────────────────────
@@ -3840,6 +3868,7 @@ function councilsRemaining() { return toolRemaining('council'); }
 function canRunCouncil() { return canUseTool('council'); }
 
 function renderUsageBadge() {
+  updateProCouncilNavBtn();
   const wrap = document.getElementById('usage-badge-wrap');
   if (!wrap) return;
   if (isHardPaid()) {
@@ -4116,6 +4145,25 @@ function checkSuccessReturn() {
 
 // Gate is applied inline inside runFullCouncil via canRunCouncil() check at top
 
+// ── Pro Council nav gated launcher ────────────────────────────
+function openProCouncilGated() {
+  if (!isPaid()) { openPaywall('pro_council'); return; }
+  switchTool('procouncil');
+}
+
+// Update the Pro Council nav button lock indicator based on paid status
+function updateProCouncilNavBtn() {
+  const btn = document.getElementById('pro-council-nav-btn');
+  if (!btn) return;
+  if (isPaid()) {
+    btn.classList.remove('locked');
+    btn.title = 'Pro Council — pick any lens combination';
+  } else {
+    btn.classList.add('locked');
+    btn.title = 'Pro Council — upgrade to unlock';
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────
 restoreTheme();
 restoreThought();
@@ -4126,6 +4174,7 @@ renderTrialBadge();
 renderAuthUI();
 checkSuccessReturn();
 sbInit();
+updateProCouncilNavBtn();
 checkDisclaimer();
 // Auto-focus hero input on desktop after short settle delay
 setTimeout(() => {
@@ -4594,7 +4643,7 @@ const LP_CORE_LENSES = [
   { id:'kingdom',  name:'Kingdom Lens', icon:'✝️' },
   { id:'socratic', name:'Socratic',     icon:'❓' },
   { id:'blind',    name:'Blind Spot',   icon:'🔍' },
-  { id:'council',  name:'Full Council', icon:'⚡' },
+  { id:'council',  name:'Full Core Council', icon:'⚡' },
 ];
 
 function openLensPicker() {
