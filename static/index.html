@@ -312,6 +312,54 @@ body {
   margin: 0 auto 22px;
   max-width: 480px;
 }
+/* ── Council Confirm modal ── */
+.council-confirm-modal {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.council-confirm-modal.visible { opacity: 1; pointer-events: all; }
+.council-confirm-inner {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px; width: min(480px, 94vw);
+}
+.council-confirm-title {
+  font-size: 17px; font-weight: 800; margin-bottom: 6px; color: var(--ladder);
+}
+.council-confirm-lenses {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0;
+}
+.council-confirm-lens-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+}
+.council-confirm-thought {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; font-size: 13px; line-height: 1.6; color: var(--text);
+  margin-bottom: 18px; max-height: 100px; overflow-y: auto; white-space: pre-wrap;
+}
+.council-confirm-thought-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); margin-bottom: 6px; font-weight: 600;
+}
+.council-confirm-btns {
+  display: flex; gap: 10px; justify-content: flex-end;
+}
+.btn-council-confirm-cancel {
+  background: transparent; border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 18px; font-size: 13px; color: var(--muted); cursor: pointer;
+  transition: border-color 0.15s;
+}
+.btn-council-confirm-cancel:hover { border-color: var(--text); color: var(--text); }
+.btn-council-confirm-run {
+  background: var(--ladder); color: #000; border: none; border-radius: 8px;
+  padding: 10px 22px; font-size: 13px; font-weight: 800; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-council-confirm-run:hover { opacity: 0.85; }
+
 /* ── Customise Core Council modal ── */
 .customise-core-modal {
   position: fixed; inset: 0; z-index: 1200;
@@ -2040,6 +2088,21 @@ body {
 <!-- Full Core Council FAB for mobile -->
 <button class="fab-council" onclick="runFullCouncil()">⚡ Full Core Council</button>
 
+<!-- Full Core Council confirmation modal -->
+<div class="council-confirm-modal" id="council-confirm-modal">
+  <div class="council-confirm-inner">
+    <div class="council-confirm-title">⚡ Full Core Council</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Running these lenses in sequence:</div>
+    <div class="council-confirm-lenses" id="ccm-lenses"></div>
+    <div class="council-confirm-thought-label">Your thought</div>
+    <div class="council-confirm-thought" id="ccm-thought"></div>
+    <div class="council-confirm-btns">
+      <button class="btn-council-confirm-cancel" onclick="document.getElementById('council-confirm-modal').classList.remove('visible')">Cancel</button>
+      <button class="btn-council-confirm-run" onclick="_runFullCouncilExecute()">Run Council →</button>
+    </div>
+  </div>
+</div>
+
 <!-- Customise Core Council modal (Pro only) -->
 <div class="customise-core-modal" id="customise-core-modal">
   <div class="customise-core-inner">
@@ -3157,12 +3220,36 @@ async function _lensWithRetry(lensId, situation, attempts = 2) {
   }
 }
 
-// ── Full Core Council (fully dynamic — reads getMyCoreLenses()) ─
-async function runFullCouncil() {
+// ── Full Core Council — step 1: show confirmation ──────────────
+function runFullCouncil() {
   if (!canRunCouncil()) { openPaywall('limit'); return; }
   const input = getThought();
   if (!input) { document.getElementById('global-thought').focus(); return; }
 
+  const lenses = getMyCoreLenses();
+
+  // Populate confirm modal
+  const thoughtEl = document.getElementById('ccm-thought');
+  if (thoughtEl) thoughtEl.textContent = input;
+
+  const lensesEl = document.getElementById('ccm-lenses');
+  if (lensesEl) {
+    lensesEl.innerHTML = lenses.map(id => {
+      const cfg = getLensById(id) || LP_CORE_LENSES.find(l => l.id === id);
+      const icon = cfg?.icon || '🔭';
+      const name = cfg?.name || id;
+      return `<span class="council-confirm-lens-chip">${icon} ${name}</span>`;
+    }).join('');
+  }
+
+  document.getElementById('council-confirm-modal').classList.add('visible');
+}
+
+// ── Full Core Council — step 2: execute after confirmation ─────
+async function _runFullCouncilExecute() {
+  document.getElementById('council-confirm-modal').classList.remove('visible');
+
+  const input = getThought();
   const lenses = getMyCoreLenses();
 
   switchTool('council');
@@ -4347,7 +4434,7 @@ document.getElementById('customise-core-modal')?.addEventListener('click', e => 
 // ── Pro Council nav gated launcher ────────────────────────────
 function openProCouncilGated() {
   if (!isPaid()) { openPaywall('pro_council'); return; }
-  switchTool('procouncil');
+  openProCouncil(); // reuses existing fn which calls renderProLensSelector()
 }
 
 // Update the Pro Council nav button lock indicator based on paid status
