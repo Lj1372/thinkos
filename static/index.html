@@ -5704,15 +5704,26 @@ function renderJournal() {
     list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">No decisions logged yet.<br>Every big decision you log becomes a record of your thinking.</div>';
     return;
   }
-  list.innerHTML = decisions.map(d => `
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;">
-      <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${esc(d.title)}</div>
-      ${d.chosen ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Chose: <span style="color:var(--text)">${esc(d.chosen)}</span></div>` : ''}
-      ${d.reasoning ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;">${esc(d.reasoning.slice(0,120))}${d.reasoning.length>120?'…':''}</div>` : ''}
+  list.innerHTML = decisions.map(d => {
+    const isPlanner = d.source === 'planner';
+    const borderColor = isPlanner ? 'rgba(45,212,191,.35)' : 'var(--border)';
+    const badge = isPlanner
+      ? `<span style="display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;background:rgba(45,212,191,.15);color:var(--secondorder);border-radius:4px;padding:2px 6px;margin-left:6px;vertical-align:middle;">Action Plan</span>`
+      : '';
+    const openPlanBtn = isPlanner && d.plan_id
+      ? `<button onclick="loadSavedPlan('${d.plan_id}');switchTool('planner')" style="margin-top:8px;margin-right:6px;background:rgba(45,212,191,.15);border:1px solid rgba(45,212,191,.3);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--secondorder);cursor:pointer;">Open plan →</button>`
+      : '';
+    return `
+    <div style="background:var(--surface2);border:1px solid ${borderColor};border-radius:12px;padding:16px;margin-bottom:10px;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${esc(d.title)}${badge}</div>
+      ${d.context ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;line-height:1.5;">${esc(d.context.slice(0,100))}${d.context.length>100?'…':''}</div>` : ''}
+      ${d.chosen ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Path: <span style="color:var(--text)">${esc(d.chosen)}</span></div>` : ''}
+      ${d.reasoning ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;">${esc(d.reasoning.slice(0,140))}${d.reasoning.length>140?'…':''}</div>` : ''}
       <div style="font-size:10px;color:var(--muted);margin-top:8px;">${new Date(d.created_at).toLocaleDateString()}</div>
+      ${openPlanBtn}
       ${!d.outcome ? `<button onclick='promptOutcome(${d.id})' style='margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;'>+ Record outcome</button>` : `<div style='margin-top:8px;font-size:11px;color:var(--reason);'>✓ Outcome recorded</div>`}
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function promptOutcome(id) {
@@ -6160,9 +6171,41 @@ function savePlan() {
   const idx = getPlannerIndex();
   if (!idx.includes(_currentPlanId)) { idx.unshift(_currentPlanId); savePlannerIndex(idx); }
 
+  // ── Auto-log to Decision Journal ──────────────────────────────
+  const plan = _currentPlan;
+  const recommendedPath = (plan.paths || []).find(p => p.recommended) || (plan.paths || [])[0];
+  const allPaths = (plan.paths || []).map(p => p.name).join(' / ');
+  const firstStep = plan.first_step || ((plan.phases || [])[0]?.steps || [])[0]?.action || '';
+  const risks = (plan.key_risks || []).slice(0, 2).join('; ');
+  const journalEntry = {
+    id: Date.now(),
+    title: '🗺️ ' + (plan.title || thought.slice(0, 60)),
+    context: plan.desired_outcome || '',
+    options: [allPaths],
+    chosen: recommendedPath ? recommendedPath.name : '',
+    reasoning: [
+      firstStep ? 'First step: ' + firstStep : '',
+      risks ? 'Key risks: ' + risks : '',
+    ].filter(Boolean).join(' · '),
+    source: 'planner',
+    plan_id: _currentPlanId,
+    created_at: new Date().toISOString(),
+  };
+  const local = JSON.parse(localStorage.getItem('thinkos_decisions') || '[]');
+  // Only add if not already logged for this plan
+  if (!local.find(d => d.plan_id === _currentPlanId)) {
+    local.unshift(journalEntry);
+    localStorage.setItem('thinkos_decisions', JSON.stringify(local.slice(0, 100)));
+    // Persist to Supabase if logged in
+    if (_sbUser) {
+      const { title, context, options, chosen, reasoning, source } = journalEntry;
+      _sb.from('decisions').insert({ user_id: _sbUser.id, title, context, options, chosen, reasoning, source }).catch(() => {});
+    }
+  }
+
   renderSavedPlans();
   const btn = document.querySelector('[onclick="savePlan()"]');
-  if (btn) { btn.textContent = '✓ Saved!'; setTimeout(() => btn.textContent = '💾 Save Plan', 2000); }
+  if (btn) { btn.textContent = '✓ Saved to journal!'; setTimeout(() => btn.textContent = '💾 Save Plan', 2500); }
 }
 
 function renderSavedPlans() {
