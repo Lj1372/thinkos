@@ -2814,6 +2814,8 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: {
     persistSession: true,
+    storageKey: 'thinkos-auth-v1',   // keep stable — changing this key logs everyone out
+    storage: window.localStorage,
     autoRefreshToken: true,
     detectSessionInUrl: true,
   }
@@ -2881,8 +2883,8 @@ async function onLogin(user) {
   renderAuthUI();
   toggleInsightsPanel();
   loadSessionHistory();
-  // Load cloud-saved plans and merge into localStorage
-  loadCloudPlans();
+  loadCloudDecisions();   // sync decision journal across devices
+  loadCloudPlans();       // sync action plans across devices
 }
 
 // ── Cloud plan sync (cross-device) ─────────────────────────────
@@ -2897,6 +2899,35 @@ async function onLogin(user) {
 // );
 // alter table action_plans enable row level security;
 // create policy "own plans" on action_plans for all using (auth.uid()=user_id);
+
+async function loadCloudDecisions() {
+  if (!_sbUser) return;
+  try {
+    const { data } = await _sb.from('decisions')
+      .select('id,title,context,options,chosen,reasoning,lens_log,source,created_at')
+      .eq('user_id', _sbUser.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (!data || !data.length) return;
+    const local = JSON.parse(localStorage.getItem('thinkos_decisions') || '[]');
+    const localIds = new Set(local.map(d => String(d.id)));
+    let added = 0;
+    data.forEach(d => {
+      if (!localIds.has(String(d.id))) {
+        local.push({
+          id: d.id, title: d.title, context: d.context,
+          options: d.options, chosen: d.chosen, reasoning: d.reasoning,
+          lens_log: d.lens_log, source: d.source, created_at: d.created_at,
+        });
+        added++;
+      }
+    });
+    if (added > 0) {
+      local.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      localStorage.setItem('thinkos_decisions', JSON.stringify(local.slice(0, 100)));
+    }
+  } catch(e) { /* decisions table may have schema differences */ }
+}
 
 async function loadCloudPlans() {
   if (!_sbUser || !isPaid()) return;
@@ -3094,20 +3125,37 @@ async function loadSessionHistory() {
   renderCloudHistory(data || []);
 }
 
-function renderCloudHistory(sessions) {
+function renderCloudHistory(cloudSessions) {
   const list = document.getElementById('session-list');
   if (!list) return;
   list.innerHTML = '';
-  if (!sessions.length) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:6px 10px">No saved sessions yet</div>';
+
+  // Merge: cloud sessions first, then any local sessions not already in cloud
+  const localSessions = getSessions().slice(0, 20);
+  const cloudThoughts = new Set(cloudSessions.map(s => s.thought));
+  const localOnly = localSessions.filter(s => !cloudThoughts.has(s.thought));
+
+  if (!cloudSessions.length && !localOnly.length) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:6px 10px">No sessions yet</div>';
     return;
   }
-  sessions.forEach(s => {
+
+  // Render cloud sessions (synced across devices)
+  cloudSessions.forEach(s => {
     const title = (s.thought || 'Untitled').slice(0, 45) + ((s.thought||'').length > 45 ? '…' : '');
     const toolLabel = { rei:'REI', ladder:'Ladder', kingdom:'Kingdom', blind:'Blind Spot', socratic:'Socratic', council:'Council' }[s.tool] || s.tool;
     const item = document.createElement('div');
     item.className = 'session-item';
     item.innerHTML = `<span class="session-title"><span style="font-size:10px;color:var(--muted);margin-right:4px;">${esc(toolLabel)}</span>${esc(title)}</span><button class="session-del" onclick="event.stopPropagation();deleteCloudSession('${s.id}')" title="Delete">×</button>`;
+    list.appendChild(item);
+  });
+
+  // Render local-only sessions (this device only) as fallback
+  localOnly.slice(0, 8).forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'session-item';
+    item.innerHTML = `<span class="session-title">${esc(s.title)}</span><button class="session-del" onclick="event.stopPropagation();deleteSession('${s.id}')" title="Delete">×</button>`;
+    item.onclick = () => loadSession(s.id);
     list.appendChild(item);
   });
 }
