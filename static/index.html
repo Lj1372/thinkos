@@ -2811,13 +2811,22 @@ body {
 // ── Supabase Auth ──────────────────────────────────────────────
 const SUPABASE_URL = 'https://plbmidsmtbkggehmoeuf.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYm1pZHNtdGJrZ2dlaG1vZXVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0OTc5MjQsImV4cCI6MjA5MjA3MzkyNH0.8sBr6kWhLKMwtVx4KUse1nb6Ll5IdiZjYzCB8lTdkMo';
-const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: {
+    persistSession: true,
+    storageKey: 'thinkos-auth-v1',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  }
+});
 let _sbUser = null;
 
 async function sbInit() {
   // Listen for all auth events first — catches the code exchange completing
   _sb.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+    // INITIAL_SESSION fires on every page load when a valid session exists in storage
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
       await onLogin(session.user);
     }
     if (event === 'SIGNED_OUT') onLogout();
@@ -2874,6 +2883,65 @@ async function onLogin(user) {
   renderAuthUI();
   toggleInsightsPanel();
   loadSessionHistory();
+  // Load cloud-saved plans and merge into localStorage
+  loadCloudPlans();
+}
+
+// ── Cloud plan sync (cross-device) ─────────────────────────────
+// Requires action_plans table in Supabase:
+// create table action_plans (
+//   id text primary key,
+//   user_id uuid references auth.users(id) on delete cascade,
+//   title text, thought text,
+//   plan_json jsonb, completed_steps jsonb default '{}',
+//   lens_session jsonb default '{}',
+//   updated_at timestamptz default now()
+// );
+// alter table action_plans enable row level security;
+// create policy "own plans" on action_plans for all using (auth.uid()=user_id);
+
+async function loadCloudPlans() {
+  if (!_sbUser || !isPaid()) return;
+  try {
+    const { data } = await _sb.from('action_plans')
+      .select('id,title,thought,plan_json,completed_steps,lens_session,updated_at')
+      .eq('user_id', _sbUser.id)
+      .order('updated_at', { ascending: false })
+      .limit(30);
+    if (!data || !data.length) return;
+    const idx = getPlannerIndex();
+    data.forEach(cp => {
+      const localKey = getPlannerKey(cp.id);
+      const local = JSON.parse(localStorage.getItem(localKey) || 'null');
+      const cloudTime = new Date(cp.updated_at).getTime();
+      const localTime = local?.updated_at ? new Date(local.updated_at).getTime() : 0;
+      if (!local || cloudTime > localTime) {
+        localStorage.setItem(localKey, JSON.stringify({
+          id: cp.id, thought: cp.thought, title: cp.title,
+          plan: cp.plan_json, completedSteps: cp.completed_steps || {},
+          lensSession: cp.lens_session || {},
+          created: new Date(cp.updated_at).toLocaleDateString(),
+          updated_at: cp.updated_at,
+        }));
+      }
+      if (!idx.includes(cp.id)) idx.unshift(cp.id);
+    });
+    savePlannerIndex(idx);
+    renderSavedPlans();
+  } catch(e) { /* action_plans table may not exist yet */ }
+}
+
+async function saveCloudPlan(stored) {
+  if (!_sbUser || !isPaid()) return;
+  try {
+    await _sb.from('action_plans').upsert({
+      id: stored.id, user_id: _sbUser.id,
+      title: stored.title, thought: stored.thought,
+      plan_json: stored.plan, completed_steps: stored.completedSteps || {},
+      lens_session: stored.lensSession || {},
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' });
+  } catch(e) { /* silent — table may not exist yet */ }
 }
 
 function onLogout() {
@@ -5704,24 +5772,57 @@ function renderJournal() {
     list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">No decisions logged yet.<br>Every big decision you log becomes a record of your thinking.</div>';
     return;
   }
-  list.innerHTML = decisions.map(d => {
+  list.innerHTML = decisions.map((d, idx) => {
     const isPlanner = d.source === 'planner';
     const borderColor = isPlanner ? 'rgba(45,212,191,.35)' : 'var(--border)';
     const badge = isPlanner
       ? `<span style="display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;background:rgba(45,212,191,.15);color:var(--secondorder);border-radius:4px;padding:2px 6px;margin-left:6px;vertical-align:middle;">Action Plan</span>`
       : '';
+
+    // Step progress for planner entries
+    let stepProgress = '';
+    if (isPlanner && d.plan_id) {
+      const stored = JSON.parse(localStorage.getItem(getPlannerKey(d.plan_id)) || 'null');
+      if (stored?.plan?.phases) {
+        const allSteps = (stored.plan.phases || []).flatMap(ph => ph.steps || []);
+        const done = allSteps.filter(st => (stored.completedSteps || {})[d.plan_id + '_' + st.id]).length;
+        const pct = allSteps.length ? Math.round((done / allSteps.length) * 100) : 0;
+        const barColor = pct === 100 ? 'var(--reason)' : 'var(--secondorder)';
+        stepProgress = `
+          <div style="margin:10px 0 4px;display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${barColor};transition:width .3s;"></div>
+            </div>
+            <div style="font-size:11px;color:${pct===100?'var(--reason)':'var(--muted)'};font-weight:600;white-space:nowrap;">${done}/${allSteps.length} steps${pct===100?' ✓':''}</div>
+          </div>`;
+      }
+    }
+
+    // Lens log expandable section
+    const lensLogId = 'lens-log-' + idx;
+    const lensLog = d.lens_log ? `
+      <div style="margin-top:10px;">
+        <button onclick="document.getElementById('${lensLogId}').style.display=document.getElementById('${lensLogId}').style.display==='none'?'block':'none';this.textContent=this.textContent.includes('▶')?'▼ Lens insights':'▶ Lens insights'" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:0;">▶ Lens insights</button>
+        <div id="${lensLogId}" style="display:none;margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;">
+          ${d.lens_log.split('\n').filter(Boolean).map(line => `<div style="font-size:11px;color:var(--text);line-height:1.7;padding:2px 0;border-bottom:1px solid var(--border);">${esc(line)}</div>`).join('')}
+        </div>
+      </div>` : '';
+
     const openPlanBtn = isPlanner && d.plan_id
-      ? `<button onclick="loadSavedPlan('${d.plan_id}');switchTool('planner')" style="margin-top:8px;margin-right:6px;background:rgba(45,212,191,.15);border:1px solid rgba(45,212,191,.3);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--secondorder);cursor:pointer;">Open plan →</button>`
+      ? `<button onclick="loadSavedPlan('${d.plan_id}');switchTool('planner')" style="margin-top:8px;margin-right:6px;background:rgba(45,212,191,.15);border:1px solid rgba(45,212,191,.3);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--secondorder);cursor:pointer;">🗺️ Open plan & tick steps →</button>`
       : '';
+
     return `
     <div style="background:var(--surface2);border:1px solid ${borderColor};border-radius:12px;padding:16px;margin-bottom:10px;">
       <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${esc(d.title)}${badge}</div>
-      ${d.context ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;line-height:1.5;">${esc(d.context.slice(0,100))}${d.context.length>100?'…':''}</div>` : ''}
+      ${d.context ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;line-height:1.5;">${esc(d.context.slice(0,120))}${d.context.length>120?'…':''}</div>` : ''}
       ${d.chosen ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Path: <span style="color:var(--text)">${esc(d.chosen)}</span></div>` : ''}
-      ${d.reasoning ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;">${esc(d.reasoning.slice(0,140))}${d.reasoning.length>140?'…':''}</div>` : ''}
-      <div style="font-size:10px;color:var(--muted);margin-top:8px;">${new Date(d.created_at).toLocaleDateString()}</div>
+      ${d.reasoning ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;">${esc(d.reasoning.slice(0,160))}${d.reasoning.length>160?'…':''}</div>` : ''}
+      ${stepProgress}
+      ${lensLog}
+      <div style="font-size:10px;color:var(--muted);margin-top:10px;">${new Date(d.created_at).toLocaleDateString()}</div>
       ${openPlanBtn}
-      ${!d.outcome ? `<button onclick='promptOutcome(${d.id})' style='margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;'>+ Record outcome</button>` : `<div style='margin-top:8px;font-size:11px;color:var(--reason);'>✓ Outcome recorded</div>`}
+      ${!d.outcome ? `<button onclick='promptOutcome(${d.id})' style='margin-top:8px;background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;'>+ Record outcome</button>` : `<div style='margin-top:8px;font-size:11px;color:var(--reason);'>✓ ${esc(d.outcome.slice(0,80))}</div>`}
     </div>`;
   }).join('');
 }
@@ -6106,7 +6207,12 @@ function togglePlanStep(planId, stepId, phaseIdx) {
   const completed = stored.completedSteps || {};
   completed[sid] = !completed[sid];
   stored.completedSteps = completed;
+  stored.updated_at = new Date().toISOString();
   localStorage.setItem(getPlannerKey(planId), JSON.stringify(stored));
+
+  // Sync step completion to Supabase (debounced — don't hammer on rapid ticks)
+  clearTimeout(togglePlanStep._syncTimer);
+  togglePlanStep._syncTimer = setTimeout(() => saveCloudPlan(stored), 1500);
 
   // Update UI
   const cb = document.querySelector(`#sr-${sid} .step-cb`);
@@ -6159,24 +6265,46 @@ function rerenderTimeline(planId, plan, completedSteps) {
 function savePlan() {
   if (!_currentPlan || !_currentPlanId) return;
   const thought = document.getElementById('global-thought')?.value || '';
+  const plan = _currentPlan;
+
+  // ── 1. Store plan locally ──────────────────────────────────────
   const stored = JSON.parse(localStorage.getItem(getPlannerKey(_currentPlanId)) || '{}');
-  stored.id = _currentPlanId;
-  stored.thought = thought;
-  stored.title = _currentPlan.title || 'Action Plan';
-  stored.plan = _currentPlan;
-  stored.created = stored.created || new Date().toLocaleDateString();
+  stored.id           = _currentPlanId;
+  stored.thought      = thought;
+  stored.title        = plan.title || 'Action Plan';
+  stored.plan         = plan;
+  stored.lensSession  = { ...lastResults }; // capture every lens run this session
+  stored.created      = stored.created || new Date().toLocaleDateString();
+  stored.updated_at   = new Date().toISOString();
   if (!stored.completedSteps) stored.completedSteps = {};
   localStorage.setItem(getPlannerKey(_currentPlanId), JSON.stringify(stored));
 
   const idx = getPlannerIndex();
   if (!idx.includes(_currentPlanId)) { idx.unshift(_currentPlanId); savePlannerIndex(idx); }
 
-  // ── Auto-log to Decision Journal ──────────────────────────────
-  const plan = _currentPlan;
+  // ── 2. Sync to Supabase (cross-device) ────────────────────────
+  saveCloudPlan(stored);
+
+  // ── 3. Auto-log full session to Decision Journal ───────────────
   const recommendedPath = (plan.paths || []).find(p => p.recommended) || (plan.paths || [])[0];
   const allPaths = (plan.paths || []).map(p => p.name).join(' / ');
   const firstStep = plan.first_step || ((plan.phases || [])[0]?.steps || [])[0]?.action || '';
   const risks = (plan.key_risks || []).slice(0, 2).join('; ');
+
+  // Build lens summary from whatever was run this session
+  const lensLines = [];
+  const lr = lastResults;
+  if (lr.rei)    lensLines.push('🧠 REI: ' + (lr.rei.majority_view || '').slice(0, 80));
+  if (lr.ladder) lensLines.push('🪜 Ladder: ' + (lr.ladder.current_view || '').slice(0, 80));
+  if (lr.kingdom)lensLines.push('✝️ Kingdom: ' + (lr.kingdom.kingdom || '').slice(0, 80));
+  if (lr.blind)  lensLines.push('🔍 Blind Spot: ' + (lr.blind.missing_perspective || '').slice(0, 80));
+  if (lr.synthesis) lensLines.push('⚡ Synthesis: ' + (lr.synthesis.synthesis || lr.synthesis.key_insight || '').slice(0, 100));
+  // Extended lenses
+  Object.entries(lr).forEach(([k, v]) => {
+    if (['rei','ladder','kingdom','blind','synthesis'].includes(k)) return;
+    if (v?.panels?.length) lensLines.push(`🔭 ${k}: ` + (v.synthesis || v.panels[0]?.text || '').slice(0, 80));
+  });
+
   const journalEntry = {
     id: Date.now(),
     title: '🗺️ ' + (plan.title || thought.slice(0, 60)),
@@ -6185,27 +6313,39 @@ function savePlan() {
     chosen: recommendedPath ? recommendedPath.name : '',
     reasoning: [
       firstStep ? 'First step: ' + firstStep : '',
-      risks ? 'Key risks: ' + risks : '',
+      risks ? 'Risks: ' + risks : '',
     ].filter(Boolean).join(' · '),
+    lens_log: lensLines.join('\n'),   // full lens session as text
     source: 'planner',
     plan_id: _currentPlanId,
     created_at: new Date().toISOString(),
   };
+
   const local = JSON.parse(localStorage.getItem('thinkos_decisions') || '[]');
-  // Only add if not already logged for this plan
   if (!local.find(d => d.plan_id === _currentPlanId)) {
     local.unshift(journalEntry);
     localStorage.setItem('thinkos_decisions', JSON.stringify(local.slice(0, 100)));
-    // Persist to Supabase if logged in
     if (_sbUser) {
-      const { title, context, options, chosen, reasoning, source } = journalEntry;
-      _sb.from('decisions').insert({ user_id: _sbUser.id, title, context, options, chosen, reasoning, source }).catch(() => {});
+      const { title, context, options, chosen, reasoning, lens_log, source } = journalEntry;
+      _sb.from('decisions').insert({ user_id: _sbUser.id, title, context, options, chosen, reasoning, lens_log, source }).catch(() => {});
     }
   }
 
+  // ── 4. Free up the planner (reset for next plan) ──────────────
   renderSavedPlans();
+  document.getElementById('planner-results').style.display = 'none';
+  document.getElementById('planner-btn').textContent = '🗺️ Build My Action Plan';
+
+  // ── 5. Feedback to user ───────────────────────────────────────
   const btn = document.querySelector('[onclick="savePlan()"]');
   if (btn) { btn.textContent = '✓ Saved to journal!'; setTimeout(() => btn.textContent = '💾 Save Plan', 2500); }
+
+  // Show a brief toast pointing them to the journal
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--secondorder);color:#000;border-radius:99px;padding:10px 20px;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;';
+  toast.innerHTML = '✓ Plan saved · <span style="text-decoration:underline;cursor:pointer;" onclick="switchTool(\'journal\')">Open in Journal →</span>';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
 
 function renderSavedPlans() {
