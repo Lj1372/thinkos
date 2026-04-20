@@ -4042,8 +4042,6 @@ function councilsRemaining() { return toolRemaining('council'); }
 function canRunCouncil() { return canUseTool('council'); }
 
 function renderUsageBadge() {
-  updateProCouncilNavBtn();
-  updateCouncilLineupLabel();
   const wrap = document.getElementById('usage-badge-wrap');
   if (!wrap) return;
   if (isHardPaid()) {
@@ -4460,9 +4458,14 @@ renderTrialBadge();
 renderAuthUI();
 checkSuccessReturn();
 sbInit();
-updateProCouncilNavBtn();
-updateCouncilLineupLabel();
 checkDisclaimer();
+// updateProCouncilNavBtn / updateCouncilLineupLabel deferred — they reference
+// LENS_CONFIG and LP_CORE_LENSES which are const-declared later in this file
+// and would throw ReferenceError (temporal dead zone) if called here.
+setTimeout(() => {
+  updateProCouncilNavBtn();
+  updateCouncilLineupLabel();
+}, 0);
 // Auto-focus hero input on desktop after short settle delay
 setTimeout(() => {
   const isMobile = window.innerWidth < 768;
