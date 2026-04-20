@@ -1491,6 +1491,12 @@ body {
 .fsc-label { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--ladder); font-weight:700; margin-bottom:8px; }
 .fsc-text { font-size:15px; font-weight:600; line-height:1.5; }
 .planner-saved-list { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+/* ── Planner Starter Modal ── */
+.planner-starter-section { margin-bottom:18px; }
+.planner-starter-section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:8px; }
+.planner-starter-chips { display:flex; flex-wrap:wrap; gap:7px; }
+.planner-starter-chip { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 12px; font-size:12px; color:var(--text); cursor:pointer; transition:all .15s; white-space:nowrap; }
+.planner-starter-chip:hover { border-color:var(--secondorder); color:var(--secondorder); background:rgba(45,212,191,.07); }
 .saved-plan-row { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:border-color 0.15s; }
 .saved-plan-row:hover { border-color:var(--ladder); }
 </style>
@@ -2208,7 +2214,7 @@ body {
       </div>
       <div id="planner-pill"></div>
       <div id="planner-saved-section" style="margin-bottom:4px;"><div id="planner-saved-list" class="planner-saved-list"></div></div>
-      <button class="btn-submit" id="planner-btn" onclick="runPlanner()" style="background:var(--secondorder);color:#000;margin-bottom:24px;">🗺️ Build My Action Plan</button>
+      <button class="btn-submit" id="planner-btn" onclick="openPlannerStarter()" style="background:var(--secondorder);color:#000;margin-bottom:24px;">🗺️ Build My Action Plan</button>
       <div id="planner-results" style="display:none;">
         <div style="margin-bottom:20px;">
           <div id="planner-title" style="font-size:20px;font-weight:800;margin-bottom:4px;"></div>
@@ -2636,6 +2642,23 @@ body {
 </div>
 
 <!-- ── New Decision Modal ── -->
+<!-- ── Planner Starter Modal ── -->
+<div class="modal-overlay" id="planner-starter-modal" onclick="if(event.target===this)closeAllModals()">
+  <div class="modal-box" style="max-width:640px;max-height:80vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closeAllModals()">×</button>
+    <div class="modal-title">🗺️ What do you want to plan?</div>
+    <div class="modal-subtitle">Pick a situation below or type your own in the thought box</div>
+    <div id="planner-starter-sections"></div>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Or type your own:</div>
+      <div style="display:flex;gap:8px;">
+        <input id="planner-custom-input" type="text" placeholder="e.g. Launch my podcast in 60 days…" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;font-family:inherit;" onkeydown="if(event.key==='Enter')selectPlannerStarter(this.value)" />
+        <button onclick="selectPlannerStarter(document.getElementById('planner-custom-input').value)" style="background:var(--secondorder);color:#000;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;">Go →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="new-decision-modal" onclick="if(event.target===this)closeAllModals()">
   <div class="modal-box">
     <button class="modal-close" onclick="closeAllModals()">×</button>
@@ -5361,9 +5384,15 @@ function launchLens(id) {
   const thought = getThought();
   if (CORE_LENS_SUBMIT[id]) {
     if (thought && id !== 'socratic') {
-      CORE_LENS_SUBMIT[id](); // includes switchTool + submit
+      CORE_LENS_SUBMIT[id](); // includes switchTool + submit (or just activateLens for FP/Inversion)
     } else {
-      switchTool(id);
+      // Navigate without running. Use switchTool only if a dedicated view exists,
+      // otherwise fall back to activateLens (handles first_principles, inversion etc.)
+      if (document.getElementById('view-' + id)) {
+        switchTool(id);
+      } else {
+        activateLens(id);
+      }
     }
   } else {
     activateLens(id);
@@ -5811,6 +5840,129 @@ let _currentPlanId = null; // localStorage key for current plan
 function getPlannerKey(id) { return 'thinkos_plan_' + id; }
 function getPlannerIndex()  { return JSON.parse(localStorage.getItem('thinkos_plans_index') || '[]'); }
 function savePlannerIndex(arr) { localStorage.setItem('thinkos_plans_index', JSON.stringify(arr)); }
+
+// ── Planner Starter Modal ──────────────────────────────────────
+const PLANNER_STARTERS = [
+  {
+    category: '🚀 Career & Work',
+    items: [
+      'Launch my own freelance business in the next 90 days',
+      'Get promoted to senior level at my current job',
+      'Transition from my corporate job to entrepreneurship',
+      'Build a side income of $1,000/month',
+      'Change careers into a completely different field',
+      'Navigate a difficult relationship with my manager',
+      'Decide whether to accept this job offer',
+      'Become a consultant in my industry',
+    ]
+  },
+  {
+    category: '💰 Finance & Money',
+    items: [
+      'Pay off $10,000 in debt within 12 months',
+      'Save for a house deposit in 2 years',
+      'Start investing for the first time',
+      'Build a 6-month emergency fund',
+      'Grow my business revenue by 50% this year',
+      'Reduce my monthly expenses by 20%',
+      'Create a passive income stream',
+    ]
+  },
+  {
+    category: '💪 Health & Habits',
+    items: [
+      'Lose 10kg and keep it off for good',
+      'Build a consistent daily workout habit',
+      'Improve my sleep quality and energy levels',
+      'Train for my first marathon or major event',
+      'Quit a bad habit (smoking, drinking, scrolling)',
+      'Build a sustainable nutrition routine',
+      'Recover from burnout and rebuild my energy',
+    ]
+  },
+  {
+    category: '🧠 Personal Growth',
+    items: [
+      'Read 24 books this year',
+      'Start a daily journaling and reflection habit',
+      'Learn a new skill (coding, language, instrument)',
+      'Build deeper relationships and friendships',
+      'Overcome anxiety or people-pleasing tendencies',
+      'Develop a daily spiritual or prayer practice',
+      'Write and publish a book or course',
+    ]
+  },
+  {
+    category: '📦 Projects & Launches',
+    items: [
+      'Build and launch a web app or SaaS product',
+      'Start a podcast or YouTube channel',
+      'Launch an online course or coaching program',
+      'Complete a major creative project',
+      'Start and grow a community or membership',
+      'Ship a product to my first 100 paying customers',
+      'Run a successful crowdfunding campaign',
+    ]
+  },
+  {
+    category: '🏠 Life & Relationships',
+    items: [
+      'Plan a major life move or relocation',
+      'Rebuild my life after a breakup or divorce',
+      'Prepare for marriage or a major commitment',
+      'Have a difficult but necessary conversation',
+      'Repair a broken relationship with someone important',
+      'Decide whether to go back to school',
+      'Plan for a major purchase (house, car, etc.)',
+    ]
+  },
+  {
+    category: '📈 Business & Growth',
+    items: [
+      'Grow from 10 to 100 customers',
+      'Hire my first employee or contractor',
+      'Build a repeatable sales and marketing system',
+      'Productise my service or expertise',
+      'Scale my operations without burning out',
+      'Launch into a new market or geography',
+      'Raise funding or find business partners',
+    ]
+  },
+];
+
+function openPlannerStarter() {
+  const wrap = document.getElementById('planner-starter-sections');
+  if (wrap && !wrap.children.length) {
+    wrap.innerHTML = '';
+    PLANNER_STARTERS.forEach(group => {
+      const section = document.createElement('div');
+      section.className = 'planner-starter-section';
+      section.innerHTML = `<div class="planner-starter-section-title">${group.category}</div>`;
+      const chips = document.createElement('div');
+      chips.className = 'planner-starter-chips';
+      group.items.forEach(item => {
+        const chip = document.createElement('button');
+        chip.className = 'planner-starter-chip';
+        chip.textContent = item;
+        chip.onclick = () => selectPlannerStarter(item);
+        chips.appendChild(chip);
+      });
+      section.appendChild(chips);
+      wrap.appendChild(section);
+    });
+  }
+  document.getElementById('planner-starter-modal').classList.add('visible');
+}
+
+function selectPlannerStarter(text) {
+  if (!text || !text.trim()) return;
+  closeAllModals();
+  const ta = document.getElementById('global-thought');
+  ta.value = text.trim();
+  if (typeof onThoughtInput === 'function') onThoughtInput();
+  switchTool('planner');
+  setTimeout(runPlanner, 80);
+}
 
 async function runPlanner() {
   const thought = getThought();
