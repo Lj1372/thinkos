@@ -3858,7 +3858,7 @@ async function runProCouncil() {
         const b = document.createElement('button');
         b.className = 'continue-planner-btn';
         b.innerHTML = '🗺️ Ready to act? Turn this synthesis into a Decision Plan →';
-        b.onclick = () => switchTool('planner');
+        b.onclick = () => { switchTool('planner'); setTimeout(runPlanner, 80); };
         proPlanner.appendChild(b);
         synthEl.parentElement.appendChild(proPlanner);
       }
@@ -5455,7 +5455,7 @@ function injectContinueBar(resultsWrapId, lensId) {
   const planBtn = document.createElement('button');
   planBtn.className = 'continue-planner-btn';
   planBtn.innerHTML = '🗺️ Ready to act on this? Turn the insight into a Decision Plan →';
-  planBtn.onclick = () => { switchTool('planner'); };
+  planBtn.onclick = () => { switchTool('planner'); setTimeout(runPlanner, 80); };
   planDiv.appendChild(planBtn);
   bar.appendChild(planDiv);
 
