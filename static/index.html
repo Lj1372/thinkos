@@ -3960,10 +3960,20 @@ function saveSession() {
   const thought = getThought(); if (!thought) return;
   const sessions = getSessions();
   const title = thought.slice(0, 45) + (thought.length > 45 ? '…' : '');
+  const id = Date.now().toString();
   const filtered = sessions.filter(s => s.title !== title);
-  filtered.unshift({ id: Date.now().toString(), title, thought, timestamp: Date.now(), results: { ...lastResults } });
+  filtered.unshift({ id, title, thought, timestamp: Date.now(), results: { ...lastResults } });
   if (filtered.length > 50) filtered.splice(50);
   localStorage.setItem('thinkos_sessions', JSON.stringify(filtered));
+  // Auto-sync to Supabase when logged in — enables cross-device session history
+  if (_sbUser && isPaid()) {
+    _sb.from('sessions').insert({
+      user_id: _sbUser.id,
+      tool: currentTool,
+      thought,
+      result: lastResults,  // store full results object for cross-device restore
+    }).then(() => loadSessionHistory()).catch(() => {});
+  }
   renderSessions();
 }
 function deleteSession(id) {
