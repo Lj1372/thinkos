@@ -2814,8 +2814,6 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: {
     persistSession: true,
-    storageKey: 'thinkos-auth-v1',
-    storage: window.localStorage,
     autoRefreshToken: true,
     detectSessionInUrl: true,
   }
