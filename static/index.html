@@ -6714,8 +6714,8 @@ function showToast(msg, duration = 3000) {
 // ── PWA: Service Worker ────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .then(reg => console.log('SW registered', reg.scope))
+    navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
+      .then(reg => { console.log('SW registered', reg.scope); reg.update(); })
       .catch(err => console.warn('SW failed:', err));
   });
 }
