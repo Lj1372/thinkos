@@ -312,6 +312,60 @@ body {
   margin: 0 auto 22px;
   max-width: 480px;
 }
+/* ── Customise Core Council modal ── */
+.customise-core-modal {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.customise-core-modal.visible { opacity: 1; pointer-events: all; }
+.customise-core-inner {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px; width: min(520px, 94vw);
+  max-height: 85vh; overflow-y: auto;
+}
+.customise-core-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 4px;
+}
+.customise-core-sub {
+  font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;
+}
+.ccore-chips {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;
+}
+.ccore-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--border); background: var(--surface2);
+  color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none;
+}
+.ccore-chip:hover { border-color: var(--probabilistic); color: var(--text); }
+.ccore-chip.selected {
+  border-color: var(--probabilistic); background: rgba(167,139,250,.15);
+  color: var(--probabilistic);
+}
+.ccore-footer {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding-top: 16px; border-top: 1px solid var(--border);
+}
+.ccore-count {
+  font-size: 12px; color: var(--muted); flex: 1;
+}
+.btn-ccore-save {
+  background: var(--probabilistic); color: #fff; border: none;
+  border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: opacity 0.15s;
+}
+.btn-ccore-save:hover { opacity: 0.85; }
+.btn-ccore-save:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-ccore-reset {
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 16px; font-size: 12px; color: var(--muted);
+  cursor: pointer; transition: border-color 0.15s;
+}
+.btn-ccore-reset:hover { border-color: var(--text); color: var(--text); }
+
 .home-scope-tag {
   font-size: 11px;
   font-weight: 600;
@@ -1353,11 +1407,16 @@ body {
   <button class="tool-btn" data-tool="home" onclick="switchTool('home')" style="font-weight:700;color:var(--text);margin-bottom:4px;">🏠 Home</button>
   <div class="sb-label">Core Lenses</div>
   <nav class="tool-nav">
-    <button class="tool-btn" data-tool="rei"      onclick="switchTool('rei')">🧠 REI Council</button>
-    <button class="tool-btn" data-tool="ladder"   onclick="switchTool('ladder')">🪜 The Ladder</button>
-    <button class="tool-btn" data-tool="kingdom"  onclick="switchTool('kingdom')">✝️ Kingdom Lens</button>
+    <button class="tool-btn" data-tool="rei"               onclick="switchTool('rei')">🧠 REI Council</button>
+    <button class="tool-btn" data-tool="ladder"            onclick="switchTool('ladder')">🪜 The Ladder</button>
+    <button class="tool-btn" data-tool="kingdom"           onclick="switchTool('kingdom')">✝️ Kingdom Lens</button>
+    <button class="tool-btn" data-tool="blind"             onclick="switchTool('blind')">🔍 Blind Spot</button>
+    <button class="tool-btn" data-tool="first_principles"  onclick="launchLens('first_principles')">🪨 First Principles</button>
+    <button class="tool-btn" data-tool="inversion"         onclick="launchLens('inversion')">🔃 Inversion</button>
+  </nav>
+  <div class="sb-label" style="margin-top:8px;">Dialogue</div>
+  <nav class="tool-nav">
     <button class="tool-btn" data-tool="socratic" onclick="switchTool('socratic')">❓ Socratic</button>
-    <button class="tool-btn" data-tool="blind"    onclick="switchTool('blind')">🔍 Blind Spot</button>
   </nav>
   <button onclick="openLensLibrary()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;text-align:left;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">🔭 More Lenses <span style="float:right;opacity:0.5">10+</span></button>
   <!-- Dynamic recent extra lenses -->
@@ -1683,72 +1742,21 @@ body {
     <div class="tool-view" id="view-council">
       <div class="tool-header">
         <div class="tool-title" style="color:var(--ladder)">⚡ Full Core Council</div>
-        <div class="tool-desc">Six core lenses in sequence — REI, Ladder, Kingdom, Blind Spot, First Principles, and Inversion — then a synthesis across all six. Want to pick your own lens combination? Use <strong>🔮 Pro Council</strong>.</div>
+        <div class="tool-desc">Runs your core lineup in sequence then synthesises across all of them.
+          <span id="council-lineup-label" style="color:var(--muted);font-size:12px;display:block;margin-top:4px;"></span>
+        </div>
+        <button id="customise-core-btn" onclick="openCustomiseCore()" style="display:none;margin-top:8px;background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;color:var(--muted);cursor:pointer;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--probabilistic)'" onmouseout="this.style.borderColor='var(--border)'">⚙ Customise my lineup <span style="background:var(--probabilistic);color:#fff;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;margin-left:4px;">PRO</span></button>
       </div>
       <div id="council-pill"></div>
       <div class="council-view" id="council-view">
-
         <!-- Synthesis -->
         <div class="synthesis-card" id="council-synthesis" style="display:none">
           <div class="synthesis-label">⚡ Council Synthesis</div>
           <div class="synthesis-text" id="synth-text"></div>
           <div class="synthesis-q" id="synth-q"></div>
         </div>
-
-        <!-- REI section -->
-        <div class="council-section collapsed" id="cs-rei" style="display:none">
-          <div class="council-section-header" onclick="toggleCouncilSection('cs-rei')">
-            <span class="council-section-title" style="color:var(--instinct)">🧠 REI Council</span>
-            <span class="council-section-toggle"></span>
-          </div>
-          <div class="council-section-body" id="cs-rei-body"></div>
-        </div>
-
-        <!-- Ladder section -->
-        <div class="council-section collapsed" id="cs-ladder" style="display:none">
-          <div class="council-section-header" onclick="toggleCouncilSection('cs-ladder')">
-            <span class="council-section-title" style="color:var(--ladder)">🪜 The Ladder</span>
-            <span class="council-section-toggle"></span>
-          </div>
-          <div class="council-section-body" id="cs-ladder-body"></div>
-        </div>
-
-        <!-- Kingdom section -->
-        <div class="council-section collapsed" id="cs-kingdom" style="display:none">
-          <div class="council-section-header" onclick="toggleCouncilSection('cs-kingdom')">
-            <span class="council-section-title" style="color:var(--kingdom)">✝️ Kingdom Lens</span>
-            <span class="council-section-toggle"></span>
-          </div>
-          <div class="council-section-body" id="cs-kingdom-body"></div>
-        </div>
-
-        <!-- Blind Spot section -->
-        <div class="council-section collapsed" id="cs-blind" style="display:none">
-          <div class="council-section-header" onclick="toggleCouncilSection('cs-blind')">
-            <span class="council-section-title" style="color:var(--blind)">🔍 Blind Spot</span>
-            <span class="council-section-toggle"></span>
-          </div>
-          <div class="council-section-body" id="cs-blind-body"></div>
-        </div>
-
-        <!-- First Principles section -->
-        <div class="council-section collapsed" id="cs-fp" style="display:none">
-          <div class="council-section-header" onclick="toggleCouncilSection('cs-fp')">
-            <span class="council-section-title" style="color:var(--fp)">🪨 First Principles</span>
-            <span class="council-section-toggle"></span>
-          </div>
-          <div class="council-section-body" id="cs-fp-body"></div>
-        </div>
-
-        <!-- Inversion section -->
-        <div class="council-section collapsed" id="cs-inversion" style="display:none">
-          <div class="council-section-header" onclick="toggleCouncilSection('cs-inversion')">
-            <span class="council-section-title" style="color:var(--inversion)">🔃 Inversion</span>
-            <span class="council-section-toggle"></span>
-          </div>
-          <div class="council-section-body" id="cs-inversion-body"></div>
-        </div>
-
+        <!-- Dynamic lens sections injected here by runFullCouncil() -->
+        <div id="council-results"></div>
         <!-- Actions -->
         <div class="council-actions" id="council-actions" style="display:none">
           <button class="btn-export" onclick="exportMarkdown()">⬇ Export as Markdown</button>
@@ -2031,6 +2039,20 @@ body {
 
 <!-- Full Core Council FAB for mobile -->
 <button class="fab-council" onclick="runFullCouncil()">⚡ Full Core Council</button>
+
+<!-- Customise Core Council modal (Pro only) -->
+<div class="customise-core-modal" id="customise-core-modal">
+  <div class="customise-core-inner">
+    <div class="customise-core-title">⚙ Customise your Core Council lineup</div>
+    <div class="customise-core-sub">Pick 2–8 lenses. When you run <strong>⚡ Full Core Council</strong> these are the lenses that run. Your selection is saved. Free users always get the default 6.</div>
+    <div class="ccore-chips" id="ccore-chips"></div>
+    <div class="ccore-footer">
+      <span class="ccore-count" id="ccore-count">0 selected</span>
+      <button class="btn-ccore-reset" onclick="resetCustomiseCore()">↺ Reset to default</button>
+      <button class="btn-ccore-save" id="ccore-save-btn" onclick="saveCustomiseCore()">Save lineup →</button>
+    </div>
+  </div>
+</div>
 
 <!-- Floating feedback button -->
 <button class="fab-feedback" onclick="switchTool('help')" title="Help &amp; Feedback">💬 Feedback</button>
@@ -3135,54 +3157,116 @@ async function _lensWithRetry(lensId, situation, attempts = 2) {
   }
 }
 
-// ── Full Core Council ──────────────────────────────────────────
+// ── Full Core Council (fully dynamic — reads getMyCoreLenses()) ─
 async function runFullCouncil() {
   if (!canRunCouncil()) { openPaywall('limit'); return; }
   const input = getThought();
   if (!input) { document.getElementById('global-thought').focus(); return; }
+
+  const lenses = getMyCoreLenses();
+
   switchTool('council');
   renderThoughtPill('council-pill');
-  ['council-synthesis','cs-rei','cs-ladder','cs-kingdom','cs-blind','cs-fp','cs-inversion','council-actions']
-    .forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  updateCouncilLineupLabel();
+
+  // Reset UI
+  document.getElementById('council-synthesis').style.display = 'none';
+  document.getElementById('council-actions').style.display   = 'none';
+  document.getElementById('council-results').innerHTML       = '';
+
   document.getElementById('full-council-btn').disabled = true;
   startLoading('council');
+
+  // Native API calls for the 4 core lenses (uses context from prior results)
+  const _coreAPIs = {
+    rei:     () => callAPI('/api/rei',      { situation: input }),
+    ladder:  () => callAPI('/api/ladder',   { question:  input }),
+    kingdom: () => callAPI('/api/kingdom',  { situation: input }),
+    blind:   () => {
+      let ctx = '';
+      if (lastResults.rei)    ctx += `REI — Instinct: ${lastResults.rei.instinct} | Emotion: ${lastResults.rei.emotion} | Reason: ${lastResults.rei.reason}\n`;
+      if (lastResults.ladder) ctx += `Ladder — Rung ${lastResults.ladder.current_rung}: ${lastResults.ladder.current_view}`;
+      return callAPI('/api/blindspot', { situation: input, context: ctx });
+    },
+  };
+
+  // Normalise native core result → generic {panels, synthesis, question, action}
+  const _coreNorm = {
+    rei:    d => ({ synthesis: d.majority_view, question: d.action_question, action: d.alignment,
+                    panels: [{label:'Instinct',emoji:'🧠',text:d.instinct},{label:'Emotion',emoji:'💙',text:d.emotion},{label:'Reason',emoji:'💚',text:d.reason}] }),
+    ladder: d => ({ synthesis: d.current_view,  question: d.ascent_question, action: '',
+                    panels: [{label:'Rung '+d.current_rung+' — '+d.rung_name,emoji:'📊',text:d.current_view},{label:'One rung above',emoji:'⬆️',text:d.above_view||''}] }),
+    kingdom:d => ({ synthesis: d.kingdom, question: d.kingdom_question, action: '',
+                    panels: [{label:'Kingdom View',emoji:'👑',text:d.kingdom},{label:'The Path',emoji:'🛤️',text:d.the_path},{label:'Eternal Weight',emoji:'⚖️',text:d.eternal_weight}] }),
+    blind:  d => ({ synthesis: d.reframe, question: d.blind_spot_question, action: '',
+                    panels: [{label:'Missing Angle',emoji:'🔍',text:d.missing_perspective},{label:'Why',emoji:'💭',text:d.why_its_missing},{label:'Reframe',emoji:'✨',text:d.reframe}] }),
+  };
+
+  // Use rich native renderers for the 4 core lenses, generic for everything else
+  const _coreRender = { rei: renderREIBody, ladder: renderLadderBody, kingdom: renderKingdomBody, blind: renderBlindBody };
+
+  const allResults = [];
+
   try {
-    const rei = await callAPI('/api/rei', { situation: input });
-    lastResults.rei = rei;
-    showCouncilSection('cs-rei', renderREIBody(rei));
+    for (const lensId of lenses) {
+      const cfg    = getLensById(lensId) || LP_CORE_LENSES.find(l => l.id === lensId);
+      const color  = cfg?.color || 'var(--text)';
+      const icon   = cfg?.icon  || '🔭';
+      const name   = cfg?.name  || lensId;
+      const sectId = 'cc-' + lensId;
 
-    const ladder = await callAPI('/api/ladder', { question: input });
-    lastResults.ladder = ladder;
-    showCouncilSection('cs-ladder', renderLadderBody(ladder));
+      // Build collapsible section skeleton
+      const section = document.createElement('div');
+      section.id = sectId;
+      section.className = 'council-section collapsed';
+      section.innerHTML = `
+        <div class="council-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+          <span class="council-section-title" style="color:${color}">${icon} ${name}</span>
+          <span class="council-section-toggle"></span>
+        </div>
+        <div class="council-section-body" id="${sectId}-body">
+          <div style="color:var(--muted);font-size:13px;padding:8px 0;">Running…</div>
+        </div>`;
+      document.getElementById('council-results').appendChild(section);
 
-    const kingdom = await callAPI('/api/kingdom', { situation: input });
-    lastResults.kingdom = kingdom;
-    showCouncilSection('cs-kingdom', renderKingdomBody(kingdom));
+      let normalised;
+      try {
+        if (_coreAPIs[lensId]) {
+          const raw = await _coreAPIs[lensId]();
+          lastResults[lensId] = raw;
+          normalised = _coreNorm[lensId](raw);
+          document.getElementById(sectId + '-body').innerHTML = _coreRender[lensId](raw);
+        } else {
+          const raw = await _lensWithRetry(lensId, input);
+          normalised = raw;
+          document.getElementById(sectId + '-body').innerHTML = renderGenericLensBody(raw);
+        }
+        section.classList.remove('collapsed');
+        allResults.push({ lens_name: name, lens_id: lensId,
+          synthesis: normalised.synthesis || '', question: normalised.question || '',
+          action:    normalised.action    || '', panels:   normalised.panels   || [] });
+      } catch(err) {
+        document.getElementById(sectId + '-body').innerHTML =
+          `<div style="color:#f87171;font-size:13px;">${name} failed: ${err.message}</div>`;
+      }
+    }
 
-    let context = `REI — Instinct: ${rei.instinct} | Emotion: ${rei.emotion} | Reason: ${rei.reason}\nLadder — Rung ${ladder.current_rung}: ${ladder.current_view}`;
-    const blind = await callAPI('/api/blindspot', { situation: input, context });
-    lastResults.blind = blind;
-    showCouncilSection('cs-blind', renderBlindBody(blind));
+    // Synthesis — uses pro-synthesis which handles any lens lineup
+    if (allResults.length > 0) {
+      const synth = await callAPI('/api/pro-synthesis', { thought: input, results: allResults });
+      lastResults.synthesis = synth;
+      document.getElementById('synth-text').textContent = synth.synthesis || synth.key_insight || '';
+      document.getElementById('synth-q').textContent    = synth.synthesis_question
+        ? '\u201c' + synth.synthesis_question + '\u201d' : '';
+      document.getElementById('council-synthesis').style.display = 'block';
+    }
 
-    const fp = await _lensWithRetry('first_principles', input);
-    lastResults.fp = fp;
-    showCouncilSection('cs-fp', renderGenericLensBody(fp));
-
-    const inversion = await _lensWithRetry('inversion', input);
-    lastResults.inversion = inversion;
-    showCouncilSection('cs-inversion', renderGenericLensBody(inversion));
-
-    const synth = await callAPI('/api/synthesis', { rei, ladder, kingdom, blind_spot: blind, fp, inversion });
-    lastResults.synthesis = synth;
-    document.getElementById('synth-text').textContent = synth.synthesis;
-    document.getElementById('synth-q').textContent = '\u201c' + synth.synthesis_question + '\u201d';
-    document.getElementById('council-synthesis').style.display = 'block';
     document.getElementById('council-actions').style.display = 'flex';
     saveSession();
-    showSavePrompt('council', input, { rei, ladder, kingdom, blind, fp, inversion, synthesis: synth });
+    showSavePrompt('council', input, { ...lastResults });
     if (!isPaid()) incrementCouncilCount();
     injectContinueBar('council-results', 'council');
-  } catch(e) { alert('Full Council error: ' + e.message); }
+  } catch(e) { alert('Full Core Council error: ' + e.message); }
   finally { stopLoading('council'); document.getElementById('full-council-btn').disabled = false; }
 }
 
@@ -3761,17 +3845,20 @@ function submitCurrentTool() {
 
 // ── Paywall & Usage Tracking ──────────────────────────────────
 const FREE_USES = {
-  rei:      30,  // ~1 month of daily use before the wall hits
-  ladder:   30,
-  kingdom:  30,
-  blind:    30,
-  socratic: 50,  // chat exchanges — more generous since each is quick
-  council:  10   // full council is the premium feature — hook them then gate
+  rei:              30,
+  ladder:           30,
+  kingdom:          30,
+  blind:            30,
+  first_principles: 30,
+  inversion:        30,
+  socratic:         50,
+  council:          10   // full core council — hook them then gate
 };
 
 const TOOL_LABELS = {
   rei: 'REI Council', ladder: 'The Ladder', kingdom: 'Kingdom Lens',
-  blind: 'Blind Spot', socratic: 'Socratic', council: 'Full Core Council'
+  blind: 'Blind Spot', socratic: 'Socratic', council: 'Full Core Council',
+  first_principles: 'First Principles', inversion: 'Inversion'
 };
 
 // ── Trial system ──────────────────────────────────────────────
@@ -3869,6 +3956,7 @@ function canRunCouncil() { return canUseTool('council'); }
 
 function renderUsageBadge() {
   updateProCouncilNavBtn();
+  updateCouncilLineupLabel();
   const wrap = document.getElementById('usage-badge-wrap');
   if (!wrap) return;
   if (isHardPaid()) {
@@ -4145,6 +4233,117 @@ function checkSuccessReturn() {
 
 // Gate is applied inline inside runFullCouncil via canRunCouncil() check at top
 
+// ── Custom Core Council lineup ─────────────────────────────────
+const DEFAULT_CORE_LENSES = ['rei','ladder','kingdom','blind','first_principles','inversion'];
+const CCORE_STORAGE_KEY   = 'thinkos_custom_core';
+
+function getMyCoreLenses() {
+  if (!isPaid()) return DEFAULT_CORE_LENSES;
+  try {
+    const stored = localStorage.getItem(CCORE_STORAGE_KEY);
+    if (stored) {
+      const arr = JSON.parse(stored);
+      if (Array.isArray(arr) && arr.length >= 2) return arr;
+    }
+  } catch(e) {}
+  return DEFAULT_CORE_LENSES;
+}
+function saveMyCoreLenses(ids) {
+  localStorage.setItem(CCORE_STORAGE_KEY, JSON.stringify(ids));
+}
+
+// Returns the display label for the current lineup
+function getLineupLabel() {
+  const lenses = getMyCoreLenses();
+  const names = lenses.map(id => {
+    const cfg = getLensById(id) || LP_CORE_LENSES.find(l => l.id === id);
+    return cfg ? cfg.icon + ' ' + cfg.name : id;
+  });
+  return names.join('  ·  ');
+}
+
+function updateCouncilLineupLabel() {
+  const el = document.getElementById('council-lineup-label');
+  if (el) el.textContent = getLineupLabel();
+  // show/hide customise button based on paid status
+  const btn = document.getElementById('customise-core-btn');
+  if (btn) btn.style.display = isPaid() ? 'inline-block' : 'none';
+}
+
+// ── Customise modal ────────────────────────────────────────────
+let _ccoreSelected = new Set();
+
+function openCustomiseCore() {
+  if (!isPaid()) { openPaywall('customise_core'); return; }
+  _ccoreSelected = new Set(getMyCoreLenses());
+  _renderCcoreChips();
+  _updateCcoreFooter();
+  document.getElementById('customise-core-modal').classList.add('visible');
+}
+
+function _renderCcoreChips() {
+  const wrap = document.getElementById('ccore-chips');
+  if (!wrap) return;
+  // All 29 lenses: core + extended
+  const allLenses = [
+    ...LP_CORE_LENSES.filter(l => l.id !== 'council'),
+    ...(window.LENS_CONFIG || [])
+  ];
+  // Dedupe by id
+  const seen = new Set();
+  const deduped = allLenses.filter(l => { if (seen.has(l.id)) return false; seen.add(l.id); return true; });
+
+  wrap.innerHTML = deduped.map(cfg => {
+    const sel = _ccoreSelected.has(cfg.id);
+    return `<div class="ccore-chip${sel ? ' selected' : ''}" data-id="${cfg.id}" onclick="_toggleCcoreChip('${cfg.id}')">
+      <span>${cfg.icon || '🔭'}</span><span>${cfg.name}</span>
+    </div>`;
+  }).join('');
+}
+
+function _toggleCcoreChip(id) {
+  if (_ccoreSelected.has(id)) {
+    if (_ccoreSelected.size <= 2) return; // enforce minimum 2
+    _ccoreSelected.delete(id);
+  } else {
+    if (_ccoreSelected.size >= 10) return; // cap at 10
+    _ccoreSelected.add(id);
+  }
+  const chip = document.querySelector(`#ccore-chips .ccore-chip[data-id="${id}"]`);
+  if (chip) chip.classList.toggle('selected', _ccoreSelected.has(id));
+  _updateCcoreFooter();
+}
+
+function _updateCcoreFooter() {
+  const n = _ccoreSelected.size;
+  const countEl = document.getElementById('ccore-count');
+  if (countEl) countEl.textContent = n + ' lens' + (n !== 1 ? 'es' : '') + ' selected (min 2, max 10)';
+  const btn = document.getElementById('ccore-save-btn');
+  if (btn) btn.disabled = n < 2;
+}
+
+function saveCustomiseCore() {
+  const ids = [..._ccoreSelected];
+  saveMyCoreLenses(ids);
+  document.getElementById('customise-core-modal').classList.remove('visible');
+  updateCouncilLineupLabel();
+  // Brief confirmation in button
+  const btn = document.getElementById('customise-core-btn');
+  if (btn) { btn.textContent = '✓ Lineup saved'; setTimeout(() => { btn.innerHTML = '⚙ Customise my lineup <span style="background:var(--probabilistic);color:#fff;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;margin-left:4px;">PRO</span>'; }, 2000); }
+}
+
+function resetCustomiseCore() {
+  _ccoreSelected = new Set(DEFAULT_CORE_LENSES);
+  _renderCcoreChips();
+  _updateCcoreFooter();
+}
+
+// Close customise modal on backdrop click
+document.getElementById('customise-core-modal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('customise-core-modal'))
+    document.getElementById('customise-core-modal').classList.remove('visible');
+});
+
 // ── Pro Council nav gated launcher ────────────────────────────
 function openProCouncilGated() {
   if (!isPaid()) { openPaywall('pro_council'); return; }
@@ -4175,6 +4374,7 @@ renderAuthUI();
 checkSuccessReturn();
 sbInit();
 updateProCouncilNavBtn();
+updateCouncilLineupLabel();
 checkDisclaimer();
 // Auto-focus hero input on desktop after short settle delay
 setTimeout(() => {
@@ -4638,12 +4838,14 @@ let _pickedLenses    = new Set();
 let _suggestedLenses = new Set();
 
 const LP_CORE_LENSES = [
-  { id:'rei',      name:'REI Council',  icon:'🧠' },
-  { id:'ladder',   name:'The Ladder',   icon:'🪜' },
-  { id:'kingdom',  name:'Kingdom Lens', icon:'✝️' },
-  { id:'socratic', name:'Socratic',     icon:'❓' },
-  { id:'blind',    name:'Blind Spot',   icon:'🔍' },
-  { id:'council',  name:'Full Core Council', icon:'⚡' },
+  { id:'rei',              name:'REI Council',      icon:'🧠' },
+  { id:'ladder',           name:'The Ladder',       icon:'🪜' },
+  { id:'kingdom',          name:'Kingdom Lens',     icon:'✝️' },
+  { id:'blind',            name:'Blind Spot',       icon:'🔍' },
+  { id:'first_principles', name:'First Principles', icon:'🪨' },
+  { id:'inversion',        name:'Inversion',        icon:'🔃' },
+  { id:'socratic',         name:'Socratic',         icon:'❓' },
+  { id:'council',          name:'Full Core Council',icon:'⚡' },
 ];
 
 function openLensPicker() {
@@ -4764,12 +4966,14 @@ async function _fetchLpSuggestions(thought) {
 }
 
 const CORE_LENS_SUBMIT = {
-  'rei':     () => { switchTool('rei');     setTimeout(submitREI,     120); },
-  'ladder':  () => { switchTool('ladder');  setTimeout(submitLadder,  120); },
-  'kingdom': () => { switchTool('kingdom'); setTimeout(submitKingdom, 120); },
-  'socratic':() => { switchTool('socratic'); },
-  'blind':   () => { switchTool('blind');   setTimeout(submitBlind,   120); },
-  'council': () => { setTimeout(runFullCouncil, 80); },
+  'rei':              () => { switchTool('rei');     setTimeout(submitREI,     120); },
+  'ladder':           () => { switchTool('ladder');  setTimeout(submitLadder,  120); },
+  'kingdom':          () => { switchTool('kingdom'); setTimeout(submitKingdom, 120); },
+  'socratic':         () => { switchTool('socratic'); },
+  'blind':            () => { switchTool('blind');   setTimeout(submitBlind,   120); },
+  'first_principles': () => { activateLens('first_principles'); setTimeout(submitLens, 150); },
+  'inversion':        () => { activateLens('inversion');        setTimeout(submitLens, 150); },
+  'council':          () => { setTimeout(runFullCouncil, 80); },
 };
 
 // ── launchLens — smart launcher used by home cards + continue bar ──
