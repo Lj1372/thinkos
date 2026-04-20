@@ -360,6 +360,77 @@ body {
 }
 .btn-council-confirm-run:hover { opacity: 0.85; }
 
+/* ── Action Prompt ── */
+.action-prompt-card {
+  background: var(--surface2); border: 1px solid rgba(167,139,250,.35);
+  border-radius: 12px; padding: 14px 16px; margin-top: 16px;
+}
+.action-prompt-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ladder); margin-bottom: 6px;
+}
+.action-prompt-text {
+  font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.5;
+  margin-bottom: 12px;
+}
+.action-prompt-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-action-commit {
+  background: var(--ladder); color: #000; border: none; border-radius: 8px;
+  padding: 8px 16px; font-size: 12px; font-weight: 800; cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-action-commit:hover { opacity: .85; }
+.btn-action-skip {
+  background: transparent; border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 14px; font-size: 12px; color: var(--muted); cursor: pointer;
+  transition: border-color .15s;
+}
+.btn-action-skip:hover { border-color: var(--text); color: var(--text); }
+.action-prompt-done {
+  font-size: 13px; color: var(--reason); font-weight: 700; padding: 4px 0;
+}
+
+/* ── Pro Benefits View ── */
+.pro-compare-wrap { }
+.pro-compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+@media(max-width:480px) { .pro-compare-grid { grid-template-columns: 1fr; } }
+.pro-col { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.pro-col-pro { border-color: rgba(167,139,250,.4); background: rgba(167,139,250,.05); }
+.pro-col-head { font-size: 13px; font-weight: 800; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.pro-row { font-size: 12px; padding: 4px 0; color: var(--text); display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.pro-row-no { color: var(--muted); }
+.pro-row-yes { color: var(--text); font-weight: 600; }
+.pro-limit { font-size: 10px; font-weight: 700; color: var(--muted); background: var(--bg); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+.pro-unlimited { font-size: 10px; font-weight: 700; color: var(--reason); background: rgba(52,211,153,.1); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+
+/* ── Launch Confirm modal (Templates + Guided Paths) ── */
+.launch-confirm-modal {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.launch-confirm-modal.visible { opacity: 1; pointer-events: all; }
+.launch-confirm-inner {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px; width: min(480px, 94vw);
+}
+.launch-confirm-tag {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 2px 8px; color: var(--muted); margin-bottom: 10px;
+}
+.launch-confirm-title {
+  font-size: 17px; font-weight: 800; margin-bottom: 4px;
+}
+.launch-confirm-sub {
+  font-size: 12px; color: var(--muted); margin-bottom: 14px;
+}
+.launch-confirm-lenses {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+}
+
 /* ── Customise Core Council modal ── */
 .customise-core-modal {
   position: fixed; inset: 0; z-index: 1200;
@@ -1469,8 +1540,11 @@ body {
   <button onclick="openLensLibrary()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;text-align:left;transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">🔭 More Lenses <span style="float:right;opacity:0.5">10+</span></button>
   <!-- Dynamic recent extra lenses -->
   <nav class="tool-nav" id="extra-lens-nav" style="margin-top:4px;"></nav>
+  <!-- Custom lens builder — shown always, gated by isPaid() inside -->
+  <button onclick="isPaid() ? openCustomLensBuilder() : openPaywall('custom_lens')" id="custom-lens-sidebar-btn" style="width:100%;background:var(--surface2);border:1px dashed rgba(167,139,250,.4);border-radius:8px;padding:8px 12px;color:rgba(167,139,250,.7);font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;text-align:left;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--ladder)';this.style.color='var(--ladder)'" onmouseout="this.style.borderColor='rgba(167,139,250,.4)';this.style.color='rgba(167,139,250,.7)'">🔧 Build a Custom Lens <span id="custom-lens-sb-tag" style="float:right;font-size:9px;font-weight:800;opacity:.7">PRO</span></button>
 
   <div class="sb-divider"></div>
+  <button id="pro-page-btn" onclick="switchTool('pro')" style="width:100%;background:linear-gradient(135deg,rgba(167,139,250,.2),rgba(52,211,153,.1));border:1px solid rgba(167,139,250,.4);border-radius:8px;padding:9px 12px;color:var(--ladder);font-size:12px;font-weight:800;cursor:pointer;margin-bottom:4px;text-align:left;transition:opacity .15s;letter-spacing:.01em;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">⚡ Go Pro — see what's unlocked</button>
   <button class="btn-templates" onclick="openTemplates()">📋 Templates</button>
   <button class="btn-templates" onclick="openProCouncil()" style="margin-top:4px;background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(167,139,250,.15));border-color:rgba(236,72,153,.3);color:var(--probabilistic);">🔮 Pro Council</button>
   <button class="btn-templates" onclick="switchTool('planner')" style="margin-top:4px;background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(56,189,248,.08));border-color:rgba(45,212,191,.3);color:var(--secondorder);">🗺️ Decision Planner</button>
@@ -1892,6 +1966,100 @@ body {
       </div>
     </div>
 
+    <!-- ── Pro Benefits View ── -->
+    <div class="tool-view" id="view-pro">
+      <div class="tool-header">
+        <div class="tool-title" style="color:var(--ladder)">⚡ Go Pro</div>
+        <div class="tool-desc">Unlock every lens, customise your thinking council, and build your own AI frameworks.</div>
+      </div>
+      <div class="pro-compare-wrap">
+        <!-- CTA hero -->
+        <div style="background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(52,211,153,.08));border:1px solid rgba(167,139,250,.3);border-radius:16px;padding:22px 20px;margin-bottom:20px;text-align:center;">
+          <div style="font-size:22px;font-weight:900;margin-bottom:6px;">Think deeper. Decide better.</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;">29 lenses · unlimited uses · build your own frameworks · Pro Council · cloud save</div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;">
+            <button onclick="openPaywall('pro_page')" style="background:var(--ladder);color:#000;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:800;cursor:pointer;">Start 7-Day Free Trial</button>
+          </div>
+          <div style="font-size:11px;color:var(--muted);">No card required · cancel any time · A$9/mo or A$79/yr</div>
+        </div>
+
+        <!-- Free vs Pro comparison -->
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">What you get</div>
+        <div class="pro-compare-grid">
+          <div class="pro-col pro-col-free">
+            <div class="pro-col-head">Free</div>
+            <div class="pro-row">🧠 REI Council <span class="pro-limit">30 uses</span></div>
+            <div class="pro-row">🪜 The Ladder <span class="pro-limit">30 uses</span></div>
+            <div class="pro-row">✝️ Kingdom Lens <span class="pro-limit">30 uses</span></div>
+            <div class="pro-row">🔍 Blind Spot <span class="pro-limit">30 uses</span></div>
+            <div class="pro-row">🪨 First Principles <span class="pro-limit">30 uses</span></div>
+            <div class="pro-row">🔃 Inversion <span class="pro-limit">30 uses</span></div>
+            <div class="pro-row">❓ Socratic <span class="pro-limit">50 uses</span></div>
+            <div class="pro-row">⚡ Core Council <span class="pro-limit">10 uses</span></div>
+            <div class="pro-row pro-row-no">🔒 Extended lenses</div>
+            <div class="pro-row pro-row-no">🔒 Pro Council</div>
+            <div class="pro-row pro-row-no">🔒 Custom lenses</div>
+            <div class="pro-row pro-row-no">🔒 Customise lineup</div>
+            <div class="pro-row pro-row-no">🔒 Cloud save</div>
+            <div class="pro-row pro-row-no">🔒 Thinking Patterns</div>
+            <div class="pro-row pro-row-no">🔒 Weekly Report</div>
+            <div class="pro-row pro-row-no">🔒 Decision Planner</div>
+          </div>
+          <div class="pro-col pro-col-pro">
+            <div class="pro-col-head" style="color:var(--ladder);">⚡ Pro</div>
+            <div class="pro-row">🧠 REI Council <span class="pro-unlimited">∞ unlimited</span></div>
+            <div class="pro-row">🪜 The Ladder <span class="pro-unlimited">∞ unlimited</span></div>
+            <div class="pro-row">✝️ Kingdom Lens <span class="pro-unlimited">∞ unlimited</span></div>
+            <div class="pro-row">🔍 Blind Spot <span class="pro-unlimited">∞ unlimited</span></div>
+            <div class="pro-row">🪨 First Principles <span class="pro-unlimited">∞ unlimited</span></div>
+            <div class="pro-row">🔃 Inversion <span class="pro-unlimited">∞ unlimited</span></div>
+            <div class="pro-row">❓ Socratic <span class="pro-unlimited">∞ unlimited</span></div>
+            <div class="pro-row">⚡ Core Council <span class="pro-unlimited">∞ unlimited</span></div>
+            <div class="pro-row pro-row-yes">✅ 24 extended lenses</div>
+            <div class="pro-row pro-row-yes">✅ 🔮 Pro Council — any combo</div>
+            <div class="pro-row pro-row-yes">✅ 🔧 Build custom lenses</div>
+            <div class="pro-row pro-row-yes">✅ Customise Core Council lineup</div>
+            <div class="pro-row pro-row-yes">✅ Cloud save across devices</div>
+            <div class="pro-row pro-row-yes">✅ Thinking Patterns analysis</div>
+            <div class="pro-row pro-row-yes">✅ Weekly Thinking Report</div>
+            <div class="pro-row pro-row-yes">✅ 🗺️ Decision Planner</div>
+          </div>
+        </div>
+
+        <!-- Pricing cards -->
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 12px;">Pricing</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:24px;">
+          <div onclick="openPaywall('pro_page')" style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Monthly</div>
+            <div style="font-size:22px;font-weight:900;">A$9<span style="font-size:12px;font-weight:400;color:var(--muted)">/mo</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Billed monthly</div>
+          </div>
+          <div onclick="openPaywall('pro_page')" style="background:var(--surface2);border:2px solid var(--reason);border-radius:12px;padding:16px;cursor:pointer;position:relative;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--reason)'">
+            <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--reason);color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:5px;text-transform:uppercase;">Best value</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Annual</div>
+            <div style="font-size:22px;font-weight:900;">A$79<span style="font-size:12px;font-weight:400;color:var(--muted)">/yr</span></div>
+            <div style="font-size:11px;color:var(--reason);margin-top:4px;">Save 27% — A$6.58/mo</div>
+          </div>
+          <div onclick="openPaywall('pro_page')" style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='var(--ladder)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Lifetime</div>
+            <div style="font-size:22px;font-weight:900;">A$149<span style="font-size:12px;font-weight:400;color:var(--muted)"> once</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Pay once, own forever</div>
+          </div>
+        </div>
+
+        <!-- Custom Lens feature spotlight -->
+        <div style="background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(167,139,250,.08));border:1px solid rgba(99,102,241,.3);border-radius:14px;padding:18px;margin-bottom:16px;">
+          <div style="font-size:14px;font-weight:800;margin-bottom:6px;">🔧 Build Your Own Thinking Lens</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">Give it a name, pick an icon, write your own AI prompt. Your lens appears in the sidebar and runs like any built-in one. <strong style="color:var(--text);">Pro only.</strong></div>
+          <button onclick="isPaid() ? openCustomLensBuilder() : openPaywall('custom_lens')" style="background:rgba(167,139,250,.2);border:1px solid rgba(167,139,250,.4);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;color:var(--ladder);cursor:pointer;">Try Custom Lens Builder →</button>
+        </div>
+
+        <div style="text-align:center;padding:16px 0;font-size:12px;color:var(--muted);">
+          7-day free trial · no card needed · cancel any time · full refund within 7 days of charge
+        </div>
+      </div>
+    </div>
+
     <!-- ── Decision Journal View ── -->
     <div class="tool-view" id="view-journal">
       <div class="tool-header">
@@ -2099,6 +2267,20 @@ body {
     <div class="council-confirm-btns">
       <button class="btn-council-confirm-cancel" onclick="document.getElementById('council-confirm-modal').classList.remove('visible')">Cancel</button>
       <button class="btn-council-confirm-run" onclick="_runFullCouncilExecute()">Run Council →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Launch Confirm modal — used by Templates + Guided Paths -->
+<div class="launch-confirm-modal" id="launch-confirm-modal">
+  <div class="launch-confirm-inner">
+    <div class="launch-confirm-tag" id="lcm-tag">Template</div>
+    <div class="launch-confirm-title" id="lcm-title"></div>
+    <div class="launch-confirm-sub" id="lcm-sub">Lenses suggested for this situation:</div>
+    <div class="launch-confirm-lenses" id="lcm-lenses"></div>
+    <div class="council-confirm-btns">
+      <button class="btn-council-confirm-cancel" onclick="document.getElementById('launch-confirm-modal').classList.remove('visible')">Cancel</button>
+      <button class="btn-council-confirm-run" id="lcm-go-btn">Let's go →</button>
     </div>
   </div>
 </div>
@@ -2685,6 +2867,13 @@ function renderAuthUI() {
 
   const paid = isPaid();
 
+  // Show "Go Pro" sidebar button only to free users; hide for paid
+  const proPageBtn = document.getElementById('pro-page-btn');
+  if (proPageBtn) proPageBtn.style.display = paid ? 'none' : '';
+  // Show "PRO" tag on custom lens sidebar button; update label for paid users
+  const clSbTag = document.getElementById('custom-lens-sb-tag');
+  if (clSbTag) clSbTag.style.display = paid ? 'none' : '';
+
   if (!paid) {
     // Free user — show teaser + a subtle "already subscribed?" login link
     teaser.style.display   = 'block';
@@ -3070,6 +3259,7 @@ async function submitREI() {
     showSavePrompt('rei', input, d);
     trackUseAndMaybeCapture('rei');
     injectContinueBar('rei-results', 'rei');
+    setTimeout(() => showActionPrompt(d.action_question, 'rei-results'), 200);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('rei'); }
 }
@@ -3107,6 +3297,7 @@ async function submitLadder() {
     showSavePrompt('ladder', input, d);
     trackUseAndMaybeCapture('ladder');
     injectContinueBar('ladder-results', 'ladder');
+    setTimeout(() => showActionPrompt(d.ascent_question, 'ladder-results'), 200);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('ladder'); }
 }
@@ -3143,6 +3334,7 @@ async function submitKingdom() {
     showSavePrompt('kingdom', input, d);
     trackUseAndMaybeCapture('kingdom');
     injectContinueBar('kingdom-results', 'kingdom');
+    setTimeout(() => showActionPrompt(d.kingdom_question, 'kingdom-results'), 200);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('kingdom'); }
 }
@@ -3171,6 +3363,7 @@ async function submitBlind() {
     showSavePrompt('blind', input, d);
     trackUseAndMaybeCapture('blind');
     injectContinueBar('blind-results', 'blind');
+    setTimeout(() => showActionPrompt(d.blind_spot_question, 'blind-results'), 200);
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('blind'); }
 }
@@ -3353,6 +3546,7 @@ async function _runFullCouncilExecute() {
     showSavePrompt('council', input, { ...lastResults });
     if (!isPaid()) incrementCouncilCount();
     injectContinueBar('council-results', 'council');
+    if (lastResults.synthesis) setTimeout(() => showActionPrompt(lastResults.synthesis.action || lastResults.synthesis.synthesis_question, 'council-results'), 200);
   } catch(e) { alert('Full Core Council error: ' + e.message); }
   finally { stopLoading('council'); document.getElementById('full-council-btn').disabled = false; }
 }
@@ -3630,6 +3824,7 @@ async function runProCouncil() {
       const synthEl = document.getElementById('pro-synthesis');
       synthEl.style.display = 'block';
       synthEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => showActionPrompt(synth.action || synth.synthesis_question, 'pro-council-results'), 200);
       // Decision Planner CTA after Pro Council synthesis
       let proPlanner = document.getElementById('pro-planner-cta');
       if (!proPlanner) {
@@ -3792,6 +3987,21 @@ const TEMPLATE_LENSES = {
   'ethical':           ['stoic', 'virtue', 'kingdom'],
 };
 
+const TEMPLATE_NAMES = {
+  'big-decision':      '⚖️ Big Life Decision',
+  'conflict':          '⚡ Conflict with Someone',
+  'creative-block':    '🎨 Creative Block',
+  'discernment':       '✝️ Spiritual Discernment',
+  'pressure-test':     '🧪 Pressure Test an Idea',
+  'hard-conversation': '💬 Hard Conversation',
+  'career-pivot':      '🚀 Career Pivot',
+  'product-launch':    '📦 Product Launch',
+  'burnout':           '🔋 Burnout Recovery',
+  'financial':         '💰 Big Financial Decision',
+  'scaling':           '🌐 Scale Side Project',
+  'ethical':           '🧭 Ethical Dilemma',
+};
+
 let _selectedTemplate = null;
 function previewTemplate(id) {
   _selectedTemplate = id;
@@ -3812,10 +4022,48 @@ function previewTemplate(id) {
     row.innerHTML = `<div class="tmpl-lens-icon">${cfg.icon}</div><div class="tmpl-lens-info"><strong>${cfg.name}</strong><span>${cfg.desc}</span></div>`;
     rows.appendChild(row);
   });
-  btn.onclick = () => selectTemplate(id);
+  btn.onclick = () => {
+    closeAllModals();
+    showLaunchConfirm(
+      TEMPLATE_NAMES[id] || id,
+      'Template',
+      TEMPLATE_LENSES[id] || [],
+      () => selectTemplate(id)
+    );
+  };
   panel.classList.add('visible');
   // Scroll preview into view on small screens
   setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+// ── Launch Confirm — generic modal before templates / guided paths ─
+function showLaunchConfirm(title, tag, lenses, callback) {
+  const modal  = document.getElementById('launch-confirm-modal');
+  const tagEl  = document.getElementById('lcm-tag');
+  const titEl  = document.getElementById('lcm-title');
+  const lensEl = document.getElementById('lcm-lenses');
+  const goBtn  = document.getElementById('lcm-go-btn');
+
+  if (tagEl)  tagEl.textContent  = tag   || 'Template';
+  if (titEl)  titEl.textContent  = title || '';
+
+  if (lensEl) {
+    lensEl.innerHTML = lenses.map(id => {
+      // Try LENS_CONFIG first, then LP_CORE_LENSES
+      const cfg = (typeof LENS_CONFIG !== 'undefined' ? LENS_CONFIG : []).find(l => l.id === id)
+                || (typeof LP_CORE_LENSES !== 'undefined' ? LP_CORE_LENSES : []).find(l => l.id === id);
+      const icon = cfg?.icon || '🔭';
+      const name = cfg?.name || id;
+      return `<span class="council-confirm-lens-chip">${icon} ${name}</span>`;
+    }).join('');
+  }
+
+  if (goBtn) goBtn.onclick = () => {
+    modal.classList.remove('visible');
+    callback();
+  };
+
+  modal.classList.add('visible');
 }
 
 function openTemplates() {
@@ -4859,8 +5107,48 @@ function renderLensResult(d, cfg) {
   document.getElementById('lens-question').textContent = d.question || '';
   document.getElementById('lens-action').textContent   = d.action   || '';
 
+  // Action prompt — accept or skip
+  setTimeout(() => showActionPrompt(d.action || d.question, 'lens-results'), 200);
+
   // Store for sharing/export
   window._lastLensResult = { tool: _activeLens, thought: getThought(), result: d };
+}
+
+// ── Action Prompt — shown after every lens result ─────────────
+// Injects a small "commit / skip" card into the given container element.
+// `action` = the text to commit; `containerId` = the results wrapper id.
+function showActionPrompt(action, containerId) {
+  if (!action) return;
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  // Remove any existing prompt
+  wrap.querySelector('.action-prompt-card')?.remove();
+
+  const card = document.createElement('div');
+  card.className = 'action-prompt-card';
+  card.innerHTML = `
+    <div class="action-prompt-label">🎯 Suggested next step</div>
+    <div class="action-prompt-text">${esc(action)}</div>
+    <div class="action-prompt-btns">
+      <button class="btn-action-commit" onclick="commitAction(this,'${containerId}',${JSON.stringify(action).replace(/'/g,"&#39;")})">✅ Add to my list</button>
+      <button class="btn-action-skip" onclick="this.closest('.action-prompt-card').remove()">Skip</button>
+    </div>`;
+  wrap.appendChild(card);
+}
+
+function commitAction(btn, containerId, action) {
+  // Save to localStorage action list
+  const key = 'thinkos_action_list';
+  const list = JSON.parse(localStorage.getItem(key) || '[]');
+  list.unshift({ action, timestamp: Date.now(), thought: getThought() });
+  localStorage.setItem(key, JSON.stringify(list.slice(0, 50))); // keep last 50
+  // Update UI
+  const card = btn.closest('.action-prompt-card');
+  if (card) {
+    card.querySelector('.action-prompt-btns').innerHTML =
+      `<div class="action-prompt-done">✓ Added to your list</div>`;
+    setTimeout(() => card.remove(), 1800);
+  }
 }
 
 function copyLensResult() {
@@ -5061,8 +5349,8 @@ const CORE_LENS_SUBMIT = {
   'kingdom':          () => { switchTool('kingdom'); setTimeout(submitKingdom, 120); },
   'socratic':         () => { switchTool('socratic'); },
   'blind':            () => { switchTool('blind');   setTimeout(submitBlind,   120); },
-  'first_principles': () => { activateLens('first_principles'); setTimeout(submitLens, 150); },
-  'inversion':        () => { activateLens('inversion');        setTimeout(submitLens, 150); },
+  'first_principles': () => { activateLens('first_principles'); }, // navigate only — no auto-submit
+  'inversion':        () => { activateLens('inversion'); },        // navigate only — no auto-submit
   'council':          () => { setTimeout(runFullCouncil, 80); },
 };
 
@@ -5222,12 +5510,19 @@ function openGuidedPaths() {
     goBtn.textContent = "Let's go →";
     goBtn.onclick = () => {
       closeAllModals();
-      if (path.template) {
-        selectTemplate(path.template);
-        return;
-      }
-      activateLens(path.lenses[0]);
-      setTimeout(() => { document.getElementById('global-thought').focus(); }, 80);
+      showLaunchConfirm(
+        path.label,
+        'Guided Path',
+        path.lenses,
+        () => {
+          if (path.template) {
+            selectTemplate(path.template);
+            return;
+          }
+          activateLens(path.lenses[0]);
+          setTimeout(() => { document.getElementById('global-thought').focus(); }, 80);
+        }
+      );
     };
 
     body.appendChild(lensCards);
