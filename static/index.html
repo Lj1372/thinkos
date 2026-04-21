@@ -724,6 +724,38 @@ body {
 .regen-synth-btn:hover { background: rgba(167,139,250,.1); border-color: var(--ladder); }
 .regen-synth-btn:disabled { opacity: .5; cursor: default; }
 
+/* ── Memory context chips ── */
+.memory-ctx-wrap { margin-bottom: 14px; }
+.memory-ctx-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+.memory-anchors { display: flex; flex-direction: column; gap: 6px; }
+.memory-anchor-chip {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 9px; padding: 9px 12px; cursor: pointer;
+  transition: border-color .15s, background .15s; text-align: left;
+}
+.memory-anchor-chip:hover { border-color: var(--ladder); }
+.memory-anchor-chip.active { border-color: var(--ladder); background: rgba(167,139,250,.08); }
+.memory-anchor-chip .mac-check { width: 16px; height: 16px; border: 1.5px solid var(--border); border-radius: 4px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 10px; transition: all .15s; }
+.memory-anchor-chip.active .mac-check { background: var(--ladder); border-color: var(--ladder); color: #000; }
+.memory-anchor-chip .mac-body { flex: 1; min-width: 0; }
+.memory-anchor-chip .mac-age { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+.memory-anchor-chip .mac-thought { font-size: 12px; color: var(--text); line-height: 1.4; }
+.memory-anchor-chip .mac-insight { font-size: 11px; color: var(--muted); font-style: italic; margin-top: 2px; line-height: 1.35; }
+.memory-ctx-note { font-size: 11px; color: var(--ladder); margin-top: 6px; display: none; }
+.memory-ctx-note.visible { display: block; }
+
+/* ── Deep mode toggle ── */
+.deep-mode-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 11px; margin-top: 8px; }
+.deep-mode-label { font-size: 11px; font-weight: 700; color: var(--text); }
+.deep-mode-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.deep-mode-toggle { position: relative; width: 34px; height: 20px; flex-shrink: 0; }
+.deep-mode-toggle input { opacity: 0; width: 0; height: 0; }
+.deep-mode-slider { position: absolute; inset: 0; background: var(--border); border-radius: 20px; cursor: pointer; transition: background .2s; }
+.deep-mode-slider::before { content: ''; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; background: #fff; border-radius: 50%; transition: transform .2s; }
+.deep-mode-toggle input:checked + .deep-mode-slider { background: var(--ladder); }
+.deep-mode-toggle input:checked + .deep-mode-slider::before { transform: translateX(14px); }
+
 /* Offline banner */
 .offline-banner {
   position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
@@ -1671,7 +1703,18 @@ body {
         <input id="referral-link-input" type="text" readonly onclick="copyReferralLink()" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 8px;color:var(--muted);font-size:10px;cursor:pointer;" placeholder="Loading link…" title="Click to copy">
         <div style="font-size:10px;color:var(--muted);margin-top:3px;">Click to copy · share with anyone</div>
       </div>
-      <div style="display:flex;gap:6px;margin-top:4px;">
+      <!-- Deep mode toggle (Pro only) -->
+      <div class="deep-mode-row" id="deep-mode-row">
+        <div>
+          <div class="deep-mode-label">🧠 Deep mode <span style="font-size:9px;background:var(--ladder);color:#000;border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:800;">PRO</span></div>
+          <div class="deep-mode-sub">Slower but sharper — uses Claude Sonnet</div>
+        </div>
+        <label class="deep-mode-toggle">
+          <input type="checkbox" id="deep-mode-checkbox" onchange="toggleDeepMode(this.checked)">
+          <span class="deep-mode-slider"></span>
+        </label>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;">
         <button onclick="signOut()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;flex:1;">Sign out</button>
         <button onclick="openAccountModal()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);font-size:11px;cursor:pointer;flex:1;" title="Account settings">⚙ Account</button>
       </div>
@@ -2350,6 +2393,8 @@ body {
     <div class="council-confirm-lenses" id="ccm-lenses"></div>
     <div class="council-confirm-thought-label">Your thought</div>
     <div class="council-confirm-thought" id="ccm-thought"></div>
+    <!-- Memory context — surfaced from past sessions -->
+    <div id="ccm-memory"></div>
     <div class="council-confirm-btns">
       <button class="btn-council-confirm-cancel" onclick="document.getElementById('council-confirm-modal').classList.remove('visible')">Cancel</button>
       <button class="btn-council-confirm-run" onclick="_runFullCouncilExecute()">Run Council →</button>
@@ -2965,6 +3010,7 @@ async function onLogin(user) {
   loadSessionHistory();
   loadCloudDecisions();   // sync decision journal across devices
   loadCloudPlans();       // sync action plans across devices
+  loadCloudMemories();    // sync memory anchors across devices
 }
 
 // ── Cloud plan sync (cross-device) ─────────────────────────────
@@ -3252,10 +3298,13 @@ function esc(t) {
   return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 async function callAPI(endpoint, body) {
+  const payload = { ...body };
+  // Inject deep mode for Pro users — routes to claude-sonnet on backend
+  if (isDeepMode() && isPaid()) payload.model_pref = 'deep';
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(payload)
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error);
@@ -3536,6 +3585,7 @@ async function submitREI() {
     injectContinueBar('rei-results', 'rei');
     setTimeout(() => showActionPrompt(d.action_question, 'rei-results'), 200);
     addShareButton('REI Council', input, d.majority_view, 'var(--instinct)', '🧠');
+    saveMemoryAnchor(input, d.majority_view, 'rei');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('rei'); }
 }
@@ -3575,6 +3625,7 @@ async function submitLadder() {
     injectContinueBar('ladder-results', 'ladder');
     setTimeout(() => showActionPrompt(d.ascent_question, 'ladder-results'), 200);
     addShareButton('The Ladder', input, d.above_view || d.current_view, 'var(--ladder)', '🪜');
+    saveMemoryAnchor(input, d.above_view || d.current_view, 'ladder');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('ladder'); }
 }
@@ -3613,6 +3664,7 @@ async function submitKingdom() {
     injectContinueBar('kingdom-results', 'kingdom');
     setTimeout(() => showActionPrompt(d.kingdom_question, 'kingdom-results'), 200);
     addShareButton('Kingdom Lens', input, d.kingdom, 'var(--kingdom)', '✝️');
+    saveMemoryAnchor(input, d.kingdom, 'kingdom');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('kingdom'); }
 }
@@ -3643,6 +3695,7 @@ async function submitBlind() {
     injectContinueBar('blind-results', 'blind');
     setTimeout(() => showActionPrompt(d.blind_spot_question, 'blind-results'), 200);
     addShareButton('Blind Spot', input, d.reframe, 'var(--blind)', '🔍');
+    saveMemoryAnchor(input, d.reframe, 'blind');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('blind'); }
 }
@@ -3703,6 +3756,7 @@ function runFullCouncil() {
   // Populate confirm modal
   const thoughtEl = document.getElementById('ccm-thought');
   if (thoughtEl) thoughtEl.textContent = input;
+  renderMemoryContext(input);
 
   const lensesEl = document.getElementById('ccm-lenses');
   if (lensesEl) {
@@ -3887,7 +3941,8 @@ async function _runFullCouncilExecute() {
 
     // ── Synthesis ─────────────────────────────────────────────
     if (settled.length > 0) {
-      const synth = await callAPI('/api/pro-synthesis', { thought: input, results: settled });
+      const memCtx = buildMemoryContextString();
+      const synth = await callAPI('/api/pro-synthesis', { thought: input, results: settled, ...(memCtx ? { memory_context: memCtx } : {}) });
       lastResults.synthesis = synth;
       document.getElementById('synth-text').textContent = synth.synthesis || synth.key_insight || '';
       document.getElementById('synth-q').textContent    = synth.synthesis_question
@@ -3905,6 +3960,7 @@ async function _runFullCouncilExecute() {
     if (lastResults.synthesis) setTimeout(() => showActionPrompt(lastResults.synthesis.action || lastResults.synthesis.synthesis_question, 'council-results'), 200);
     const synthText = lastResults.synthesis?.synthesis || lastResults.synthesis?.key_insight || '';
     addShareButton('Full Core Council', input, synthText, '#e879f9', '⚡');
+    if (synthText) saveMemoryAnchor(input, synthText, 'council');
   } catch(e) { alert('Full Core Council error: ' + e.message); }
   finally { stopLoading('council'); document.getElementById('full-council-btn').disabled = false; }
 }
@@ -5118,6 +5174,168 @@ function updateProCouncilNavBtn() {
   }
 }
 
+// ── Memory Layer ───────────────────────────────────────────────
+const MEMORY_KEY     = 'thinkos_memories';
+const MEMORY_MAX     = 20;   // local cap
+const MEMORY_SURFACE = 3;    // how many to show in confirm modal
+
+function getLocalMemories() {
+  try { return JSON.parse(localStorage.getItem(MEMORY_KEY) || '[]'); } catch { return []; }
+}
+
+function saveMemoryAnchor(thought, takeaway, tool) {
+  if (!thought || !takeaway) return;
+  const mem = { id: Date.now().toString(), thought: thought.slice(0, 200),
+    takeaway: takeaway.slice(0, 200), tool: tool || 'unknown',
+    created_at: new Date().toISOString() };
+  const all = getLocalMemories();
+  // Avoid near-duplicates (same thought within 10 min)
+  const recent = all.filter(m => m.thought.slice(0,60) === mem.thought.slice(0,60) &&
+    (Date.now() - new Date(m.created_at).getTime()) < 600000);
+  if (recent.length) return;
+  all.unshift(mem);
+  if (all.length > MEMORY_MAX) all.splice(MEMORY_MAX);
+  localStorage.setItem(MEMORY_KEY, JSON.stringify(all));
+  // Sync to cloud if logged in
+  if (_sbUser) _syncMemoryToCloud(mem).catch(() => {});
+}
+
+async function _syncMemoryToCloud(mem) {
+  if (!_sbUser) return;
+  try {
+    await _sb.from('memories').insert({
+      user_id: _sbUser.id, thought: mem.thought,
+      takeaway: mem.takeaway, tool: mem.tool, created_at: mem.created_at
+    });
+  } catch(e) {}
+}
+
+async function loadCloudMemories() {
+  if (!_sbUser) return;
+  try {
+    const { data } = await _sb.from('memories')
+      .select('id,thought,takeaway,tool,created_at')
+      .eq('user_id', _sbUser.id)
+      .order('created_at', { ascending: false })
+      .limit(MEMORY_MAX);
+    if (!data || !data.length) return;
+    const local   = getLocalMemories();
+    const localIds = new Set(local.map(m => String(m.id)));
+    let added = 0;
+    data.forEach(d => {
+      if (!localIds.has(String(d.id))) { local.push(d); added++; }
+    });
+    if (added > 0) {
+      local.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+      localStorage.setItem(MEMORY_KEY, JSON.stringify(local.slice(0, MEMORY_MAX)));
+    }
+  } catch(e) {}
+}
+
+// ── Render memory chips in council confirm modal ──────────────
+let _selectedMemoryIds = new Set();
+
+function renderMemoryContext(currentThought) {
+  const wrap = document.getElementById('ccm-memory');
+  if (!wrap) return;
+  _selectedMemoryIds.clear();
+
+  const all = getLocalMemories();
+  // Filter out memories that are basically the same as current thought
+  const others = all.filter(m =>
+    m.thought.slice(0, 50).toLowerCase() !== (currentThought||'').slice(0, 50).toLowerCase()
+  ).slice(0, MEMORY_SURFACE);
+
+  if (!others.length) { wrap.innerHTML = ''; return; }
+
+  const chips = others.map(m => {
+    const age  = _relativeTime(m.created_at);
+    const icon = { council:'⚡', rei:'🧠', ladder:'🪜', kingdom:'✝️', blind:'🔍' }[m.tool] || '💭';
+    return `<button class="memory-anchor-chip" id="mac-${m.id}" onclick="toggleMemoryChip('${m.id}')" type="button">
+      <span class="mac-check"></span>
+      <span class="mac-body">
+        <span class="mac-age">${icon} ${age}</span>
+        <span class="mac-thought">${esc(m.thought.slice(0, 90))}${m.thought.length > 90 ? '…' : ''}</span>
+        <span class="mac-insight">${esc(m.takeaway.slice(0, 80))}${m.takeaway.length > 80 ? '…' : ''}</span>
+      </span>
+    </button>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="memory-ctx-wrap">
+      <div class="memory-ctx-label">💾 Build on past thinking <span style="font-size:9px;color:var(--muted);font-weight:400;text-transform:none">(optional — click to include)</span></div>
+      <div class="memory-anchors">${chips}</div>
+      <div class="memory-ctx-note" id="memory-ctx-note">✓ Past context will be woven into the synthesis</div>
+    </div>`;
+}
+
+function toggleMemoryChip(id) {
+  const chip = document.getElementById('mac-' + id);
+  if (!chip) return;
+  if (_selectedMemoryIds.has(id)) {
+    _selectedMemoryIds.delete(id);
+    chip.classList.remove('active');
+  } else {
+    _selectedMemoryIds.add(id);
+    chip.classList.add('active');
+  }
+  const note = document.getElementById('memory-ctx-note');
+  if (note) note.classList.toggle('visible', _selectedMemoryIds.size > 0);
+}
+
+function buildMemoryContextString() {
+  if (!_selectedMemoryIds.size) return '';
+  const all = getLocalMemories();
+  const selected = all.filter(m => _selectedMemoryIds.has(m.id));
+  return selected.map(m => {
+    const age = _relativeTime(m.created_at);
+    return `${age}: "${m.thought}" → Key insight: ${m.takeaway}`;
+  }).join('\n');
+}
+
+function _relativeTime(isoStr) {
+  const ms = Date.now() - new Date(isoStr).getTime();
+  const m = Math.floor(ms / 60000);
+  if (m < 2)   return 'just now';
+  if (m < 60)  return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)   return `${d} day${d>1?'s':''} ago`;
+  const w = Math.floor(d / 7);
+  if (w < 5)   return `${w} week${w>1?'s':''} ago`;
+  return `${Math.floor(d/30)} month${Math.floor(d/30)>1?'s':''} ago`;
+}
+
+// ── Deep Mode ──────────────────────────────────────────────────
+function isDeepMode() { return localStorage.getItem('thinkos_deep_mode') === '1'; }
+
+function toggleDeepMode(on) {
+  if (!isPaid()) {
+    // Silently revert the checkbox if not paid
+    const cb = document.getElementById('deep-mode-checkbox');
+    if (cb) cb.checked = false;
+    openPaywall('deep-mode');
+    return;
+  }
+  localStorage.setItem('thinkos_deep_mode', on ? '1' : '0');
+  // Brief confirmation
+  const row = document.getElementById('deep-mode-row');
+  if (row) {
+    const sub = row.querySelector('.deep-mode-sub');
+    if (sub) {
+      sub.textContent = on ? '✓ Sonnet active — slower but sharper' : 'Slower but sharper — uses Claude Sonnet';
+      sub.style.color = on ? 'var(--reason)' : '';
+      setTimeout(() => { if (sub) { sub.textContent = 'Slower but sharper — uses Claude Sonnet'; sub.style.color = ''; } }, 2500);
+    }
+  }
+}
+
+function initDeepModeToggle() {
+  const cb = document.getElementById('deep-mode-checkbox');
+  if (cb) cb.checked = isDeepMode() && isPaid();
+}
+
 // ── Debounce utility ───────────────────────────────────────────
 function debounce(fn, ms) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
@@ -5146,6 +5364,7 @@ checkSuccessReturn();
 sbInit();
 checkDisclaimer();
 setTimeout(renderWelcomeDemo, 300);
+initDeepModeToggle();
 // updateProCouncilNavBtn / updateCouncilLineupLabel deferred — they reference
 // LENS_CONFIG and LP_CORE_LENSES which are const-declared later in this file
 // and would throw ReferenceError (temporal dead zone) if called here.

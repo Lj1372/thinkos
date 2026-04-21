@@ -13,6 +13,13 @@ OPENROUTER_KEY = os.environ.get('OPENROUTER_API_KEY', '')
 OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 MODEL       = 'anthropic/claude-haiku-4-5'
 MODEL_RICH  = 'anthropic/claude-haiku-4-5'
+MODEL_DEEP  = 'anthropic/claude-sonnet-4-5'  # Pro Deep mode
+
+def get_model(data, default=None):
+    """Return MODEL_DEEP if the request opts in, otherwise the default."""
+    if (data or {}).get('model_pref') == 'deep':
+        return MODEL_DEEP
+    return default or MODEL
 
 # ─── Stripe ────────────────────────────────────────────────────────────────────
 # TODO: Set these in your .env / Railway environment variables
@@ -177,7 +184,7 @@ def rei_council():
     if not situation:
         return jsonify({'error': 'No situation provided'}), 400
     try:
-        text = call_ai(REI_PROMPT, [{'role': 'user', 'content': situation}])
+        text = call_ai(REI_PROMPT, [{'role': 'user', 'content': situation}], model=get_model(data))
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
         return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
@@ -192,7 +199,7 @@ def ladder():
     if not question:
         return jsonify({'error': 'No question provided'}), 400
     try:
-        text = call_ai(LADDER_PROMPT, [{'role': 'user', 'content': question}])
+        text = call_ai(LADDER_PROMPT, [{'role': 'user', 'content': question}], model=get_model(data))
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
         return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
@@ -319,7 +326,7 @@ def kingdom():
     if not situation:
         return jsonify({'error': 'No situation provided'}), 400
     try:
-        text = call_ai(KINGDOM_PROMPT, [{'role': 'user', 'content': situation}], max_tokens=1200, model=MODEL_RICH)
+        text = call_ai(KINGDOM_PROMPT, [{'role': 'user', 'content': situation}], max_tokens=1200, model=get_model(data, MODEL_RICH))
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
         return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
@@ -338,7 +345,7 @@ def blindspot():
     if context:
         prompt = f"{situation}\n\nContext from other tools:\n{context}"
     try:
-        text = call_ai(BLINDSPOT_PROMPT, [{'role': 'user', 'content': prompt}])
+        text = call_ai(BLINDSPOT_PROMPT, [{'role': 'user', 'content': prompt}], model=get_model(data))
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
         return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
@@ -389,9 +396,13 @@ def pro_synthesis():
     data = request.get_json()
     thought = data.get('thought', '')
     results = data.get('results', [])  # list of {lens_name, synthesis, question, action, panels}
+    memory_context = (data.get('memory_context') or '').strip()
     if not results:
         return jsonify({'error': 'No lens results provided'}), 400
     parts = [f"The situation/thought: {thought}\n"]
+    # Inject memory context if provided — gives AI continuity across sessions
+    if memory_context:
+        parts.append(f"PAST CONTEXT — previous thinking sessions by this person:\n{memory_context}")
     for r in results:
         name = r.get('lens_name', 'Unknown lens')
         synth = r.get('synthesis', '')
@@ -402,7 +413,7 @@ def pro_synthesis():
         parts.append(f"{name}:\n  Core insight: {synth}\n  Key question: {question}\n  Action: {action}\n  Detail: [{panel_summary}]")
     combined = '\n\n'.join(parts)
     try:
-        text = call_ai(PRO_SYNTHESIS_PROMPT, [{'role': 'user', 'content': combined}], max_tokens=700)
+        text = call_ai(PRO_SYNTHESIS_PROMPT, [{'role': 'user', 'content': combined}], max_tokens=700, model=get_model(data))
         return jsonify(parse_json(text))
     except json.JSONDecodeError:
         return jsonify({'error': 'Parse error', 'raw': text[:500]}), 500
@@ -1162,7 +1173,7 @@ def run_lens():
     for attempt in range(2):
         try:
             tokens = 1300 if attempt == 0 else 1700
-            text = call_ai(prompt, [{'role': 'user', 'content': f'Situation / decision / thought: {situation}'}], max_tokens=tokens)
+            text = call_ai(prompt, [{'role': 'user', 'content': f'Situation / decision / thought: {situation}'}], max_tokens=tokens, model=get_model(data))
             return jsonify(parse_json(text))
         except json.JSONDecodeError:
             if attempt == 1:
