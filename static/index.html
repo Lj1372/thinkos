@@ -2196,6 +2196,15 @@ body {
         <div class="tool-title" style="color:var(--futureself)">📔 Decision Journal</div>
         <div class="tool-desc">Log decisions as you make them. Come back later to record what happened. Build a record of your thinking over time.</div>
       </div>
+      <!-- Thinking Sessions — always visible, shows all saved lens runs -->
+      <div id="journal-sessions-section" style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">📋 Thinking Sessions</div>
+          <button onclick="openSessionsModal()" style="background:none;border:none;color:var(--ladder);font-size:11px;cursor:pointer;font-weight:600;padding:0;">View all →</button>
+        </div>
+        <div id="journal-sessions-list"><div style="color:var(--muted);font-size:13px;padding:4px 0;">No sessions yet.</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">📔 Decision Journal</div>
       <div id="journal-gate" style="display:none;text-align:center;padding:32px 0;">
         <div style="font-size:40px;margin-bottom:12px;">📔</div>
         <div style="font-weight:700;margin-bottom:8px;">Pro feature</div>
@@ -3244,7 +3253,7 @@ async function deleteCloudSession(id) {
 async function loadSessionHistory() {
   if (!_sbUser || !isPaid()) return;
   const { data } = await _sb.from('sessions')
-    .select('id,tool,thought,created_at')
+    .select('id,tool,thought,result,created_at')
     .eq('user_id', _sbUser.id)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -3273,6 +3282,7 @@ function renderCloudHistory(cloudSessions) {
     const item = document.createElement('div');
     item.className = 'session-item';
     item.innerHTML = `<span class="session-title"><span style="font-size:10px;color:var(--muted);margin-right:4px;">${esc(toolLabel)}</span>${esc(title)}</span><button class="session-del" onclick="event.stopPropagation();deleteCloudSession('${s.id}')" title="Delete">×</button>`;
+    item.onclick = () => loadAndRestoreSession({ thought: s.thought, results: s.result || {}, tool: s.tool });
     list.appendChild(item);
   });
 
@@ -3281,7 +3291,7 @@ function renderCloudHistory(cloudSessions) {
     const item = document.createElement('div');
     item.className = 'session-item';
     item.innerHTML = `<span class="session-title">${esc(s.title)}</span><button class="session-del" onclick="event.stopPropagation();deleteSession('${s.id}')" title="Delete">×</button>`;
-    item.onclick = () => loadSession(s.id);
+    item.onclick = () => loadAndRestoreSession({ thought: s.thought, results: s.results || {}, tool: s.tool || 'council' });
     list.appendChild(item);
   });
 }
@@ -4353,33 +4363,173 @@ function deleteSession(id) {
   renderSessions();
 }
 function loadSession(id) {
-  const session = getSessions().find(s => s.id === id); if (!session) return;
-  document.getElementById('global-thought').value = session.thought;
+  const s = getSessions().find(x => x.id === id); if (!s) return;
+  loadAndRestoreSession({ thought: s.thought, results: s.results || {}, tool: s.tool || 'council' });
+}
+
+// ── Unified session restore ────────────────────────────────────
+function loadSessionById(id) {
+  const s = getSessions().find(x => x.id === id); if (!s) return;
+  loadAndRestoreSession({ thought: s.thought, results: s.results || {}, tool: s.tool || 'council' });
+  closeAllModals();
+}
+
+function loadAndRestoreSession(s) {
+  const thought = s.thought || '';
+  const results = s.results || s.result || {};
+  const tool    = s.tool || 'council';
+  document.getElementById('global-thought').value = thought;
   onThoughtInput();
-  lastResults = { ...session.results };
-  if (lastResults.rei) {
-    const d = lastResults.rei;
-    document.getElementById('rei-instinct').textContent = d.instinct;
-    document.getElementById('rei-emotion').textContent  = d.emotion;
-    document.getElementById('rei-reason').textContent   = d.reason;
-    document.getElementById('rei-majority').textContent = d.majority_view;
-    document.getElementById('rei-action').textContent   = '\u201c' + d.action_question + '\u201d';
+  lastResults = { ...results };
+  // Multi-lens or council → restore full council view
+  const coreLensCount = ['rei','ladder','kingdom','blind'].filter(id => results[id]).length;
+  if (results.synthesis || coreLensCount > 1 || tool === 'council') {
+    restoreCouncilView(results);
+    return;
+  }
+  // Single-lens: restore to that lens's individual view
+  if (results.rei) {
+    const d = results.rei;
+    document.getElementById('rei-instinct').textContent = d.instinct || '';
+    document.getElementById('rei-emotion').textContent  = d.emotion  || '';
+    document.getElementById('rei-reason').textContent   = d.reason   || '';
+    document.getElementById('rei-majority').textContent = d.majority_view || '';
+    document.getElementById('rei-action').textContent   = '\u201c' + (d.action_question||'') + '\u201d';
     const badge = document.getElementById('rei-alignment');
-    badge.textContent = {divided:'Divided',partial:'Partial Alignment',strong:'Strong Alignment'}[d.alignment]||d.alignment;
-    badge.className = 'alignment-badge alignment-' + d.alignment;
+    badge.textContent = {divided:'Divided',partial:'Partial Alignment',strong:'Strong Alignment'}[d.alignment]||d.alignment||'';
+    badge.className = 'alignment-badge alignment-' + (d.alignment||'');
     document.getElementById('rei-results').classList.add('visible');
     renderThoughtPill('rei-pill');
-  }
-  if (lastResults.blind) {
-    const d = lastResults.blind;
-    document.getElementById('blind-missing').textContent = d.missing_perspective;
-    document.getElementById('blind-why').textContent     = d.why_its_missing;
-    document.getElementById('blind-reframe').textContent = d.reframe;
-    document.getElementById('blind-q').textContent       = '\u201c' + d.blind_spot_question + '\u201d';
+    switchTool('rei');
+  } else if (results.ladder) {
+    const d = results.ladder;
+    const visual = document.getElementById('ladder-visual');
+    visual.innerHTML = '';
+    for (let i = 5; i >= 1; i--) {
+      const div = document.createElement('div');
+      div.className = 'rung' + (i === d.current_rung ? ' active' : '');
+      div.innerHTML = `<span class="rung-num">${i}</span><span class="rung-name">${RUNG_NAMES[i-1]}</span>`;
+      visual.appendChild(div);
+      if (i > 1) { const c = document.createElement('div'); c.className = 'rung-connector'; visual.appendChild(c); }
+    }
+    document.getElementById('lv-current-text').textContent = d.current_view || '';
+    document.getElementById('lv-above-text').textContent   = d.above_view || '(highest rung)';
+    document.getElementById('lv-below-text').textContent   = d.below_view || '(lowest rung)';
+    document.getElementById('ladder-ascent').textContent   = '\u201c' + (d.ascent_question||'') + '\u201d';
+    document.getElementById('lv-above').classList.toggle('dim', !d.above_view);
+    document.getElementById('lv-below').classList.toggle('dim', !d.below_view);
+    document.getElementById('ladder-results').classList.add('visible');
+    renderThoughtPill('ladder-pill');
+    switchTool('ladder');
+  } else if (results.kingdom) {
+    const d = results.kingdom;
+    document.getElementById('k-kingdom').textContent = d.kingdom || '';
+    document.getElementById('k-person').textContent  = d.the_person || '';
+    document.getElementById('k-eternal').textContent = d.eternal_weight || '';
+    document.getElementById('k-path').textContent    = d.the_path || '';
+    document.getElementById('k-analogy-person').textContent    = d.biblical_analogy?.person_or_story || '';
+    document.getElementById('k-analogy-situation').textContent = d.biblical_analogy?.their_situation || '';
+    document.getElementById('k-analogy-parallel').textContent  = d.biblical_analogy?.the_parallel || '';
+    const scriptureEl = document.getElementById('k-scripture');
+    scriptureEl.innerHTML = '';
+    (d.scripture || []).forEach(sv => {
+      const card = document.createElement('div'); card.className = 'verse-card';
+      card.innerHTML = `<div class="verse-ref">${esc(sv.reference)}</div><div class="verse-text">\u201c${esc(sv.verse)}\u201d</div><div class="verse-applied">${esc(sv.applied)}</div>`;
+      scriptureEl.appendChild(card);
+    });
+    document.getElementById('k-question').textContent = '\u201c' + (d.kingdom_question||'') + '\u201d';
+    document.getElementById('kingdom-results').classList.add('visible');
+    renderThoughtPill('kingdom-pill');
+    switchTool('kingdom');
+  } else if (results.blind) {
+    const d = results.blind;
+    document.getElementById('blind-missing').textContent = d.missing_perspective || '';
+    document.getElementById('blind-why').textContent     = d.why_its_missing || '';
+    document.getElementById('blind-reframe').textContent = d.reframe || '';
+    document.getElementById('blind-q').textContent       = '\u201c' + (d.blind_spot_question||'') + '\u201d';
     document.getElementById('blind-results').classList.add('visible');
     renderThoughtPill('blind-pill');
+    switchTool('blind');
   }
-  switchTool(lastResults.rei ? 'rei' : lastResults.ladder ? 'ladder' : 'kingdom');
+  renderSessions();
+}
+
+function restoreCouncilView(results) {
+  const resultsEl = document.getElementById('council-results');
+  resultsEl.innerHTML = '';
+  document.getElementById('council-synthesis').style.display  = 'none';
+  document.getElementById('council-takeaways').innerHTML      = '';
+  document.getElementById('council-status-bar').style.display = 'none';
+  document.getElementById('council-actions').style.display    = 'none';
+
+  const CORE = [
+    { id:'rei',     fn: renderREIBody,     color:'var(--instinct)', icon:'🧠', name:'REI Council'  },
+    { id:'ladder',  fn: renderLadderBody,  color:'var(--ladder)',   icon:'🪜', name:'The Ladder'   },
+    { id:'kingdom', fn: renderKingdomBody, color:'var(--kingdom)',  icon:'✝️', name:'Kingdom Lens' },
+    { id:'blind',   fn: renderBlindBody,   color:'var(--blind)',    icon:'🔍', name:'Blind Spot'   },
+  ];
+  let hasAny = false;
+
+  CORE.forEach(({ id, fn, color, icon, name }) => {
+    if (!results[id]) return;
+    hasAny = true;
+    const sectId = 'cc-' + id;
+    const section = document.createElement('div');
+    section.id = sectId;
+    section.className = 'council-section';
+    section.innerHTML = `
+      <div class="council-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <span class="council-section-title" style="color:${color}">${icon} ${name}</span>
+        <span class="council-section-toggle"></span>
+      </div>
+      <div class="council-section-body" id="${sectId}-body">${fn(results[id])}</div>`;
+    resultsEl.appendChild(section);
+  });
+
+  // Generic/extended lenses
+  Object.keys(results).forEach(key => {
+    if (['rei','ladder','kingdom','blind','synthesis'].includes(key)) return;
+    const d = results[key]; if (!d || typeof d !== 'object') return;
+    const cfg = getLensById(key) || LP_CORE_LENSES.find(l => l.id === key) || { id:key, name:key, icon:'🔭', color:'var(--muted)' };
+    hasAny = true;
+    const sectId = 'cc-' + key;
+    const section = document.createElement('div');
+    section.id = sectId;
+    section.className = 'council-section';
+    section.innerHTML = `
+      <div class="council-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <span class="council-section-title" style="color:${cfg.color||'var(--muted)'}">${cfg.icon||'🔭'} ${cfg.name||key}</span>
+        <span class="council-section-toggle"></span>
+      </div>
+      <div class="council-section-body" id="${sectId}-body">${renderGenericLensBody(d)}</div>`;
+    resultsEl.appendChild(section);
+  });
+
+  // Restore synthesis
+  if (results.synthesis) {
+    const sy = results.synthesis;
+    document.getElementById('synth-text').textContent = sy.synthesis || sy.key_insight || '';
+    document.getElementById('synth-q').textContent    = sy.synthesis_question ? '\u201c' + sy.synthesis_question + '\u201d' : '';
+    document.getElementById('council-synthesis').style.display = 'block';
+  }
+
+  // Rebuild Key Takeaways
+  const takeParts = CORE.filter(({ id }) => results[id]).map(({ id, icon, name, color }) => {
+    const d = results[id];
+    const snippet = (id==='rei' ? d.majority_view : id==='ladder' ? (d.above_view||d.current_view) : id==='kingdom' ? d.kingdom : d.reframe||'').slice(0,100);
+    return `<li><span class="tl-label" style="color:${color}">${icon} ${name}</span><span class="tl-text">${esc(snippet)}${snippet.length>=100?'…':''}</span></li>`;
+  });
+  if (takeParts.length) {
+    document.getElementById('council-takeaways').innerHTML = `
+      <div class="takeaway-card">
+        <div class="takeaway-card-label">🎯 Key Takeaways</div>
+        <ul class="takeaway-list">${takeParts.join('')}</ul>
+      </div>`;
+  }
+
+  if (hasAny) document.getElementById('council-actions').style.display = 'flex';
+  renderThoughtPill('council-pill');
+  switchTool('council');
   renderSessions();
 }
 function renderSessions() {
@@ -4387,7 +4537,7 @@ function renderSessions() {
   if (_sbUser && isPaid()) { loadSessionHistory(); return; }
   // Everyone else sees local-only sessions
   const list = document.getElementById('session-list'); if (!list) return;
-  const sessions = getSessions().slice(0, 8);
+  const sessions = getSessions().slice(0, 3);
   list.innerHTML = sessions.length ? '' : '<div style="font-size:11px;color:var(--muted);padding:6px 10px">No sessions yet</div>';
   sessions.forEach(s => {
     const item = document.createElement('div'); item.className = 'session-item';
@@ -4582,18 +4732,164 @@ function openSessionsModal() {
 const _debouncedRenderAllSessions = debounce(() => renderAllSessions(), 200);
 function renderAllSessions() {
   const query = (document.getElementById('sessions-search')?.value || '').toLowerCase();
-  const all = getSessions().filter(s => !query || s.title.toLowerCase().includes(query));
+  const all = getSessions().filter(s => !query || (s.title||'').toLowerCase().includes(query) || (s.thought||'').toLowerCase().includes(query));
   const list = document.getElementById('all-sessions-list');
   list.innerHTML = all.length ? '' : '<div style="color:var(--muted);font-size:13px;padding:10px 0">No sessions found</div>';
-  all.forEach(s => {
+  all.forEach((s, idx) => {
+    const lensContent = buildSessionLensHTML(s.results || {});
     const item = document.createElement('div');
-    item.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:4px;transition:background 0.15s;';
-    item.innerHTML = `<div><div style="font-size:13px;font-weight:600;color:var(--text)">${esc(s.title)}</div><div style="font-size:11px;color:var(--muted)">${new Date(s.timestamp).toLocaleDateString()}</div></div><button style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px" onclick="event.stopPropagation();deleteSession('${s.id}');renderAllSessions()">×</button>`;
-    item.onmouseenter = () => item.style.background = 'var(--surface2)';
-    item.onmouseleave = () => item.style.background = '';
-    item.onclick = () => { loadSession(s.id); closeAllModals(); };
+    item.style.cssText = 'border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;';
+    item.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;cursor:pointer;"
+           onclick="const b=document.getElementById('asl-${idx}');const open=b.style.display!=='none';b.style.display=open?'none':'block';">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.title||s.thought||'Untitled')}</div>
+          <div style="font-size:11px;color:var(--muted)">${new Date(s.timestamp).toLocaleDateString()}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <button onclick="event.stopPropagation();loadSessionById('${s.id}')"
+            style="background:var(--ladder);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Load →</button>
+          <button onclick="event.stopPropagation();deleteSession('${s.id}');renderAllSessions()"
+            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;">×</button>
+        </div>
+      </div>
+      <div id="asl-${idx}" style="display:none;border-top:1px solid var(--border);padding:12px 14px;">
+        ${lensContent || '<div style="color:var(--muted);font-size:12px;">No lens data saved for this session</div>'}
+      </div>`;
     list.appendChild(item);
   });
+}
+
+// ── Journal session history ────────────────────────────────────
+let _journalSessions = [];
+
+async function renderJournalSessions() {
+  const container = document.getElementById('journal-sessions-list');
+  if (!container) return;
+
+  // Start with local sessions
+  let sessions = getSessions();
+
+  // Merge cloud sessions for logged-in users (enables cross-device history)
+  if (_sbUser) {
+    try {
+      const { data } = await _sb.from('sessions')
+        .select('id,tool,thought,result,created_at')
+        .eq('user_id', _sbUser.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (data && data.length) {
+        const localThoughts = new Set(sessions.map(s => s.thought));
+        const cloudOnly = data
+          .filter(s => !localThoughts.has(s.thought))
+          .map(s => ({
+            id: 'cloud_' + s.id,
+            title: (s.thought||'Untitled').slice(0, 45),
+            thought: s.thought,
+            results: s.result || {},
+            tool: s.tool || 'council',
+            timestamp: new Date(s.created_at).getTime(),
+          }));
+        sessions = [...sessions, ...cloudOnly]
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 50);
+      }
+    } catch(e) { /* ignore — degrade gracefully */ }
+  }
+
+  _journalSessions = sessions;
+
+  if (!sessions.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:4px 0;">No sessions yet. Run a lens to get started.</div>';
+    return;
+  }
+
+  container.innerHTML = sessions.slice(0, 25).map((s, idx) => {
+    const r = s.results || {};
+    const date = new Date(s.timestamp).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const lensChips = ['rei','ladder','kingdom','blind','synthesis']
+      .filter(k => r[k])
+      .map(k => {
+        const ic = {rei:'🧠',ladder:'🪜',kingdom:'✝️',blind:'🔍',synthesis:'⚡'}[k]||'🔭';
+        const cl = {rei:'var(--instinct)',ladder:'var(--ladder)',kingdom:'var(--kingdom)',blind:'var(--blind)',synthesis:'var(--ladder)'}[k]||'var(--muted)';
+        return `<span style="font-size:10px;border:1px solid ${cl}55;border-radius:99px;padding:1px 6px;color:${cl};">${ic}</span>`;
+      }).join('&nbsp;');
+    const lensContent = buildSessionLensHTML(r);
+    return `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;overflow:hidden;">
+      <div style="padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;"
+           onclick="const b=document.getElementById('jsl-${idx}');const open=b.style.display!=='none';b.style.display=open?'none':'block';this.querySelector('.jsl-arr').textContent=open?'▶':'▼';">
+        <span class="jsl-arr" style="color:var(--muted);font-size:9px;flex-shrink:0;">▶</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.title||s.thought||'Untitled')}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;display:flex;gap:4px;align-items:center;">${date}${lensChips ? '&nbsp;&nbsp;'+lensChips : ''}</div>
+        </div>
+        <button onclick="event.stopPropagation();loadJournalSession(${idx});"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--ladder);cursor:pointer;flex-shrink:0;">Load →</button>
+      </div>
+      <div id="jsl-${idx}" style="display:none;border-top:1px solid var(--border);padding:12px 14px;">
+        ${lensContent || '<div style="color:var(--muted);font-size:12px;">No lens data saved for this session</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadJournalSession(idx) {
+  const s = _journalSessions[idx];
+  if (!s) return;
+  loadAndRestoreSession({ thought: s.thought, results: s.results || {}, tool: s.tool || 'council' });
+}
+
+function buildSessionLensHTML(results) {
+  const r = results || {};
+  let html = '';
+  if (r.rei) {
+    const d = r.rei;
+    html += `<div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--instinct);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">🧠 REI Council</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+        <div style="background:var(--surface);border-radius:6px;padding:8px;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:3px;">Instinct</div><div style="font-size:12px;line-height:1.5;">${esc(d.instinct||'')}</div></div>
+        <div style="background:var(--surface);border-radius:6px;padding:8px;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:3px;">Emotion</div><div style="font-size:12px;line-height:1.5;">${esc(d.emotion||'')}</div></div>
+        <div style="background:var(--surface);border-radius:6px;padding:8px;"><div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:3px;">Reason</div><div style="font-size:12px;line-height:1.5;">${esc(d.reason||'')}</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--text);border-left:2px solid var(--instinct);padding-left:8px;">${esc(d.majority_view||'')}</div>
+    </div>`;
+  }
+  if (r.ladder) {
+    const d = r.ladder;
+    html += `<div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--ladder);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">🪜 The Ladder — Rung ${d.current_rung||''}: ${esc(d.rung_name||'')}</div>
+      ${d.above_view ? `<div style="font-size:12px;margin-bottom:4px;"><span style="color:var(--muted);font-size:10px;">↑ One rung up: </span>${esc(d.above_view)}</div>` : ''}
+      <div style="font-size:12px;border-left:2px solid var(--ladder);padding-left:8px;margin-bottom:4px;">${esc(d.current_view||'')}</div>
+      <div style="font-size:11px;color:var(--muted);font-style:italic;">"${esc(d.ascent_question||'')}"</div>
+    </div>`;
+  }
+  if (r.kingdom) {
+    const d = r.kingdom;
+    html += `<div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--kingdom);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">✝️ Kingdom Lens</div>
+      <div style="font-size:12px;border-left:2px solid var(--kingdom);padding-left:8px;margin-bottom:4px;">${esc(d.kingdom||'')}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:2px;">Path: ${esc(d.the_path||'')}</div>
+      ${d.biblical_analogy ? `<div style="font-size:11px;color:var(--muted);">Parallel: ${esc(d.biblical_analogy.person_or_story||'')} — ${esc(d.biblical_analogy.the_parallel||'')}</div>` : ''}
+    </div>`;
+  }
+  if (r.blind) {
+    const d = r.blind;
+    html += `<div style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--blind);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">🔍 Blind Spot</div>
+      <div style="font-size:12px;border-left:2px solid var(--blind);padding-left:8px;margin-bottom:4px;">${esc(d.reframe||'')}</div>
+      <div style="font-size:12px;color:var(--muted);">${esc(d.missing_perspective||'')}</div>
+    </div>`;
+  }
+  if (r.synthesis) {
+    const sy = r.synthesis;
+    html += `<div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--ladder);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">⚡ Synthesis</div>
+      <div style="font-size:13px;line-height:1.6;">${esc(sy.synthesis||sy.key_insight||'')}</div>
+      ${sy.synthesis_question ? `<div style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic;">"${esc(sy.synthesis_question)}"</div>` : ''}
+    </div>`;
+  }
+  return html;
 }
 function closeAllModals() {
   document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('visible'));
@@ -6326,6 +6622,7 @@ async function saveDecision() {
 }
 
 function renderJournal() {
+  renderJournalSessions(); // Always show session history, regardless of paid status
   if (!isPaid()) {
     document.getElementById('journal-gate').style.display = 'block';
     document.getElementById('journal-content').style.display = 'none';
