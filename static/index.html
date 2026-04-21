@@ -687,6 +687,51 @@ body {
 
 /* ── Full Council view ── */
 .council-view { display: flex; flex-direction: column; gap: 20px; }
+
+/* Per-lens status bar */
+.council-status-bar {
+  display: flex; flex-wrap: wrap; gap: 7px; padding: 14px 0 4px;
+}
+.csl-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; padding: 5px 10px;
+  border-radius: 99px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--muted);
+  transition: all .25s;
+}
+.csl-chip.running { border-color: var(--ladder); color: var(--ladder); background: rgba(167,139,250,.08); }
+.csl-chip.done    { border-color: var(--reason); color: var(--reason); background: rgba(52,211,153,.08); }
+.csl-chip.failed  { border-color: #f87171; color: #f87171; background: rgba(248,113,113,.08); }
+.csl-spinner { display:inline-block; width:8px; height:8px; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Key Takeaways card */
+.takeaway-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 22px;
+}
+.takeaway-card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--ladder); margin-bottom: 14px; }
+.takeaway-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.takeaway-list li { font-size: 13px; line-height: 1.55; display: flex; gap: 8px; }
+.takeaway-list li .tl-label { font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.takeaway-list li .tl-text { color: var(--text); }
+.takeaway-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.takeaway-copy-all { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; transition: border-color .15s; }
+.takeaway-copy-all:hover { border-color: var(--ladder); }
+
+/* Regenerate synthesis */
+.regen-synth-btn { background: none; border: 1px solid #3a2a5a; color: var(--ladder); border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 12px; transition: background .15s, border-color .15s; }
+.regen-synth-btn:hover { background: rgba(167,139,250,.1); border-color: var(--ladder); }
+.regen-synth-btn:disabled { opacity: .5; cursor: default; }
+
+/* Offline banner */
+.offline-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  background: #f59e0b; color: #000; font-size: 12px; font-weight: 700;
+  text-align: center; padding: 8px 16px;
+  display: none;
+}
+.offline-banner.visible { display: block; }
 .synthesis-card {
   background: linear-gradient(135deg, #1a0a30, #0a1a20);
   border: 1px solid #3a2a5a; border-radius: 14px; padding: 24px;
@@ -1529,6 +1574,11 @@ body {
 </head>
 <body>
 
+<!-- ── Offline banner ── -->
+<div class="offline-banner" id="offline-banner">
+  ⚡ You're offline — AI lenses need internet. Your saved sessions and journal work offline.
+</div>
+
 <!-- ── Sidebar backdrop ── -->
 <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
 
@@ -1903,11 +1953,16 @@ body {
       </div>
       <div id="council-pill"></div>
       <div class="council-view" id="council-view">
+        <!-- Per-lens status bar (shown during run) -->
+        <div class="council-status-bar" id="council-status-bar" style="display:none"></div>
+        <!-- Key Takeaways (shown after run, before synthesis) -->
+        <div id="council-takeaways"></div>
         <!-- Synthesis -->
         <div class="synthesis-card" id="council-synthesis" style="display:none">
           <div class="synthesis-label">⚡ Council Synthesis</div>
           <div class="synthesis-text" id="synth-text"></div>
           <div class="synthesis-q" id="synth-q"></div>
+          <button class="regen-synth-btn" id="regen-synth-btn" onclick="regenSynthesis()" style="display:none">↺ Regenerate synthesis</button>
         </div>
         <!-- Dynamic lens sections injected here by runFullCouncil() -->
         <div id="council-results"></div>
@@ -2277,12 +2332,11 @@ body {
 
 <!-- ── Mobile bottom nav ── -->
 <nav class="bottom-nav" id="bottom-nav">
-  <button class="bnav-btn" data-tool="rei"      onclick="switchTool('rei')"><span class="bnav-icon">🧠</span>REI</button>
-  <button class="bnav-btn" data-tool="ladder"   onclick="switchTool('ladder')"><span class="bnav-icon">🪜</span>Ladder</button>
-  <button class="bnav-btn" data-tool="kingdom"  onclick="switchTool('kingdom')"><span class="bnav-icon">✝️</span>Kingdom</button>
-  <button class="bnav-btn" data-tool="socratic" onclick="switchTool('socratic')"><span class="bnav-icon">❓</span>Socratic</button>
-  <button class="bnav-btn" data-tool="blind"    onclick="switchTool('blind')"><span class="bnav-icon">🔍</span>Blind</button>
-  <button class="bnav-btn" onclick="openLensLibrary()"><span class="bnav-icon">🔭</span>Lenses</button>
+  <button class="bnav-btn" data-tool="home"     onclick="switchTool('home')"><span class="bnav-icon">🏠</span>Home</button>
+  <button class="bnav-btn" data-tool="council"  onclick="runFullCouncil()"><span class="bnav-icon">⚡</span>Council</button>
+  <button class="bnav-btn" data-tool="journal"  onclick="switchTool('journal')"><span class="bnav-icon">📔</span>Journal</button>
+  <button class="bnav-btn" data-tool="planner"  onclick="switchTool('planner')"><span class="bnav-icon">🗺️</span>Planner</button>
+  <button class="bnav-btn" onclick="toggleSidebar()"><span class="bnav-icon">☰</span>More</button>
 </nav>
 
 <!-- Full Core Council FAB for mobile -->
@@ -2292,7 +2346,7 @@ body {
 <div class="council-confirm-modal" id="council-confirm-modal">
   <div class="council-confirm-inner">
     <div class="council-confirm-title">⚡ Full Core Council</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Running these lenses in sequence:</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Running these lenses <strong>in parallel</strong> ⚡ — results appear as each finishes:</div>
     <div class="council-confirm-lenses" id="ccm-lenses"></div>
     <div class="council-confirm-thought-label">Your thought</div>
     <div class="council-confirm-thought" id="ccm-thought"></div>
@@ -2826,7 +2880,7 @@ body {
     <button class="modal-close" onclick="closeAllModals()">×</button>
     <div class="modal-title">All Sessions</div>
     <div style="margin-bottom:12px">
-      <input id="sessions-search" type="text" placeholder="Search sessions..." oninput="renderAllSessions()"
+      <input id="sessions-search" type="text" placeholder="Search sessions..." oninput="_debouncedRenderAllSessions()"
         style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;">
     </div>
     <div id="all-sessions-list"></div>
@@ -3664,6 +3718,10 @@ function runFullCouncil() {
 }
 
 // ── Full Core Council — step 2: execute after confirmation ─────
+// Stored so regenSynthesis() can re-use them
+let _lastCouncilInput = '';
+let _lastCouncilResults = [];
+
 async function _runFullCouncilExecute() {
   document.getElementById('council-confirm-modal').classList.remove('visible');
 
@@ -3675,97 +3733,170 @@ async function _runFullCouncilExecute() {
   updateCouncilLineupLabel();
 
   // Reset UI
-  document.getElementById('council-synthesis').style.display = 'none';
-  document.getElementById('council-actions').style.display   = 'none';
-  document.getElementById('council-results').innerHTML       = '';
+  document.getElementById('council-synthesis').style.display  = 'none';
+  document.getElementById('council-actions').style.display    = 'none';
+  document.getElementById('council-results').innerHTML        = '';
+  document.getElementById('council-takeaways').innerHTML      = '';
+  document.getElementById('council-status-bar').innerHTML     = '';
+  document.getElementById('council-status-bar').style.display = 'flex';
+  const regenBtn = document.getElementById('regen-synth-btn');
+  if (regenBtn) regenBtn.style.display = 'none';
 
   document.getElementById('full-council-btn').disabled = true;
   startLoading('council');
 
-  // Native API calls for the 4 core lenses (uses context from prior results)
-  const _coreAPIs = {
-    rei:     () => callAPI('/api/rei',      { situation: input }),
-    ladder:  () => callAPI('/api/ladder',   { question:  input }),
-    kingdom: () => callAPI('/api/kingdom',  { situation: input }),
-    blind:   () => {
-      let ctx = '';
-      if (lastResults.rei)    ctx += `REI — Instinct: ${lastResults.rei.instinct} | Emotion: ${lastResults.rei.emotion} | Reason: ${lastResults.rei.reason}\n`;
-      if (lastResults.ladder) ctx += `Ladder — Rung ${lastResults.ladder.current_rung}: ${lastResults.ladder.current_view}`;
-      return callAPI('/api/blindspot', { situation: input, context: ctx });
-    },
-  };
+  // ── Helper: lens config lookup ──────────────────────────────
+  function _cfgFor(id) { return getLensById(id) || LP_CORE_LENSES.find(l => l.id === id) || {}; }
 
-  // Normalise native core result → generic {panels, synthesis, question, action}
+  // ── Status bar setup ────────────────────────────────────────
+  const statusBar = document.getElementById('council-status-bar');
+  lenses.forEach(id => {
+    const cfg = _cfgFor(id);
+    const chip = document.createElement('span');
+    chip.id = 'csl-' + id;
+    chip.className = 'csl-chip';
+    chip.innerHTML = `${cfg.icon||'🔭'} ${cfg.name||id}`;
+    statusBar.appendChild(chip);
+  });
+  function setLensStatus(id, status) {
+    const chip = document.getElementById('csl-' + id);
+    if (!chip) return;
+    chip.className = 'csl-chip ' + status;
+    const icons = { running: '<span class="csl-spinner"></span>', done: '✓', failed: '✗' };
+    const cfg = _cfgFor(id);
+    chip.innerHTML = `${icons[status]||''} ${cfg.icon||'🔭'} ${cfg.name||id}`;
+  }
+
+  // ── Build section skeletons upfront ─────────────────────────
+  const resultsEl = document.getElementById('council-results');
+  lenses.forEach(id => {
+    const cfg    = _cfgFor(id);
+    const color  = cfg.color || 'var(--text)';
+    const icon   = cfg.icon  || '🔭';
+    const name   = cfg.name  || id;
+    const sectId = 'cc-' + id;
+    const section = document.createElement('div');
+    section.id = sectId;
+    section.className = 'council-section collapsed';
+    section.innerHTML = `
+      <div class="council-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <span class="council-section-title" style="color:${color}">${icon} ${name}</span>
+        <span class="council-section-toggle"></span>
+      </div>
+      <div class="council-section-body" id="${sectId}-body">
+        <div style="color:var(--muted);font-size:13px;padding:8px 0;display:flex;align-items:center;gap:8px;"><span class="csl-spinner" style="border-color:var(--muted);border-top-color:transparent;"></span> Running…</div>
+      </div>`;
+    resultsEl.appendChild(section);
+  });
+
+  // ── Normalise helpers ────────────────────────────────────────
   const _coreNorm = {
     rei:    d => ({ synthesis: d.majority_view, question: d.action_question, action: d.alignment,
                     panels: [{label:'Instinct',emoji:'🧠',text:d.instinct},{label:'Emotion',emoji:'💙',text:d.emotion},{label:'Reason',emoji:'💚',text:d.reason}] }),
-    ladder: d => ({ synthesis: d.current_view,  question: d.ascent_question, action: '',
+    ladder: d => ({ synthesis: d.above_view || d.current_view, question: d.ascent_question, action: '',
                     panels: [{label:'Rung '+d.current_rung+' — '+d.rung_name,emoji:'📊',text:d.current_view},{label:'One rung above',emoji:'⬆️',text:d.above_view||''}] }),
     kingdom:d => ({ synthesis: d.kingdom, question: d.kingdom_question, action: '',
                     panels: [{label:'Kingdom View',emoji:'👑',text:d.kingdom},{label:'The Path',emoji:'🛤️',text:d.the_path},{label:'Eternal Weight',emoji:'⚖️',text:d.eternal_weight}] }),
     blind:  d => ({ synthesis: d.reframe, question: d.blind_spot_question, action: '',
                     panels: [{label:'Missing Angle',emoji:'🔍',text:d.missing_perspective},{label:'Why',emoji:'💭',text:d.why_its_missing},{label:'Reframe',emoji:'✨',text:d.reframe}] }),
   };
-
-  // Use rich native renderers for the 4 core lenses, generic for everything else
   const _coreRender = { rei: renderREIBody, ladder: renderLadderBody, kingdom: renderKingdomBody, blind: renderBlindBody };
 
-  const allResults = [];
+  // ── Blind spot depends on REI + Ladder context ───────────────
+  // Use resolve handles so blind waits only as long as needed
+  let _reiResolve, _ladderResolve;
+  const _reiDone    = new Promise(r => _reiResolve    = r);
+  const _ladderDone = new Promise(r => _ladderResolve = r);
+
+  // ── Fire all lenses in parallel ──────────────────────────────
+  const lensPromises = lenses.map(async (lensId) => {
+    const cfg    = _cfgFor(lensId);
+    const name   = cfg.name  || lensId;
+    const sectId = 'cc-' + lensId;
+    setLensStatus(lensId, 'running');
+    try {
+      let normalised, raw;
+      if (lensId === 'blind') {
+        // Wait for REI + Ladder before firing blind (needs their context)
+        await Promise.all([_reiDone, _ladderDone]);
+        let ctx = '';
+        if (lastResults.rei)    ctx += `REI — Instinct: ${lastResults.rei.instinct} | Emotion: ${lastResults.rei.emotion} | Reason: ${lastResults.rei.reason}\n`;
+        if (lastResults.ladder) ctx += `Ladder — Rung ${lastResults.ladder.current_rung}: ${lastResults.ladder.current_view}`;
+        raw = await callAPI('/api/blindspot', { situation: input, context: ctx });
+        lastResults.blind = raw;
+        normalised = _coreNorm.blind(raw);
+        document.getElementById(sectId + '-body').innerHTML = renderBlindBody(raw);
+      } else if (lensId === 'rei') {
+        raw = await callAPI('/api/rei', { situation: input });
+        lastResults.rei = raw; _reiResolve();
+        normalised = _coreNorm.rei(raw);
+        document.getElementById(sectId + '-body').innerHTML = renderREIBody(raw);
+      } else if (lensId === 'ladder') {
+        raw = await callAPI('/api/ladder', { question: input });
+        lastResults.ladder = raw; _ladderResolve();
+        normalised = _coreNorm.ladder(raw);
+        document.getElementById(sectId + '-body').innerHTML = renderLadderBody(raw);
+      } else if (lensId === 'kingdom') {
+        raw = await callAPI('/api/kingdom', { situation: input });
+        lastResults.kingdom = raw;
+        normalised = _coreNorm.kingdom(raw);
+        document.getElementById(sectId + '-body').innerHTML = renderKingdomBody(raw);
+      } else {
+        raw = await _lensWithRetry(lensId, input);
+        normalised = raw;
+        document.getElementById(sectId + '-body').innerHTML = renderGenericLensBody(raw);
+      }
+      setLensStatus(lensId, 'done');
+      // Sections stay collapsed — user expands on demand
+      return { lens_name: name, lens_id: lensId,
+        synthesis: normalised.synthesis || '', question: normalised.question || '',
+        action:    normalised.action    || '', panels:   normalised.panels   || [] };
+    } catch(err) {
+      setLensStatus(lensId, 'failed');
+      document.getElementById(sectId + '-body').innerHTML =
+        `<div style="color:#f87171;font-size:13px;padding:8px 0;">${name} failed — ${err.message}. <button onclick="_retryLens('${lensId}','${input.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--ladder);cursor:pointer;font-size:12px;text-decoration:underline;">Retry</button></div>`;
+      // Unblock blind if REI/Ladder failed (prevent permanent hang)
+      if (lensId === 'rei')    _reiResolve();
+      if (lensId === 'ladder') _ladderResolve();
+      return null;
+    }
+  });
 
   try {
-    for (const lensId of lenses) {
-      const cfg    = getLensById(lensId) || LP_CORE_LENSES.find(l => l.id === lensId);
-      const color  = cfg?.color || 'var(--text)';
-      const icon   = cfg?.icon  || '🔭';
-      const name   = cfg?.name  || lensId;
-      const sectId = 'cc-' + lensId;
+    const settled = (await Promise.all(lensPromises)).filter(Boolean);
+    _lastCouncilInput   = input;
+    _lastCouncilResults = settled;
 
-      // Build collapsible section skeleton
-      const section = document.createElement('div');
-      section.id = sectId;
-      section.className = 'council-section collapsed';
-      section.innerHTML = `
-        <div class="council-section-header" onclick="this.parentElement.classList.toggle('collapsed')">
-          <span class="council-section-title" style="color:${color}">${icon} ${name}</span>
-          <span class="council-section-toggle"></span>
-        </div>
-        <div class="council-section-body" id="${sectId}-body">
-          <div style="color:var(--muted);font-size:13px;padding:8px 0;">Running…</div>
+    // ── Key Takeaways card ────────────────────────────────────
+    if (settled.length > 0) {
+      const items = settled.map(r => {
+        const cfg = _cfgFor(r.lens_id);
+        const snippet = (r.synthesis || r.question || '').slice(0, 100);
+        return `<li><span class="tl-label" style="color:${cfg.color||'var(--ladder)'}">${cfg.icon||'🔭'} ${r.lens_name}</span><span class="tl-text">${esc(snippet)}${snippet.length >= 100 ? '…' : ''}</span></li>`;
+      }).join('');
+      const copyAllTxt = settled.map(r => `${r.lens_name}: ${r.synthesis||r.question||''}`).join('\n\n');
+      document.getElementById('council-takeaways').innerHTML = `
+        <div class="takeaway-card">
+          <div class="takeaway-card-label">🎯 Key Takeaways</div>
+          <ul class="takeaway-list">${items}</ul>
+          <div class="takeaway-actions">
+            <button class="takeaway-copy-all" onclick="navigator.clipboard.writeText(${JSON.stringify(copyAllTxt)}).then(()=>{this.textContent='✓ Copied';setTimeout(()=>this.textContent='Copy all takeaways',2000)})">Copy all takeaways</button>
+          </div>
         </div>`;
-      document.getElementById('council-results').appendChild(section);
-
-      let normalised;
-      try {
-        if (_coreAPIs[lensId]) {
-          const raw = await _coreAPIs[lensId]();
-          lastResults[lensId] = raw;
-          normalised = _coreNorm[lensId](raw);
-          document.getElementById(sectId + '-body').innerHTML = _coreRender[lensId](raw);
-        } else {
-          const raw = await _lensWithRetry(lensId, input);
-          normalised = raw;
-          document.getElementById(sectId + '-body').innerHTML = renderGenericLensBody(raw);
-        }
-        section.classList.remove('collapsed');
-        allResults.push({ lens_name: name, lens_id: lensId,
-          synthesis: normalised.synthesis || '', question: normalised.question || '',
-          action:    normalised.action    || '', panels:   normalised.panels   || [] });
-      } catch(err) {
-        document.getElementById(sectId + '-body').innerHTML =
-          `<div style="color:#f87171;font-size:13px;">${name} failed: ${err.message}</div>`;
-      }
     }
 
-    // Synthesis — uses pro-synthesis which handles any lens lineup
-    if (allResults.length > 0) {
-      const synth = await callAPI('/api/pro-synthesis', { thought: input, results: allResults });
+    // ── Synthesis ─────────────────────────────────────────────
+    if (settled.length > 0) {
+      const synth = await callAPI('/api/pro-synthesis', { thought: input, results: settled });
       lastResults.synthesis = synth;
       document.getElementById('synth-text').textContent = synth.synthesis || synth.key_insight || '';
       document.getElementById('synth-q').textContent    = synth.synthesis_question
         ? '\u201c' + synth.synthesis_question + '\u201d' : '';
       document.getElementById('council-synthesis').style.display = 'block';
+      if (regenBtn) regenBtn.style.display = 'inline-block';
     }
 
+    document.getElementById('council-status-bar').style.display = 'none';
     document.getElementById('council-actions').style.display = 'flex';
     saveSession();
     showSavePrompt('council', input, { ...lastResults });
@@ -3776,6 +3907,47 @@ async function _runFullCouncilExecute() {
     addShareButton('Full Core Council', input, synthText, '#e879f9', '⚡');
   } catch(e) { alert('Full Core Council error: ' + e.message); }
   finally { stopLoading('council'); document.getElementById('full-council-btn').disabled = false; }
+}
+
+// ── Regenerate synthesis ────────────────────────────────────────
+async function regenSynthesis() {
+  if (!_lastCouncilInput || !_lastCouncilResults.length) return;
+  const btn = document.getElementById('regen-synth-btn');
+  btn.disabled = true; btn.textContent = '↺ Regenerating…';
+  document.getElementById('synth-text').textContent = '';
+  document.getElementById('synth-q').textContent = '';
+  try {
+    const synth = await callAPI('/api/pro-synthesis', { thought: _lastCouncilInput, results: _lastCouncilResults });
+    lastResults.synthesis = synth;
+    document.getElementById('synth-text').textContent = synth.synthesis || synth.key_insight || '';
+    document.getElementById('synth-q').textContent    = synth.synthesis_question
+      ? '\u201c' + synth.synthesis_question + '\u201d' : '';
+  } catch(e) { alert('Regenerate failed: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '↺ Regenerate synthesis'; }
+}
+
+// ── Retry a single failed lens ──────────────────────────────────
+async function _retryLens(lensId, input) {
+  const sectId = 'cc-' + lensId;
+  const bodyEl = document.getElementById(sectId + '-body');
+  if (!bodyEl) return;
+  bodyEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;display:flex;align-items:center;gap:8px;"><span class="csl-spinner" style="border-color:var(--muted);border-top-color:transparent;"></span> Retrying…</div>';
+  setLensStatus(lensId, 'running');
+  try {
+    let raw, normalised;
+    const _coreNormLocal = {
+      rei:    d => d, ladder: d => d, kingdom: d => d, blind: d => d,
+    };
+    if (lensId === 'rei')    { raw = await callAPI('/api/rei', { situation: input }); lastResults.rei = raw; bodyEl.innerHTML = renderREIBody(raw); }
+    else if (lensId === 'ladder')  { raw = await callAPI('/api/ladder', { question: input }); lastResults.ladder = raw; bodyEl.innerHTML = renderLadderBody(raw); }
+    else if (lensId === 'kingdom') { raw = await callAPI('/api/kingdom', { situation: input }); lastResults.kingdom = raw; bodyEl.innerHTML = renderKingdomBody(raw); }
+    else if (lensId === 'blind')   { raw = await callAPI('/api/blindspot', { situation: input, context: '' }); lastResults.blind = raw; bodyEl.innerHTML = renderBlindBody(raw); }
+    else { raw = await _lensWithRetry(lensId, input); bodyEl.innerHTML = renderGenericLensBody(raw); }
+    setLensStatus(lensId, 'done');
+  } catch(e) {
+    setLensStatus(lensId, 'failed');
+    bodyEl.innerHTML = `<div style="color:#f87171;font-size:13px;padding:8px 0;">${lensId} failed again: ${e.message}</div>`;
+  }
 }
 
 // Render a generic lens result (panels + synthesis) as a council section body
@@ -4351,6 +4523,7 @@ function openSessionsModal() {
   document.getElementById('sessions-modal').classList.add('visible');
   renderAllSessions();
 }
+const _debouncedRenderAllSessions = debounce(() => renderAllSessions(), 200);
 function renderAllSessions() {
   const query = (document.getElementById('sessions-search')?.value || '').toLowerCase();
   const all = getSessions().filter(s => !query || s.title.toLowerCase().includes(query));
@@ -4396,7 +4569,14 @@ function toggleVoice() {
     ta.value = (ta.value ? ta.value + ' ' : '') + transcript;
     onThoughtInput(); // this syncs back to home-input automatically
   };
-  recognition.onerror = () => { recognition = null; _setVoiceListening(false); };
+  recognition.onerror = e => {
+    recognition = null; _setVoiceListening(false);
+    if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+      // Show inline fallback instead of alert
+      const hint = document.getElementById('home-char-hint') || document.getElementById('voice-hint');
+      if (hint) { hint.textContent = '🎙️ Mic blocked — type instead'; hint.style.color = '#f59e0b'; hint.style.opacity = '1'; setTimeout(() => { hint.textContent = 'Start typing…'; hint.style.color = ''; hint.style.opacity = ''; }, 3500); }
+    }
+  };
   recognition.onend   = () => { recognition = null; _setVoiceListening(false); };
   recognition.start();
   _setVoiceListening(true);
@@ -4937,6 +5117,22 @@ function updateProCouncilNavBtn() {
     btn.title = 'Pro Council — upgrade to unlock';
   }
 }
+
+// ── Debounce utility ───────────────────────────────────────────
+function debounce(fn, ms) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// ── Offline / online banner ────────────────────────────────────
+function _updateOfflineBanner() {
+  const banner = document.getElementById('offline-banner');
+  if (!banner) return;
+  if (navigator.onLine) { banner.classList.remove('visible'); }
+  else { banner.classList.add('visible'); }
+}
+window.addEventListener('online',  _updateOfflineBanner);
+window.addEventListener('offline', _updateOfflineBanner);
+_updateOfflineBanner(); // check on load
 
 // ── Init ───────────────────────────────────────────────────────
 restoreTheme();
