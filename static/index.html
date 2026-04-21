@@ -1132,12 +1132,37 @@ body {
 .home-send-btn:hover { opacity: .85; }
 .home-send-btn:active { transform: scale(.96); }
 .home-send-btn.shake { animation: inputShake .35s ease; }
+.home-send-secondary { background:none; border:none; color:var(--muted); font-size:12px; font-weight:500; cursor:pointer; padding:6px 4px 0; display:block; width:100%; text-align:right; transition:color .15s; }
+.home-send-secondary:hover { color:var(--text); }
 @keyframes inputShake {
   0%,100% { transform:translateX(0); }
   20%      { transform:translateX(-7px); }
   60%      { transform:translateX(7px); }
   80%      { transform:translateX(-4px); }
 }
+/* Welcome demo */
+.home-demo-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  margin-bottom: 24px;
+  position: relative;
+}
+.home-demo-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ladder); margin-bottom: 10px; }
+.home-demo-thought { font-size: 12px; color: var(--muted); margin-bottom: 12px; font-style: italic; }
+.home-demo-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.home-demo-card { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+.home-demo-card-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.home-demo-card-text { font-size: 11px; color: var(--text); line-height: 1.45; }
+.home-demo-synthesis { background: linear-gradient(135deg, rgba(167,139,250,.08), rgba(232,121,249,.06)); border: 1px solid rgba(167,139,250,.2); border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.5; color: var(--text); margin-bottom: 12px; }
+.home-demo-cta { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.home-demo-try { background: var(--ladder); color: #000; border: none; border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+.home-demo-try:hover { opacity: .85; }
+.home-demo-dismiss { background: none; border: none; color: var(--muted); font-size: 11px; cursor: pointer; padding: 2px 4px; transition: color .15s; }
+.home-demo-dismiss:hover { color: var(--text); }
+@media(max-width:600px) { .home-demo-cards { grid-template-columns: 1fr; } }
+
 /* Example chips */
 .home-examples {
   display: flex;
@@ -1694,8 +1719,9 @@ body {
               <button class="btn-voice" id="home-voice-btn" onclick="toggleVoice()" title="Voice input">🎙️</button>
               <span class="home-char-hint" id="home-char-hint">Start typing…</span>
             </div>
-            <button class="home-send-btn" id="home-send-btn" onclick="openLensPicker()">Start →</button>
+            <button class="home-send-btn" id="home-send-btn" onclick="runHeroCouncil()">⚡ Run Full Council</button>
           </div>
+          <button class="home-send-secondary" onclick="openLensPicker()">or pick a specific lens →</button>
         </div>
 
         <!-- ── Example thoughts ── -->
@@ -2785,8 +2811,8 @@ body {
 <!-- ── Lead capture modal ── -->
 <div class="lead-modal" id="lead-modal">
   <button class="lead-modal-dismiss" onclick="dismissLeadModal()">×</button>
-  <div class="lead-modal-title">🧠 Get your free thinking report</div>
-  <div class="lead-modal-sub">Drop your email and we'll send you a breakdown of your thinking patterns — completely free.</div>
+  <div class="lead-modal-title">📊 Get your weekly thinking report</div>
+  <div class="lead-modal-sub">You've already used ThinkOS 3 times this week. Every Monday we'll send you a breakdown of your thinking patterns — what lenses you reach for, what questions keep surfacing, and where your blind spots tend to cluster. Free.</div>
   <div class="lead-modal-row">
     <input type="email" id="lead-email" placeholder="your@email.com" />
     <button onclick="submitLead()">Send it →</button>
@@ -3236,6 +3262,64 @@ function sendHomeThought() {
   openLensPicker();
 }
 
+function renderWelcomeDemo() {
+  // Only show to users who have no sessions AND haven't dismissed it
+  if (localStorage.getItem('thinkos_demo_dismissed')) return;
+  if (getSessions().length > 0) return;
+  const homeEl = document.getElementById('view-home');
+  if (!homeEl) return;
+  if (document.getElementById('welcome-demo')) return; // already rendered
+  const demo = document.createElement('div');
+  demo.id = 'welcome-demo';
+  demo.className = 'home-demo-wrap';
+  demo.innerHTML = `
+    <div class="home-demo-label">⚡ Example — Full Core Council</div>
+    <div class="home-demo-thought">💭 "Should I leave my stable job to go all-in on my startup idea?"</div>
+    <div class="home-demo-cards">
+      <div class="home-demo-card">
+        <div class="home-demo-card-label" style="color:var(--instinct)">🧠 Instinct</div>
+        <div class="home-demo-card-text">Something in you already knows the answer. The fear isn't about failure — it's about giving up your excuse to stay safe.</div>
+      </div>
+      <div class="home-demo-card">
+        <div class="home-demo-card-label" style="color:var(--emotion)">💙 Emotion</div>
+        <div class="home-demo-card-text">The pull toward the startup is a vision of who you want to become. Staying in the job means watching that version of yourself disappear.</div>
+      </div>
+      <div class="home-demo-card">
+        <div class="home-demo-card-label" style="color:var(--reason)">🔬 Reason</div>
+        <div class="home-demo-card-text">The real question isn't "leave or stay" — it's "what's the minimum viable test I can run before committing fully?" Have you de-risked this?</div>
+      </div>
+    </div>
+    <div class="home-demo-synthesis">🔮 <strong>Synthesis:</strong> All three voices are pointing at the same thing — you're using the stability of the job as permission to not decide. The decision has already been made emotionally; what's missing is a structured exit plan that makes it rational too.</div>
+    <div class="home-demo-cta">
+      <button class="home-demo-try" onclick="dismissWelcomeDemo()">Try it with your own situation →</button>
+      <button class="home-demo-dismiss" onclick="dismissWelcomeDemo(true)">dismiss</button>
+    </div>`;
+  // Insert before the hero tagline
+  const hero = homeEl.querySelector('.home-hero');
+  if (hero) hero.insertBefore(demo, hero.firstChild);
+}
+
+function dismissWelcomeDemo(silent) {
+  localStorage.setItem('thinkos_demo_dismissed', '1');
+  const el = document.getElementById('welcome-demo');
+  if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); }
+  if (!silent) { document.getElementById('home-input')?.focus(); }
+}
+
+function runHeroCouncil() {
+  const val = (document.getElementById('home-input')?.value || '').trim();
+  if (!val) {
+    const btn = document.getElementById('home-send-btn');
+    if (btn) { btn.classList.add('shake'); setTimeout(() => btn.classList.remove('shake'), 380); }
+    document.getElementById('home-input')?.focus();
+    return;
+  }
+  document.getElementById('global-thought').value = val;
+  onThoughtInput();
+  switchTool('council');
+  setTimeout(runFullCouncil, 80);
+}
+
 // ── Thought pill ──────────────────────────────────────────────
 function renderThoughtPill(containerId) {
   const thought = getThought();
@@ -3397,6 +3481,7 @@ async function submitREI() {
     trackUseAndMaybeCapture('rei');
     injectContinueBar('rei-results', 'rei');
     setTimeout(() => showActionPrompt(d.action_question, 'rei-results'), 200);
+    addShareButton('REI Council', input, d.majority_view, 'var(--instinct)', '🧠');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('rei'); }
 }
@@ -3435,6 +3520,7 @@ async function submitLadder() {
     trackUseAndMaybeCapture('ladder');
     injectContinueBar('ladder-results', 'ladder');
     setTimeout(() => showActionPrompt(d.ascent_question, 'ladder-results'), 200);
+    addShareButton('The Ladder', input, d.above_view || d.current_view, 'var(--ladder)', '🪜');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('ladder'); }
 }
@@ -3472,6 +3558,7 @@ async function submitKingdom() {
     trackUseAndMaybeCapture('kingdom');
     injectContinueBar('kingdom-results', 'kingdom');
     setTimeout(() => showActionPrompt(d.kingdom_question, 'kingdom-results'), 200);
+    addShareButton('Kingdom Lens', input, d.kingdom, 'var(--kingdom)', '✝️');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('kingdom'); }
 }
@@ -3501,6 +3588,7 @@ async function submitBlind() {
     trackUseAndMaybeCapture('blind');
     injectContinueBar('blind-results', 'blind');
     setTimeout(() => showActionPrompt(d.blind_spot_question, 'blind-results'), 200);
+    addShareButton('Blind Spot', input, d.reframe, 'var(--blind)', '🔍');
   } catch(e) { alert('Error: ' + e.message); }
   finally { stopLoading('blind'); }
 }
@@ -3684,6 +3772,8 @@ async function _runFullCouncilExecute() {
     if (!isPaid()) incrementCouncilCount();
     injectContinueBar('council-results', 'council');
     if (lastResults.synthesis) setTimeout(() => showActionPrompt(lastResults.synthesis.action || lastResults.synthesis.synthesis_question, 'council-results'), 200);
+    const synthText = lastResults.synthesis?.synthesis || lastResults.synthesis?.key_insight || '';
+    addShareButton('Full Core Council', input, synthText, '#e879f9', '⚡');
   } catch(e) { alert('Full Core Council error: ' + e.message); }
   finally { stopLoading('council'); document.getElementById('full-council-btn').disabled = false; }
 }
@@ -4023,6 +4113,11 @@ function saveSession() {
     }).then(() => loadSessionHistory()).catch(() => {});
   }
   renderSessions();
+  // Trigger email capture after 3rd saved session for non-paid, non-logged-in users
+  if (!isPaid() && !_sbUser) {
+    const sessionCount = JSON.parse(localStorage.getItem('thinkos_sessions') || '[]').length;
+    if (sessionCount >= 3) setTimeout(() => maybeShowLeadModal(currentTool), 1200);
+  }
 }
 function deleteSession(id) {
   const sessions = getSessions().filter(s => s.id !== id);
@@ -4854,6 +4949,7 @@ renderAuthUI();
 checkSuccessReturn();
 sbInit();
 checkDisclaimer();
+setTimeout(renderWelcomeDemo, 300);
 // updateProCouncilNavBtn / updateCouncilLineupLabel deferred — they reference
 // LENS_CONFIG and LP_CORE_LENSES which are const-declared later in this file
 // and would throw ReferenceError (temporal dead zone) if called here.
@@ -6454,6 +6550,40 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   if (line) lines.push(line);
   lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight));
   return lines.length;
+}
+
+// ── Share button ───────────────────────────────────────────────
+let _shareBtn = null;
+function addShareButton(tool, thought, insight, color, icon) {
+  removeShareButton();
+  const btn = document.createElement('button');
+  btn.id = 'floating-share-btn';
+  btn.title = 'Share this insight';
+  btn.innerHTML = '📤 Share insight';
+  Object.assign(btn.style, {
+    position: 'fixed', bottom: '88px', right: '18px', zIndex: '999',
+    background: color || 'var(--ladder)', color: '#000',
+    border: 'none', borderRadius: '10px', padding: '10px 16px',
+    fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+    boxShadow: '0 4px 16px rgba(0,0,0,.4)', transition: 'opacity .2s, transform .2s',
+    opacity: '0', transform: 'translateY(8px)'
+  });
+  btn.onclick = () => {
+    downloadShareCard({ tool, thought, insight, color, icon,
+      toolName: btn.dataset.toolName });
+    removeShareButton();
+  };
+  btn.dataset.toolName = tool;
+  document.body.appendChild(btn);
+  _shareBtn = btn;
+  requestAnimationFrame(() => { btn.style.opacity = '1'; btn.style.transform = 'translateY(0)'; });
+  // Auto-remove after 30s
+  setTimeout(removeShareButton, 30000);
+}
+function removeShareButton() {
+  if (_shareBtn) { _shareBtn.remove(); _shareBtn = null; }
+  const old = document.getElementById('floating-share-btn');
+  if (old) old.remove();
 }
 
 function generateShareCard(opts = {}) {
