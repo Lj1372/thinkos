@@ -116,8 +116,10 @@ body {
   .main { margin-left: 0; flex: 1; min-width: 0; width: 100%; }
   .bottom-nav { display: flex !important; }
   .mobile-thought-bar { display: flex !important; width: 100%; align-items: flex-start; gap: 8px; }
-  .main-inner { padding: 16px 16px 80px; max-width: 100%; }
+  .main-inner { padding: 16px 16px 140px; max-width: 100%; }
   .fab-council { display: block !important; }
+  /* Hide FAB when results are visible so it never covers content */
+  .results-visible .fab-council { display: none !important; }
   .tool-header { flex-direction: column; align-items: flex-start; gap: 6px; }
   .btn-submit { width: 100%; }
   /* Socratic chat — keep input row horizontal, don't stretch Ask button */
@@ -882,6 +884,28 @@ body {
   box-shadow: 0 4px 20px rgba(167,139,250,0.4); z-index: 201; transition: all 0.15s;
 }
 .fab-council:hover { transform: scale(1.05); }
+
+/* ── Post-Council Action Bar ── */
+.post-council-actions {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.pca-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 14px;
+  font-size: 12px; font-weight: 600; color: var(--text);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.pca-btn:hover { border-color: var(--ladder); background: var(--surface); }
+.pca-btn.pca-primary { background: var(--ladder); color: #000; border-color: var(--ladder); }
+.pca-btn.pca-primary:hover { opacity: .88; }
+@media (max-width: 640px) {
+  .post-council-actions { gap: 6px; }
+  .pca-btn { padding: 10px 12px; font-size: 12px; flex: 1; justify-content: center; min-width: 0; }
+}
 
 /* ── Keyboard shortcuts hint ── */
 .shortcuts-hint { font-size: 10px; color: var(--muted); line-height: 1.9; padding: 4px 0; flex-shrink: 0; }
@@ -1828,6 +1852,12 @@ body {
           <button class="home-example-chip" onclick="fillExample(this.dataset.t)" data-t="Is this business idea actually good, or am I just excited about it?">
             <span>💭</span>"Is this business idea actually good, or am I just excited about it?"
           </button>
+          <button class="home-example-chip" onclick="fillExample(this.dataset.t)" data-t="I keep procrastinating on the most important thing in my life. Why?">
+            <span>💭</span>"I keep procrastinating on the most important thing in my life. Why?"
+          </button>
+          <button class="home-example-chip" onclick="fillExample(this.dataset.t)" data-t="I'm in a relationship that feels right but something keeps holding me back.">
+            <span>💭</span>"I'm in a relationship that feels right but something keeps holding me back."
+          </button>
         </div>
 
         <!-- ── Secondary CTAs ── -->
@@ -2011,7 +2041,9 @@ body {
         <div id="council-results"></div>
         <!-- Actions -->
         <div class="council-actions" id="council-actions" style="display:none">
-          <button class="btn-export" onclick="exportMarkdown()">⬇ Export as Markdown</button>
+          <button class="pca-btn pca-primary" onclick="saveCurrentToJournal('council')">💾 Save to Journal</button>
+          <button class="pca-btn" onclick="copyAllResults('council')">📋 Copy All</button>
+          <button class="pca-btn" onclick="exportMarkdown()">📄 Export</button>
         </div>
       </div>
     </div>
@@ -3168,8 +3200,10 @@ async function sendMagicLink() {
   if (!email) { if (status) status.textContent = 'Enter your email first.'; return; }
   btn.disabled = true;
   if (status) status.textContent = 'Sending link...';
-  // Preserve owner param in redirect so isPaid() works on return
-  const ownerParam = new URLSearchParams(window.location.search).get('owner') === 'jl2026' ? '?owner=jl2026' : '';
+  // Preserve owner flag in redirect — check URL param OR localStorage plan
+  const urlOwner = new URLSearchParams(window.location.search).get('owner') === 'jl2026';
+  const lsOwner  = localStorage.getItem('thinkos_paid_plan') === 'owner';
+  const ownerParam = (urlOwner || lsOwner) ? '?owner=jl2026' : '';
   const { error } = await _sb.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: window.location.origin + '/' + ownerParam }
@@ -3491,6 +3525,8 @@ function switchTool(tool) {
   if (tool === 'analytics') setTimeout(loadAnalytics,    50);
   if (tool === 'journal')   setTimeout(renderJournal,    50);
   if (tool === 'planner')   setTimeout(renderSavedPlans, 50);
+  // Remove results-visible class when going home (re-shows FAB)
+  if (tool === 'home') document.body.classList.remove('results-visible');
   // Focus hero input when returning home (desktop only)
   if (tool === 'home' && window.innerWidth >= 768) {
     setTimeout(() => {
@@ -3593,6 +3629,7 @@ async function submitREI() {
     showSavePrompt('rei', input, d);
     trackUseAndMaybeCapture('rei');
     injectContinueBar('rei-results', 'rei');
+    injectPostCouncilActions('rei-results', 'rei');
     setTimeout(() => showActionPrompt(d.action_question, 'rei-results'), 200);
     addShareButton('REI Council', input, d.majority_view, 'var(--instinct)', '🧠');
     saveMemoryAnchor(input, d.majority_view, 'rei');
@@ -3633,6 +3670,7 @@ async function submitLadder() {
     showSavePrompt('ladder', input, d);
     trackUseAndMaybeCapture('ladder');
     injectContinueBar('ladder-results', 'ladder');
+    injectPostCouncilActions('ladder-results', 'ladder');
     setTimeout(() => showActionPrompt(d.ascent_question, 'ladder-results'), 200);
     addShareButton('The Ladder', input, d.above_view || d.current_view, 'var(--ladder)', '🪜');
     saveMemoryAnchor(input, d.above_view || d.current_view, 'ladder');
@@ -3672,6 +3710,7 @@ async function submitKingdom() {
     showSavePrompt('kingdom', input, d);
     trackUseAndMaybeCapture('kingdom');
     injectContinueBar('kingdom-results', 'kingdom');
+    injectPostCouncilActions('kingdom-results', 'kingdom');
     setTimeout(() => showActionPrompt(d.kingdom_question, 'kingdom-results'), 200);
     addShareButton('Kingdom Lens', input, d.kingdom, 'var(--kingdom)', '✝️');
     saveMemoryAnchor(input, d.kingdom, 'kingdom');
@@ -3703,6 +3742,7 @@ async function submitBlind() {
     showSavePrompt('blind', input, d);
     trackUseAndMaybeCapture('blind');
     injectContinueBar('blind-results', 'blind');
+    injectPostCouncilActions('blind-results', 'blind');
     setTimeout(() => showActionPrompt(d.blind_spot_question, 'blind-results'), 200);
     addShareButton('Blind Spot', input, d.reframe, 'var(--blind)', '🔍');
     saveMemoryAnchor(input, d.reframe, 'blind');
@@ -3963,6 +4003,7 @@ async function _runFullCouncilExecute() {
 
     document.getElementById('council-status-bar').style.display = 'none';
     document.getElementById('council-actions').style.display = 'flex';
+    document.body.classList.add('results-visible');
     saveSession();
     showSavePrompt('council', input, { ...lastResults });
     if (!isPaid()) incrementCouncilCount();
@@ -4527,7 +4568,10 @@ function restoreCouncilView(results) {
       </div>`;
   }
 
-  if (hasAny) document.getElementById('council-actions').style.display = 'flex';
+  if (hasAny) {
+    document.getElementById('council-actions').style.display = 'flex';
+    document.body.classList.add('results-visible');
+  }
   renderThoughtPill('council-pill');
   switchTool('council');
   renderSessions();
@@ -4578,6 +4622,96 @@ function exportMarkdown() {
   a.href = URL.createObjectURL(blob);
   a.download = thought.slice(0,40).replace(/[^a-z0-9 ]/gi,'_') + '.md';
   a.click();
+}
+
+// ── Post-Council Action Functions ──────────────────────────────
+
+// Save the current lastResults + thought to session storage (already happens via saveSession)
+// AND inject a visible "Saved!" confirmation toast + open the journal tab
+function saveCurrentToJournal(lensId) {
+  const thought = getThought();
+  if (!thought) { showToast('Add a thought first to save.'); return; }
+  if (!Object.keys(lastResults).length) { showToast('Run a lens first to save results.'); return; }
+  saveSession(); // persist to localStorage + Supabase
+  showToast('✅ Session saved to Journal!', 3000);
+  // Brief flash — then open journal
+  setTimeout(() => {
+    switchTool('journal');
+    renderJournal();
+  }, 800);
+}
+
+// Copy all current lens results to clipboard as plain text
+async function copyAllResults(lensId) {
+  const thought = getThought() || 'Untitled';
+  let text = `THINKOS — ${thought}\n${'─'.repeat(50)}\n\n`;
+
+  if (lastResults.rei) {
+    const d = lastResults.rei;
+    text += `REI COUNCIL\nInstinct: ${d.instinct}\nEmotion: ${d.emotion}\nReason: ${d.reason}\nCouncil View: ${d.majority_view}\nKey Question: "${d.action_question}"\n\n`;
+  }
+  if (lastResults.ladder) {
+    const d = lastResults.ladder;
+    text += `THE LADDER — Rung ${d.current_rung}: ${d.rung_name}\nCurrent View: ${d.current_view}\nOne Rung Up: ${d.above_view || 'N/A'}\nAscent Question: "${d.ascent_question}"\n\n`;
+  }
+  if (lastResults.kingdom) {
+    const d = lastResults.kingdom;
+    text += `KINGDOM LENS\nKingdom View: ${d.kingdom}\nThe Person: ${d.the_person}\nEternal Weight: ${d.eternal_weight}\nThe Path: ${d.the_path}\nKingdom Question: "${d.kingdom_question}"\n\n`;
+  }
+  if (lastResults.blind) {
+    const d = lastResults.blind;
+    text += `BLIND SPOT\nMissing: ${d.missing_perspective}\nWhy: ${d.why_its_missing}\nReframe: ${d.reframe}\nQuestion: "${d.blind_spot_question}"\n\n`;
+  }
+  if (lastResults.synthesis) {
+    const d = lastResults.synthesis;
+    text += `COUNCIL SYNTHESIS\n${d.synthesis}\nSynthesis Question: "${d.synthesis_question}"\n\n`;
+  }
+  // Generic lens result
+  if (lastResults.lens) {
+    const d = lastResults.lens;
+    text += `LENS RESULT\n`;
+    (d.panels || []).forEach(p => { text += `${p.label}: ${p.content}\n`; });
+    if (d.key_question) text += `Key Question: "${d.key_question}"\n`;
+    text += '\n';
+  }
+
+  text = text.trim();
+  if (!text || text === `THINKOS — ${thought}\n${'─'.repeat(50)}`) {
+    showToast('Nothing to copy yet — run a lens first.'); return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('📋 Copied to clipboard!', 2500);
+  } catch(e) {
+    // Fallback for older browsers / non-https
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('📋 Copied to clipboard!', 2500);
+  }
+}
+
+// Inject a PostCouncilActions bar into any results container
+// (removes existing one first so it doesn't double-up on re-runs)
+function injectPostCouncilActions(resultsWrapId, lensId) {
+  const wrap = document.getElementById(resultsWrapId);
+  if (!wrap) return;
+  wrap.querySelector('.post-council-actions')?.remove();
+
+  const bar = document.createElement('div');
+  bar.className = 'post-council-actions';
+  bar.innerHTML = `
+    <button class="pca-btn pca-primary" onclick="saveCurrentToJournal('${lensId}')">💾 Save to Journal</button>
+    <button class="pca-btn" onclick="copyAllResults('${lensId}')">📋 Copy All</button>
+    <button class="pca-btn" onclick="exportMarkdown()">📄 Export</button>
+  `;
+  wrap.appendChild(bar);
+
+  // Mark body so FAB hides on mobile
+  document.body.classList.add('results-visible');
 }
 
 // ── Templates ─────────────────────────────────────────────────
@@ -6016,9 +6150,11 @@ async function submitLens() {
     if (d.error) throw new Error(d.error);
 
     renderLensResult(d, cfg);
+    lastResults.lens = d; // store for copyAllResults / exportMarkdown
     document.getElementById('lens-results').classList.add('visible');
     trackUseAndMaybeCapture('lens');
     injectContinueBar('lens-results', _activeLens?.id || 'lens');
+    injectPostCouncilActions('lens-results', _activeLens || 'lens');
   } catch(e) {
     alert('Error: ' + e.message);
   } finally {
