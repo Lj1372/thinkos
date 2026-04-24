@@ -117,9 +117,7 @@ body {
   .bottom-nav { display: flex !important; }
   .mobile-thought-bar { display: flex !important; width: 100%; align-items: flex-start; gap: 8px; }
   .main-inner { padding: 16px 16px 140px; max-width: 100%; }
-  .fab-council { display: block !important; }
-  /* Hide FAB when results are visible so it never covers content */
-  .results-visible .fab-council { display: none !important; }
+  /* FAB visibility is handled by body.on-home class (set in switchTool) */
   .tool-header { flex-direction: column; align-items: flex-start; gap: 6px; }
   .btn-submit { width: 100%; }
   /* Socratic chat — keep input row horizontal, don't stretch Ask button */
@@ -884,6 +882,8 @@ body {
   box-shadow: 0 4px 20px rgba(167,139,250,0.4); z-index: 201; transition: all 0.15s;
 }
 .fab-council:hover { transform: scale(1.05); }
+/* FAB only shows on home screen — controlled via JS in switchTool() */
+body.on-home .fab-council { display: block; }
 
 /* ── Post-Council Action Bar ── */
 .post-council-actions {
@@ -2996,44 +2996,42 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   }
 });
 let _sbUser = null;
+let _loginInProgress = false; // guard against concurrent onLogin calls
 
 async function sbInit() {
-  // Listen for all auth events first — catches the code exchange completing
+  // onAuthStateChange handles EVERY case:
+  //   INITIAL_SESSION — page reload with existing session
+  //   SIGNED_IN       — magic link click / code exchange
+  //   TOKEN_REFRESHED — background token refresh
+  //   SIGNED_OUT      — explicit logout
+  // We do NOT call getSession() separately — that would duplicate the INITIAL_SESSION call.
   _sb.auth.onAuthStateChange(async (event, session) => {
-    // INITIAL_SESSION fires on every page load when a valid session exists in storage
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
-      await onLogin(session.user, event); // pass event so onLogin can show sync toast
+      await onLogin(session.user, event);
     }
     if (event === 'SIGNED_OUT') onLogout();
   });
 
-  // Handle magic link PKCE callback (?code= in URL)
+  // Handle magic link PKCE callback (?code= in URL).
+  // exchangeCodeForSession also fires SIGNED_IN via onAuthStateChange, so we just
+  // clean the URL — onLogin will be called by the event listener above.
   const params = new URLSearchParams(window.location.search);
   if (params.has('code')) {
     try {
-      const { data, error } = await _sb.auth.exchangeCodeForSession(window.location.href);
-      if (data?.session?.user) {
-        await onLogin(data.session.user);
-        // Clean the code out of the URL so refresh doesn't re-run exchange
-        const clean = window.location.pathname + (params.has('owner') ? '?owner=' + params.get('owner') : '');
-        window.history.replaceState({}, '', clean);
-        return;
-      }
+      await _sb.auth.exchangeCodeForSession(window.location.href);
+      const clean = window.location.pathname + (params.has('owner') ? '?owner=' + params.get('owner') : '');
+      window.history.replaceState({}, '', clean);
     } catch(e) { console.warn('Code exchange failed:', e); }
   }
-
-  // Handle implicit/hash-based magic link (#access_token=)
-  if (window.location.hash.includes('access_token=')) {
-    // Supabase will fire SIGNED_IN via onAuthStateChange — nothing extra needed
-    return;
-  }
-
-  // Normal page load — restore existing session
-  const { data: { session } } = await _sb.auth.getSession();
-  if (session?.user) await onLogin(session.user);
+  // Hash-based magic links (#access_token=) are handled automatically by Supabase
+  // via onAuthStateChange — no extra code needed here.
 }
 
 async function onLogin(user, authEvent) {
+  // Prevent duplicate concurrent runs (e.g. INITIAL_SESSION + getSession race)
+  if (_loginInProgress) return;
+  _loginInProgress = true;
+  try {
   _sbUser = user;
 
   // 1. Owner URL param — write to Supabase + localStorage + 365-day cookie
@@ -3082,6 +3080,13 @@ async function onLogin(user, authEvent) {
   // 7. Toast — only on session restore (page reload), not every SIGNED_IN click
   if (authEvent === 'INITIAL_SESSION' || authEvent === 'TOKEN_REFRESHED') {
     setTimeout(() => showToast('✅ Account synced across devices', 3000), 600);
+  }
+
+  } finally {
+    // Release the lock after a short delay so rapid consecutive events
+    // (e.g. INITIAL_SESSION then TOKEN_REFRESHED within milliseconds) are still deduplicated,
+    // but a genuine later SIGNED_IN (user logs in again) is allowed through.
+    setTimeout(() => { _loginInProgress = false; }, 3000);
   }
 }
 
@@ -3558,8 +3563,9 @@ function switchTool(tool) {
   if (tool === 'analytics') setTimeout(loadAnalytics,    50);
   if (tool === 'journal')   setTimeout(renderJournal,    50);
   if (tool === 'planner')   setTimeout(renderSavedPlans, 50);
-  // Remove results-visible class when going home (re-shows FAB)
-  if (tool === 'home') document.body.classList.remove('results-visible');
+  // FAB only shows on home screen
+  document.body.classList.toggle('on-home', tool === 'home');
+  document.body.classList.remove('results-visible');
   // Focus hero input when returning home (desktop only)
   if (tool === 'home' && window.innerWidth >= 768) {
     setTimeout(() => {
@@ -4955,47 +4961,17 @@ function renderAllSessions() {
 // ── Journal session history ────────────────────────────────────
 let _journalSessions = [];
 
-async function renderJournalSessions() {
+// Paint function — renders from _journalSessions without any Supabase fetch.
+// Called by renderJournalSessions (after fetch) AND by deleteJournalSession
+// (optimistic: paints the already-mutated array before the async delete completes).
+function _paintJournalSessions() {
   const container = document.getElementById('journal-sessions-list');
   if (!container) return;
-
-  // Start with local sessions
-  let sessions = getSessions();
-
-  // Merge cloud sessions for logged-in users (enables cross-device history)
-  if (_sbUser) {
-    try {
-      const { data } = await _sb.from('sessions')
-        .select('id,tool,thought,result,created_at')
-        .eq('user_id', _sbUser.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (data && data.length) {
-        const localThoughts = new Set(sessions.map(s => s.thought));
-        const cloudOnly = data
-          .filter(s => !localThoughts.has(s.thought))
-          .map(s => ({
-            id: 'cloud_' + s.id,
-            title: (s.thought||'Untitled').slice(0, 45),
-            thought: s.thought,
-            results: s.result || {},
-            tool: s.tool || 'council',
-            timestamp: new Date(s.created_at).getTime(),
-          }));
-        sessions = [...sessions, ...cloudOnly]
-          .sort((a, b) => b.timestamp - a.timestamp)
-          .slice(0, 50);
-      }
-    } catch(e) { /* ignore — degrade gracefully */ }
-  }
-
-  _journalSessions = sessions;
-
+  const sessions = _journalSessions;
   if (!sessions.length) {
     container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:4px 0;">No sessions yet. Run a lens to get started.</div>';
     return;
   }
-
   container.innerHTML = sessions.slice(0, 25).map((s, idx) => {
     const r = s.results || {};
     const date = new Date(s.timestamp).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
@@ -5028,6 +5004,40 @@ async function renderJournalSessions() {
       </div>
     </div>`;
   }).join('');
+}
+
+// Fetch wrapper — builds _journalSessions from local + Supabase, then paints
+async function renderJournalSessions() {
+  let sessions = getSessions();
+
+  if (_sbUser) {
+    try {
+      const { data } = await _sb.from('sessions')
+        .select('id,tool,thought,result,created_at')
+        .eq('user_id', _sbUser.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (data && data.length) {
+        const localThoughts = new Set(sessions.map(s => s.thought));
+        const cloudOnly = data
+          .filter(s => !localThoughts.has(s.thought))
+          .map(s => ({
+            id: 'cloud_' + s.id,
+            title: (s.thought||'Untitled').slice(0, 45),
+            thought: s.thought,
+            results: s.result || {},
+            tool: s.tool || 'council',
+            timestamp: new Date(s.created_at).getTime(),
+          }));
+        sessions = [...sessions, ...cloudOnly]
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 50);
+      }
+    } catch(e) { /* degrade gracefully */ }
+  }
+
+  _journalSessions = sessions;
+  _paintJournalSessions();
 }
 
 function loadJournalSession(idx) {
@@ -6967,26 +6977,31 @@ async function deleteJournalSession(id) {
   id = String(id);
   const isCloud = id.startsWith('cloud_');
 
-  // Remove from localStorage sessions
-  const local = getSessions().filter(s => String(s.id) !== id);
-  localStorage.setItem('thinkos_sessions', JSON.stringify(local));
-
-  // Remove cloud session from Supabase
-  if (isCloud && _sbUser) {
-    const cloudId = id.replace('cloud_', '');
-    const numId = parseInt(cloudId, 10);
-    if (!isNaN(numId)) {
-      _sb.from('sessions').delete().eq('id', numId).eq('user_id', _sbUser.id).then(() => {}).catch(() => {});
-    }
-  } else if (_sbUser) {
-    // Might be a locally-created session that was also synced — delete by thought match
-    const session = getSessions().find(s => String(s.id) === id);
-    // already removed above; cloud counterpart looked up by thought if needed
-  }
-
-  renderJournalSessions();
-  renderSessions(); // refresh sidebar
+  // 1. Optimistic: remove from in-memory array and repaint immediately.
+  //    This makes the UI respond instantly without waiting for Supabase.
+  _journalSessions = _journalSessions.filter(s => String(s.id) !== id);
+  _paintJournalSessions();
   showToast('🗑 Session deleted', 2000);
+
+  // 2. Persist the deletion
+  if (isCloud) {
+    // Cloud session — delete from Supabase (awaited so re-fetches won't bring it back)
+    if (_sbUser) {
+      const numId = parseInt(id.replace('cloud_', ''), 10);
+      if (!isNaN(numId)) {
+        await _sb.from('sessions')
+          .delete()
+          .eq('id', numId)
+          .eq('user_id', _sbUser.id)
+          .catch(() => {});
+      }
+    }
+  } else {
+    // Local session — remove from localStorage
+    const local = getSessions().filter(s => String(s.id) !== id);
+    localStorage.setItem('thinkos_sessions', JSON.stringify(local));
+    renderSessions(); // refresh sidebar session list
+  }
 }
 
 // Deduplicate Thinking Sessions — keeps newest per thought text
