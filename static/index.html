@@ -4635,6 +4635,15 @@ function restoreCouncilView(results) {
   if (hasAny) {
     document.getElementById('council-actions').style.display = 'flex';
     document.body.classList.add('results-visible');
+    // Inject continue bar + "Turn into a Plan" CTA — same as a live council run
+    injectContinueBar('council-results', 'council');
+    // Inject Save/Copy/Export action bar
+    injectPostCouncilActions('council-results', 'council');
+    // Show action prompt from synthesis question if available
+    if (results.synthesis) {
+      const q = results.synthesis.synthesis_question || results.synthesis.action;
+      if (q) setTimeout(() => showActionPrompt(q, 'council-results'), 150);
+    }
   }
   renderThoughtPill('council-pill');
   switchTool('council');
