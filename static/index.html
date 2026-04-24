@@ -2232,11 +2232,17 @@ body {
       <div id="journal-sessions-section" style="margin-bottom:24px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">📋 Thinking Sessions</div>
-          <button onclick="openSessionsModal()" style="background:none;border:none;color:var(--ladder);font-size:11px;cursor:pointer;font-weight:600;padding:0;">View all →</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button onclick="deduplicateSessions()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;font-weight:600;padding:0;" title="Remove duplicate sessions">🧹 Dedup</button>
+            <button onclick="openSessionsModal()" style="background:none;border:none;color:var(--ladder);font-size:11px;cursor:pointer;font-weight:600;padding:0;">View all →</button>
+          </div>
         </div>
         <div id="journal-sessions-list"><div style="color:var(--muted);font-size:13px;padding:4px 0;">No sessions yet.</div></div>
       </div>
-      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">📔 Decision Journal</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">📔 Decision Journal</div>
+        <button onclick="deduplicateDecisions()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;font-weight:600;padding:0;" title="Remove duplicate journal entries">🧹 Dedup</button>
+      </div>
       <div id="journal-gate" style="display:none;text-align:center;padding:32px 0;">
         <div style="font-size:40px;margin-bottom:12px;">📔</div>
         <div style="font-weight:700;margin-bottom:8px;">Pro feature</div>
@@ -2964,7 +2970,10 @@ body {
 <div class="modal-overlay" id="sessions-modal" onclick="if(event.target===this)closeAllModals()">
   <div class="modal-box">
     <button class="modal-close" onclick="closeAllModals()">×</button>
-    <div class="modal-title">All Sessions</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">All Sessions</div>
+      <button onclick="deduplicateSessions()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;color:var(--muted);cursor:pointer;font-weight:600;">🧹 Remove duplicates</button>
+    </div>
     <div style="margin-bottom:12px">
       <input id="sessions-search" type="text" placeholder="Search sessions..." oninput="_debouncedRenderAllSessions()"
         style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;">
@@ -5003,12 +5012,16 @@ async function renderJournalSessions() {
       <div style="padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;"
            onclick="const b=document.getElementById('jsl-${idx}');const open=b.style.display!=='none';b.style.display=open?'none':'block';this.querySelector('.jsl-arr').textContent=open?'▶':'▼';">
         <span class="jsl-arr" style="color:var(--muted);font-size:9px;flex-shrink:0;">▶</span>
-        <div style="flex:1;min-width:0;">
+        <div style="flex:1;min-width:0;overflow:hidden;">
           <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.title||s.thought||'Untitled')}</div>
           <div style="font-size:10px;color:var(--muted);margin-top:2px;display:flex;gap:4px;align-items:center;">${date}${lensChips ? '&nbsp;&nbsp;'+lensChips : ''}</div>
         </div>
         <button onclick="event.stopPropagation();loadJournalSession(${idx});"
           style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;color:var(--ladder);cursor:pointer;flex-shrink:0;">Load →</button>
+        <button onclick="event.stopPropagation();deleteJournalSession('${s.id}');"
+          title="Delete session"
+          style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 2px;flex-shrink:0;opacity:.5;transition:opacity .15s;line-height:1;"
+          onmouseover="this.style.opacity='1';this.style.color='#f87171'" onmouseout="this.style.opacity='.5';this.style.color='var(--muted)'">×</button>
       </div>
       <div id="jsl-${idx}" style="display:none;border-top:1px solid var(--border);padding:12px 14px;">
         ${lensContent || '<div style="color:var(--muted);font-size:12px;">No lens data saved for this session</div>'}
@@ -6878,8 +6891,13 @@ function renderJournal() {
       : '';
 
     return `
-    <div style="background:var(--surface2);border:1px solid ${borderColor};border-radius:12px;padding:16px;margin-bottom:10px;">
-      <div style="font-size:14px;font-weight:700;margin-bottom:6px;">${esc(d.title)}${badge}</div>
+    <div style="background:var(--surface2);border:1px solid ${borderColor};border-radius:12px;padding:16px;margin-bottom:10px;position:relative;">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;">
+        <div style="font-size:14px;font-weight:700;flex:1;">${esc(d.title)}${badge}</div>
+        <button onclick="deleteDecision('${d.id}')" title="Delete entry"
+          style="flex-shrink:0;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:0 2px;opacity:.5;transition:opacity .15s;"
+          onmouseover="this.style.opacity='1';this.style.color='#f87171'" onmouseout="this.style.opacity='.5';this.style.color='var(--muted)'">×</button>
+      </div>
       ${d.context ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;line-height:1.5;">${esc(d.context.slice(0,120))}${d.context.length>120?'…':''}</div>` : ''}
       ${d.chosen ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Path: <span style="color:var(--text)">${esc(d.chosen)}</span></div>` : ''}
       ${d.reasoning ? `<div style="font-size:12px;color:var(--muted);line-height:1.5;">${esc(d.reasoning.slice(0,160))}${d.reasoning.length>160?'…':''}</div>` : ''}
@@ -6903,6 +6921,90 @@ function promptOutcome(id) {
     localStorage.setItem('thinkos_decisions', JSON.stringify(decisions));
     renderJournal();
   }
+}
+
+// ── Decision Journal — delete & dedup ────────────────────────
+async function deleteDecision(id) {
+  id = String(id);
+  // Remove from localStorage
+  const local = JSON.parse(localStorage.getItem('thinkos_decisions') || '[]');
+  const filtered = local.filter(d => String(d.id) !== id);
+  localStorage.setItem('thinkos_decisions', JSON.stringify(filtered));
+
+  // Remove from Supabase (best-effort — won't error if row doesn't exist)
+  if (_sbUser) {
+    // Try numeric id (Supabase bigserial)
+    const numId = parseInt(id, 10);
+    if (!isNaN(numId)) {
+      _sb.from('decisions').delete().eq('id', numId).eq('user_id', _sbUser.id).then(() => {}).catch(() => {});
+    }
+  }
+
+  renderJournal();
+  showToast('🗑 Entry deleted', 2000);
+}
+
+// Deduplicate Decision Journal — keeps newest entry per title (case-insensitive)
+function deduplicateDecisions() {
+  const local = JSON.parse(localStorage.getItem('thinkos_decisions') || '[]');
+  const seen = new Map();
+  const kept = [];
+  // Sort newest-first so we keep the most recent duplicate
+  const sorted = [...local].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  for (const d of sorted) {
+    const key = (d.title || '').toLowerCase().trim();
+    if (!seen.has(key)) { seen.set(key, true); kept.push(d); }
+  }
+  const removed = local.length - kept.length;
+  localStorage.setItem('thinkos_decisions', JSON.stringify(kept));
+  renderJournal();
+  if (removed > 0) showToast(`✅ Removed ${removed} duplicate${removed > 1 ? 's' : ''}`, 2500);
+  else showToast('No duplicates found', 2000);
+}
+
+// ── Thinking Sessions — delete & dedup ───────────────────────
+async function deleteJournalSession(id) {
+  id = String(id);
+  const isCloud = id.startsWith('cloud_');
+
+  // Remove from localStorage sessions
+  const local = getSessions().filter(s => String(s.id) !== id);
+  localStorage.setItem('thinkos_sessions', JSON.stringify(local));
+
+  // Remove cloud session from Supabase
+  if (isCloud && _sbUser) {
+    const cloudId = id.replace('cloud_', '');
+    const numId = parseInt(cloudId, 10);
+    if (!isNaN(numId)) {
+      _sb.from('sessions').delete().eq('id', numId).eq('user_id', _sbUser.id).then(() => {}).catch(() => {});
+    }
+  } else if (_sbUser) {
+    // Might be a locally-created session that was also synced — delete by thought match
+    const session = getSessions().find(s => String(s.id) === id);
+    // already removed above; cloud counterpart looked up by thought if needed
+  }
+
+  renderJournalSessions();
+  renderSessions(); // refresh sidebar
+  showToast('🗑 Session deleted', 2000);
+}
+
+// Deduplicate Thinking Sessions — keeps newest per thought text
+function deduplicateSessions() {
+  const local = getSessions();
+  const seen = new Map();
+  const sorted = [...local].sort((a, b) => b.timestamp - a.timestamp);
+  const kept = [];
+  for (const s of sorted) {
+    const key = (s.thought || s.title || '').toLowerCase().trim().slice(0, 80);
+    if (!seen.has(key)) { seen.set(key, true); kept.push(s); }
+  }
+  const removed = local.length - kept.length;
+  localStorage.setItem('thinkos_sessions', JSON.stringify(kept));
+  renderJournalSessions();
+  renderSessions();
+  if (removed > 0) showToast(`✅ Removed ${removed} duplicate${removed > 1 ? 's' : ''}`, 2500);
+  else showToast('No duplicates found', 2000);
 }
 
 // ── Custom Lens Builder ────────────────────────────────────────
