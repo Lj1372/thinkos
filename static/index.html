@@ -2993,7 +2993,7 @@ async function sbInit() {
   _sb.auth.onAuthStateChange(async (event, session) => {
     // INITIAL_SESSION fires on every page load when a valid session exists in storage
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session?.user) {
-      await onLogin(session.user);
+      await onLogin(session.user, event); // pass event so onLogin can show sync toast
     }
     if (event === 'SIGNED_OUT') onLogout();
   });
@@ -3024,34 +3024,56 @@ async function sbInit() {
   if (session?.user) await onLogin(session.user);
 }
 
-async function onLogin(user) {
+async function onLogin(user, authEvent) {
   _sbUser = user;
-  // If owner param is present, mark this account as owner in Supabase permanently
+
+  // 1. Owner URL param — write to Supabase + localStorage + 365-day cookie
   const params = new URLSearchParams(window.location.search);
   if (params.get('owner') === 'jl2026') {
     await _sb.from('profiles').upsert({ id: user.id, email: user.email, plan: 'owner', plan_status: 'active' });
     localStorage.setItem('thinkos_paid', 'true');
     localStorage.setItem('thinkos_paid_plan', 'owner');
+    _setCookie('thinkos_owner', 'jl2026', 365);
   }
-  // Check profile for paid plan
+
+  // 2. Fetch profile from Supabase — this is the authoritative paid/plan source
   const { data: profile } = await _sb.from('profiles').select('plan,plan_status').eq('id', user.id).single();
   if (profile && profile.plan !== 'free' && profile.plan_status === 'active') {
     localStorage.setItem('thinkos_paid', 'true');
     localStorage.setItem('thinkos_paid_plan', profile.plan);
+    // Write owner cookie whenever profile confirms owner plan so other devices pick it up
+    if (profile.plan === 'owner') _setCookie('thinkos_owner', 'jl2026', 365);
   }
-  // Register this user's referral code in Supabase (so their referral link works)
+
+  // 3. Register referral code (fire-and-forget)
   if (isPaid()) {
     const code = btoa(user.id).replace(/[^a-z0-9]/gi,'').slice(0,12);
     _sb.from('referrals')
       .upsert({ referrer_user_id: user.id, referrer_code: code }, { onConflict: 'referrer_code', ignoreDuplicates: true })
       .then(() => {});
   }
+
+  // 4. Update UI (now that isPaid() is authoritative)
   renderAuthUI();
   toggleInsightsPanel();
-  loadSessionHistory();
-  loadCloudDecisions();   // sync decision journal across devices
-  loadCloudPlans();       // sync action plans across devices
-  loadCloudMemories();    // sync memory anchors across devices
+
+  // 5. Sync cloud data — all run in parallel, no sequential blocking
+  await Promise.all([
+    loadSessionHistory(),
+    loadCloudDecisions(),
+    loadCloudPlans(),
+    loadCloudMemories(),
+  ]);
+
+  // 6. Re-render any live views that depend on paid status or cloud data.
+  //    This fixes the "journal blank on refresh" bug where renderJournal() fired
+  //    via switchTool() BEFORE the async profile fetch finished.
+  if (currentTool === 'journal') renderJournal();
+
+  // 7. Toast — only on session restore (page reload), not every SIGNED_IN click
+  if (authEvent === 'INITIAL_SESSION' || authEvent === 'TOKEN_REFRESHED') {
+    setTimeout(() => showToast('✅ Account synced across devices', 3000), 600);
+  }
 }
 
 // ── Cloud plan sync (cross-device) ─────────────────────────────
@@ -3200,10 +3222,11 @@ async function sendMagicLink() {
   if (!email) { if (status) status.textContent = 'Enter your email first.'; return; }
   btn.disabled = true;
   if (status) status.textContent = 'Sending link...';
-  // Preserve owner flag in redirect — check URL param OR localStorage plan
-  const urlOwner = new URLSearchParams(window.location.search).get('owner') === 'jl2026';
-  const lsOwner  = localStorage.getItem('thinkos_paid_plan') === 'owner';
-  const ownerParam = (urlOwner || lsOwner) ? '?owner=jl2026' : '';
+  // Preserve owner flag in redirect — check URL param, localStorage, OR cookie
+  const urlOwner    = new URLSearchParams(window.location.search).get('owner') === 'jl2026';
+  const lsOwner     = localStorage.getItem('thinkos_paid_plan') === 'owner';
+  const cookieOwner = _getCookie('thinkos_owner') === 'jl2026';
+  const ownerParam  = (urlOwner || lsOwner || cookieOwner) ? '?owner=jl2026' : '';
   const { error } = await _sb.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: window.location.origin + '/' + ownerParam }
@@ -3283,9 +3306,10 @@ async function deleteCloudSession(id) {
   loadSessionHistory();
 }
 
-// Load session history from Supabase — paid users only
+// Load session history from Supabase — any logged-in user (paid check removed
+// so sessions always sync even on fresh devices where isPaid() hasn't settled yet)
 async function loadSessionHistory() {
-  if (!_sbUser || !isPaid()) return;
+  if (!_sbUser) return;
   const { data } = await _sb.from('sessions')
     .select('id,tool,thought,result,created_at')
     .eq('user_id', _sbUser.id)
@@ -4286,9 +4310,10 @@ async function runProCouncil() {
     document.getElementById('pro-results').appendChild(skeleton);
 
     try {
-      let result;
+      let result;       // normalised form — used only for the synthesis payload
+      let rawForRender; // original API response — used for the rich body renderers
       if (PRO_CORE_IDS.includes(lensId)) {
-        // Core lenses have dedicated endpoints
+        // Core lenses have dedicated endpoints with their own rich data shapes
         const coreEndpoints = {
           'rei':    ['/api/rei',      { situation: thought }],
           'ladder': ['/api/ladder',   { question: thought }],
@@ -4296,12 +4321,30 @@ async function runProCouncil() {
           'blind':  ['/api/blindspot',{ situation: thought, context: '' }],
         };
         const [ep, body] = coreEndpoints[lensId];
-        const raw = await callAPI(ep, body);
-        result = _normaliseCoreResult(lensId, raw);
+        rawForRender = await callAPI(ep, body);
+        result = _normaliseCoreResult(lensId, rawForRender);
       } else {
-        result = await callAPI('/api/lens', { lens_id: lensId, situation: thought });
+        rawForRender = await callAPI('/api/lens', { lens_id: lensId, situation: thought });
+        result = rawForRender;
       }
-      document.getElementById('pro-cs-' + lensId + '-body').innerHTML = renderGenericLensBody(result);
+
+      // Render the body: core lenses get their rich dedicated renderers;
+      // extended lenses use the generic panels renderer.
+      // (Previously all lenses used renderGenericLensBody with the *normalised*
+      // result, whose panels have {header,body} keys — but renderGenericLensBody
+      // reads {label,text} — causing blank output for core lenses.)
+      const coreBodyRenderers = {
+        rei:     () => renderREIBody(rawForRender),
+        ladder:  () => renderLadderBody(rawForRender),
+        kingdom: () => renderKingdomBody(rawForRender),
+        blind:   () => renderBlindBody(rawForRender),
+      };
+      const bodyHtml = (PRO_CORE_IDS.includes(lensId) && coreBodyRenderers[lensId])
+        ? coreBodyRenderers[lensId]()
+        : renderGenericLensBody(result);
+
+      document.getElementById('pro-cs-' + lensId + '-body').innerHTML = bodyHtml;
+      skeleton.classList.remove('collapsed'); // expand so the output is visible immediately
       skeleton.style.opacity = '1';
       allResults.push({
         lens_name: cfg.name,
@@ -4329,8 +4372,13 @@ async function runProCouncil() {
       document.getElementById('pro-synth-action').textContent = synth.action      || '';
       const synthEl = document.getElementById('pro-synthesis');
       synthEl.style.display = 'block';
+      lastResults.synthesis = synth; // store so copyAllResults / exportMarkdown can use it
       synthEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setTimeout(() => showActionPrompt(synth.action || synth.synthesis_question, 'pro-council-results'), 200);
+      // PostCouncilActions bar — same as every other results page
+      injectPostCouncilActions('pro-council-results', 'pro');
+      document.body.classList.add('results-visible');
+      saveSession();
       // Decision Planner CTA after Pro Council synthesis
       let proPlanner = document.getElementById('pro-planner-cta');
       if (!proPlanner) {
@@ -4382,13 +4430,14 @@ function saveSession() {
   filtered.unshift({ id, title, thought, timestamp: Date.now(), results: { ...lastResults } });
   if (filtered.length > 50) filtered.splice(50);
   localStorage.setItem('thinkos_sessions', JSON.stringify(filtered));
-  // Auto-sync to Supabase when logged in — enables cross-device session history
-  if (_sbUser && isPaid()) {
+  // Auto-sync to Supabase when logged in — always sync for any authenticated user
+  // (removed isPaid() guard so sessions sync on fresh devices before plan loads)
+  if (_sbUser) {
     _sb.from('sessions').insert({
       user_id: _sbUser.id,
       tool: currentTool,
       thought,
-      result: lastResults,  // store full results object for cross-device restore
+      result: lastResults,  // full results object for cross-device restore
     }).then(() => loadSessionHistory()).catch(() => {});
   }
   renderSessions();
@@ -5129,9 +5178,25 @@ function isTrialActive() {
   if (!start) return false;
   return getTrialDaysLeft() > 0;
 }
+// ── Cookie helpers ────────────────────────────────────────────
+function _setCookie(name, value, days) {
+  const exp = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${exp};path=/;SameSite=Lax`;
+}
+function _getCookie(name) {
+  const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith(name + '='));
+  return match ? decodeURIComponent(match.split('=')[1]) : null;
+}
+
 function isHardPaid() {
-  // Owner bypass
+  // 1. URL param — highest priority, save to localStorage + cookie for future devices
   if (new URLSearchParams(window.location.search).get('owner') === 'jl2026') {
+    localStorage.setItem('thinkos_paid', 'true');
+    localStorage.setItem('thinkos_paid_plan', 'owner');
+    _setCookie('thinkos_owner', 'jl2026', 365);
+  }
+  // 2. Restore from 365-day cookie (cross-browser, survives localStorage clears)
+  if (_getCookie('thinkos_owner') === 'jl2026') {
     localStorage.setItem('thinkos_paid', 'true');
     localStorage.setItem('thinkos_paid_plan', 'owner');
   }
