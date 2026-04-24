@@ -1555,6 +1555,56 @@ body.on-home .fab-council { display: block; }
 .fab-feedback:hover { color: var(--text); border-color: var(--ladder); }
 @media(max-width:640px) { .fab-feedback { bottom: 72px; right: 14px; padding: 9px 13px; font-size: 12px; } }
 
+/* ── ThinkOS Companion ── */
+.companion-fab { position:fixed; bottom:24px; left:24px; width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#7c3aed,#a78bfa); border:none; color:#fff; font-size:22px; cursor:pointer; z-index:300; box-shadow:0 4px 24px rgba(124,58,237,.45); display:flex; align-items:center; justify-content:center; transition:transform .2s,box-shadow .2s; }
+.companion-fab:hover { transform:scale(1.1); box-shadow:0 6px 30px rgba(124,58,237,.6); }
+.companion-fab .companion-badge { position:absolute; top:-2px; right:-2px; width:14px; height:14px; background:#f87171; border-radius:50%; border:2px solid var(--bg); display:none; }
+@media(max-width:640px){ .companion-fab { bottom:80px; left:14px; width:46px; height:46px; font-size:20px; } }
+
+.companion-panel { position:fixed; bottom:88px; left:24px; width:360px; max-height:520px; background:var(--surface); border:1px solid var(--border); border-radius:20px; box-shadow:0 12px 48px rgba(0,0,0,.5); z-index:300; display:flex; flex-direction:column; overflow:hidden; transform:translateY(20px) scale(.96); opacity:0; pointer-events:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s; }
+.companion-panel.open { transform:translateY(0) scale(1); opacity:1; pointer-events:all; }
+@media(max-width:640px){ .companion-panel { left:10px; right:10px; width:auto; bottom:136px; max-height:60vh; } }
+
+.companion-header { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.companion-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#7c3aed,#a78bfa); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.companion-header-info { flex:1; min-width:0; }
+.companion-title { font-size:14px; font-weight:700; color:var(--text); }
+.companion-subtitle { font-size:11px; color:var(--muted); }
+.companion-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:0 4px; line-height:1; }
+.companion-close:hover { color:var(--text); }
+
+.companion-messages { flex:1; overflow-y:auto; padding:14px 14px 8px; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth; }
+.companion-messages::-webkit-scrollbar { width:4px; }
+.companion-messages::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+
+.cmsg { display:flex; gap:8px; max-width:100%; }
+.cmsg.user { flex-direction:row-reverse; }
+.cmsg-bubble { padding:10px 13px; border-radius:14px; font-size:13px; line-height:1.55; max-width:82%; word-break:break-word; }
+.cmsg.assistant .cmsg-bubble { background:var(--surface2); color:var(--text); border-bottom-left-radius:4px; }
+.cmsg.user .cmsg-bubble { background:linear-gradient(135deg,#7c3aed,#a78bfa); color:#fff; border-bottom-right-radius:4px; }
+.cmsg-avatar { width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; margin-top:2px; }
+.cmsg.assistant .cmsg-avatar { background:linear-gradient(135deg,#7c3aed,#a78bfa); }
+.cmsg.user .cmsg-avatar { background:var(--surface2); }
+
+.companion-typing { display:flex; gap:4px; align-items:center; padding:8px 12px; }
+.companion-typing span { width:6px; height:6px; border-radius:50%; background:var(--muted); animation:ctyping 1.2s infinite; }
+.companion-typing span:nth-child(2) { animation-delay:.2s; }
+.companion-typing span:nth-child(3) { animation-delay:.4s; }
+@keyframes ctyping { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+.companion-chips { display:flex; flex-wrap:wrap; gap:6px; padding:6px 14px 10px; }
+.companion-chip { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 12px; font-size:12px; color:var(--text); cursor:pointer; transition:border-color .15s,color .15s; white-space:nowrap; }
+.companion-chip:hover { border-color:#a78bfa; color:#a78bfa; }
+
+.companion-input-row { display:flex; gap:8px; padding:10px 12px 12px; border-top:1px solid var(--border); flex-shrink:0; }
+.companion-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:9px 12px; font-size:13px; color:var(--text); outline:none; resize:none; max-height:80px; min-height:38px; font-family:inherit; }
+.companion-input:focus { border-color:#7c3aed; }
+.companion-send { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#7c3aed,#a78bfa); border:none; color:#fff; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; align-self:flex-end; flex-shrink:0; transition:opacity .15s; }
+.companion-send:disabled { opacity:.4; cursor:default; }
+
+/* Expert lens badge on lens cards */
+.lens-card-badge { position:absolute; top:8px; right:8px; background:linear-gradient(135deg,#7c3aed,#a78bfa); color:#fff; font-size:9px; font-weight:700; padding:2px 7px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px; }
+
 /* ── Weekly Report ── */
 .report-headline { font-size:22px; font-weight:800; margin-bottom:8px; line-height:1.3; }
 .report-quote { font-size:14px; color:var(--muted); font-style:italic; border-left:3px solid var(--ladder); padding-left:12px; margin:16px 0; }
@@ -2480,6 +2530,37 @@ body.on-home .fab-council { display: block; }
 <!-- Floating feedback button -->
 <button class="fab-feedback" onclick="switchTool('help')" title="Help &amp; Feedback">💬 Feedback</button>
 
+<!-- ThinkOS Companion FAB -->
+<button class="companion-fab" id="companion-fab" onclick="toggleCompanion()" title="ThinkOS Companion">
+  🤖
+  <div class="companion-badge" id="companion-badge"></div>
+</button>
+
+<!-- Companion Panel -->
+<div class="companion-panel" id="companion-panel">
+  <div class="companion-header">
+    <div class="companion-avatar">🤖</div>
+    <div class="companion-header-info">
+      <div class="companion-title">ThinkOS Companion</div>
+      <div class="companion-subtitle" id="companion-subtitle">Your thinking partner</div>
+    </div>
+    <button class="companion-close" onclick="toggleCompanion()">×</button>
+  </div>
+  <div class="companion-messages" id="companion-messages">
+    <!-- Messages injected here -->
+  </div>
+  <div class="companion-chips" id="companion-chips">
+    <div class="companion-chip" onclick="companionChip(this)">What should I think about first?</div>
+    <div class="companion-chip" onclick="companionChip(this)">Which lens fits my situation?</div>
+    <div class="companion-chip" onclick="companionChip(this)">Help me get unstuck</div>
+    <div class="companion-chip" onclick="companionChip(this)">Reflect on my week</div>
+  </div>
+  <div class="companion-input-row">
+    <textarea class="companion-input" id="companion-input" placeholder="Ask me anything…" rows="1" onkeydown="companionKeydown(event)" oninput="companionAutoResize(this)"></textarea>
+    <button class="companion-send" id="companion-send" onclick="companionSend()">↑</button>
+  </div>
+</div>
+
 <!-- ── Account Management Modal ── -->
 <div class="modal-overlay" id="account-modal" onclick="if(event.target===this)closeAccountModal()" style="display:none;z-index:8000;">
   <div class="modal-box" style="max-width:520px;">
@@ -2788,6 +2869,8 @@ body.on-home .fab-council { display: block; }
       <div class="lens-library-grid" id="lens-grid-core"></div>
       <div class="lens-section-title">Extended Lenses</div>
       <div class="lens-library-grid" id="lens-grid-extended"></div>
+      <div class="lens-section-title" style="display:flex;align-items:center;gap:8px;">Expert & Field Knowledge <span style="font-size:10px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;padding:2px 7px;border-radius:10px;font-weight:700;">NEW</span></div>
+      <div class="lens-library-grid" id="lens-grid-expert"></div>
       <div class="lens-section-title" style="display:flex;align-items:center;justify-content:space-between;">
         Custom Lenses
         <button onclick="openCustomLensBuilder()" style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);cursor:pointer;">+ Build Your Own</button>
@@ -6041,6 +6124,17 @@ const LENS_CONFIG = [
   { id:'mentor',        name:'Inner Mentor',           icon:'🌿', color:'var(--mentor)',        desc:'What would the wisest version of you say right now?',         core:false, btn:'Ask My Mentor' },
   { id:'virtue',        name:'Virtue Ethics',          icon:'🏛️', color:'var(--virtue)',        desc:'Aristotle: what would a person of excellent character do?',   core:false, btn:'Apply Virtue Ethics' },
   { id:'memento',       name:'Memento Mori',           icon:'⏳', color:'var(--memento)',       desc:'You will die. Does that change this decision?',               core:false, btn:'Face Mortality' },
+  // Expert / Field Knowledge Lenses
+  { id:'legal',         name:'Legal Eagle',            icon:'⚖️', color:'#6366f1',              desc:'Rights, liabilities, contracts — the legal dimension revealed.', core:false, btn:'Apply Legal Thinking', new:true },
+  { id:'medical',       name:'Health & Medical',       icon:'🫀', color:'#22c55e',              desc:'Body signals, mental health, and the health-aligned path.',      core:false, btn:'Check the Health View', new:true },
+  { id:'engineer',      name:'Engineer\'s Lens',       icon:'⚙️', color:'#f59e0b',              desc:'Requirements, constraints, failure modes — build it right.',     core:false, btn:'Engineer a Solution', new:true },
+  { id:'math_teacher',  name:'Math Teacher',           icon:'📐', color:'#3b82f6',              desc:'Define precisely. Break into sub-problems. Check the logic.',    core:false, btn:'Solve It Step by Step', new:true },
+  { id:'carpenter',     name:'Carpenter\'s Wisdom',    icon:'🔨', color:'#a16207',              desc:'Measure twice, cut once. Build for the long term.',              core:false, btn:'Apply Builder\'s Wisdom', new:true },
+  { id:'scientist',     name:'Scientific Method',      icon:'🔬', color:'#06b6d4',              desc:'Hypothesis, evidence, alternatives, the critical test.',         core:false, btn:'Run the Experiment', new:true },
+  { id:'finance_expert',name:'Finance Expert',         icon:'💰', color:'#84cc16',              desc:'Cash flow, risk/return, leverage, the 10-year financial view.',  core:false, btn:'Get the Financial View', new:true },
+  { id:'therapist',     name:'Therapist\'s View',      icon:'🌱', color:'#ec4899',              desc:'Core beliefs, relational patterns, what this is really about.',  core:false, btn:'Go Deeper', new:true },
+  { id:'philosopher',   name:'Philosopher',            icon:'🏛️', color:'#8b5cf6',              desc:'Conceptual clarity, hidden assumptions, the examined path.',     core:false, btn:'Examine the Assumptions', new:true },
+  { id:'strategist',    name:'Master Strategist',      icon:'♟️', color:'#ef4444',              desc:'Terrain, asymmetric advantage, tactics vs strategy.',           core:false, btn:'Think Strategically', new:true },
 ];
 
 let _activeLens = null; // current extended lens being used
@@ -6058,13 +6152,17 @@ function openLensLibrary() {
   document.getElementById('lens-library-modal').classList.add('visible');
 }
 
+const _EXPERT_LENS_IDS = new Set(['legal','medical','engineer','math_teacher','carpenter','scientist','finance_expert','therapist','philosopher','strategist']);
+
 function _renderLibraryGrids() {
   const coreLenses     = LENS_CONFIG.filter(l => l.core);
-  const extendedLenses = LENS_CONFIG.filter(l => !l.core && !l.custom);
+  const extendedLenses = LENS_CONFIG.filter(l => !l.core && !l.custom && !_EXPERT_LENS_IDS.has(l.id));
+  const expertLenses   = LENS_CONFIG.filter(l => _EXPERT_LENS_IDS.has(l.id));
   const customLenses   = getCustomLenses();
 
   function renderGrid(lenses, containerId) {
     const grid = document.getElementById(containerId);
+    if (!grid) return;
     grid.innerHTML = '';
     lenses.forEach(l => {
       const card = document.createElement('div');
@@ -6092,6 +6190,7 @@ function _renderLibraryGrids() {
 
   renderGrid(coreLenses, 'lens-grid-core');
   renderGrid(extendedLenses, 'lens-grid-extended');
+  renderGrid(expertLenses, 'lens-grid-expert');
 
   const customGrid = document.getElementById('lens-grid-custom');
   customGrid.innerHTML = customLenses.length
@@ -8053,6 +8152,155 @@ async function executeDeleteAccount() {
     btn.style.opacity = '1';
     if (statusEl) statusEl.textContent = 'Deletion failed. Email ThinkOS137@outlook.com and we will delete your account manually within 24 hours.';
   }
+}
+
+// ── ThinkOS Companion ────────────────────────────────────────────────────────
+
+let _companionHistory  = [];
+let _companionOpen     = false;
+let _companionGreeted  = false;
+
+function toggleCompanion() {
+  _companionOpen = !_companionOpen;
+  const panel = document.getElementById('companion-panel');
+  if (_companionOpen) {
+    panel.classList.add('open');
+    if (!_companionGreeted) {
+      _companionGreeted = true;
+      _companionGreet();
+    }
+    setTimeout(() => document.getElementById('companion-input')?.focus(), 250);
+  } else {
+    panel.classList.remove('open');
+  }
+}
+
+function _companionGreet() {
+  const thought = getThought ? getThought() : '';
+  let greeting;
+  if (thought) {
+    greeting = `Hey — I can see you're thinking about something. What's on your mind about it, or what would you like me to help you explore?`;
+  } else {
+    greeting = `Hey! I'm your ThinkOS Companion. I'm here to think through anything with you — decisions, problems, ideas, or just what's on your mind. What's going on?`;
+  }
+  _companionAppendMsg('assistant', greeting);
+}
+
+function _companionGetContext() {
+  const ctx = { memories: [], recent_sessions: [] };
+
+  // Pull memories from localStorage
+  try {
+    const mems = (typeof getLocalMemories === 'function') ? getLocalMemories() : [];
+    if (mems?.length) {
+      ctx.memories = mems.slice(0, 12).map(m => ({
+        content: m.takeaway || m.thought || m.content || m.text || ''
+      })).filter(m => m.content);
+    }
+  } catch(e) {}
+
+  // Pull recent sessions from in-memory array or localStorage
+  try {
+    const sessions = (typeof _journalSessions !== 'undefined' && _journalSessions?.length)
+      ? _journalSessions
+      : (typeof getSessions === 'function' ? getSessions() : []);
+    ctx.recent_sessions = sessions.slice(0, 6).map(s => ({
+      thought: s.thought || s.title || ''
+    })).filter(s => s.thought);
+  } catch(e) {}
+
+  // Include current thought if any
+  try {
+    const thought = (typeof getThought === 'function') ? getThought() : '';
+    if (thought) ctx.current_thought = thought;
+  } catch(e) {}
+
+  return ctx;
+}
+
+function _companionAppendMsg(role, text) {
+  const wrap = document.getElementById('companion-messages');
+  if (!wrap) return;
+  const div = document.createElement('div');
+  div.className = 'cmsg ' + role;
+  const avatarChar = role === 'assistant' ? '🤖' : '💭';
+  div.innerHTML = `
+    <div class="cmsg-avatar">${avatarChar}</div>
+    <div class="cmsg-bubble">${text.replace(/\n/g,'<br>')}</div>
+  `;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function _companionShowTyping() {
+  const wrap = document.getElementById('companion-messages');
+  if (!wrap) return;
+  const div = document.createElement('div');
+  div.className = 'cmsg assistant';
+  div.id = 'companion-typing-indicator';
+  div.innerHTML = `
+    <div class="cmsg-avatar">🤖</div>
+    <div class="cmsg-bubble companion-typing"><span></span><span></span><span></span></div>
+  `;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function _companionRemoveTyping() {
+  document.getElementById('companion-typing-indicator')?.remove();
+}
+
+async function companionSend(overrideMsg) {
+  const input = document.getElementById('companion-input');
+  const message = overrideMsg || input?.value?.trim();
+  if (!message) return;
+  const sendBtn = document.getElementById('companion-send');
+
+  if (input) { input.value = ''; companionAutoResize(input); }
+  if (sendBtn) sendBtn.disabled = true;
+
+  _companionAppendMsg('user', message);
+  _companionHistory.push({ role: 'user', content: message });
+
+  // Hide chips after first real message
+  const chips = document.getElementById('companion-chips');
+  if (chips && _companionHistory.length > 1) chips.style.display = 'none';
+
+  _companionShowTyping();
+
+  try {
+    const data = await callAPI('/api/companion', {
+      message,
+      history: _companionHistory.slice(-14),
+      context: _companionGetContext()
+    });
+    _companionRemoveTyping();
+    const reply = data.reply || data.error || 'Something went wrong. Try again.';
+    _companionAppendMsg('assistant', reply);
+    _companionHistory.push({ role: 'assistant', content: reply });
+  } catch (e) {
+    _companionRemoveTyping();
+    _companionAppendMsg('assistant', 'Something went wrong — give it a moment and try again.');
+  }
+
+  if (sendBtn) sendBtn.disabled = false;
+}
+
+function companionChip(el) {
+  const text = el.textContent.trim();
+  companionSend(text);
+}
+
+function companionKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    companionSend();
+  }
+}
+
+function companionAutoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 80) + 'px';
 }
 
 async function submitFeedback() {
