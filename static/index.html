@@ -6814,6 +6814,12 @@ const CORE_LENS_SUBMIT = {
 // If thought already exists → navigate + auto-run in one step
 // If no thought → just navigate so user can type
 function launchLens(id) {
+  // Guided intake for core lenses
+  if (LENS_INTAKE[id]) {
+    activateLens(id);
+    renderIntakeForm(id);
+    return;
+  }
   const thought = getThought();
   if (CORE_LENS_SUBMIT[id]) {
     if (thought && id !== 'socratic') {
@@ -8727,6 +8733,83 @@ const LENS_INTAKE = {
 };
 
 let _intakeSubmitting = false;
+
+function renderIntakeForm(lensId) {
+  const cfg    = getLensById(lensId) || LP_CORE_LENSES.find(l => l.id === lensId) || { icon: '🧠', name: lensId };
+  const fields = LENS_INTAKE[lensId] || [];
+
+  // Hide the native submit button while intake is visible
+  const submitBtn = document.getElementById('lens-submit-btn');
+  if (submitBtn) submitBtn.style.display = 'none';
+
+  // Remove any previous intake wrap
+  document.getElementById('lens-intake-wrap')?.remove();
+
+  const wrap = document.createElement('div');
+  wrap.id = 'lens-intake-wrap';
+  wrap.className = 'lens-intake';
+  wrap.innerHTML = `
+    <div class="lens-intake-subtitle">${cfg.icon} ${cfg.name} — Set up your situation <span style="color:var(--muted);font-weight:400">· ~30 seconds</span></div>
+    ${fields.map(f => `
+      <div class="lens-intake-field">
+        <label class="lens-intake-label">${f.label}</label>
+        <input class="lens-intake-input" id="intake-${lensId}-${f.id}" placeholder="${f.placeholder}" autocomplete="off" />
+      </div>`).join('')}
+    <button class="lens-intake-btn" onclick="submitWithIntake('${lensId}')">Run ${esc(cfg.name)} →</button>
+    <button class="lens-intake-skip" onclick="skipIntake('${lensId}')">Skip intake →</button>
+  `;
+
+  // Inject after the submit button
+  if (submitBtn) {
+    submitBtn.insertAdjacentElement('afterend', wrap);
+  }
+
+  // Focus the first field
+  if (fields.length) {
+    setTimeout(() => document.getElementById(`intake-${lensId}-${fields[0].id}`)?.focus(), 120);
+  }
+}
+
+function submitWithIntake(lensId) {
+  // Remove intake UI and restore submit button
+  document.getElementById('lens-intake-wrap')?.remove();
+  const submitBtn = document.getElementById('lens-submit-btn');
+  if (submitBtn) submitBtn.style.display = '';
+
+  // Build enriched thought from intake answers
+  const fields = LENS_INTAKE[lensId] || [];
+  const extras = fields
+    .map(f => {
+      const val = document.getElementById(`intake-${lensId}-${f.id}`)?.value?.trim();
+      return val ? `${f.label}: ${val}` : null;
+    })
+    .filter(Boolean)
+    .join('\n');
+
+  const thought = getThought();
+  if (extras) {
+    // submitLens() reads getThought() synchronously at its first line — set before calling
+    document.getElementById('global-thought').value = `${thought}\n\n---\n${extras}`;
+  }
+
+  _intakeSubmitting = true;
+  submitLens(); // reads enriched thought synchronously, then goes async
+  _intakeSubmitting = false;
+
+  if (extras) {
+    // Restore after submitLens has captured the value
+    document.getElementById('global-thought').value = thought;
+  }
+}
+
+function skipIntake(lensId) {
+  document.getElementById('lens-intake-wrap')?.remove();
+  const submitBtn = document.getElementById('lens-submit-btn');
+  if (submitBtn) submitBtn.style.display = '';
+  _intakeSubmitting = true;
+  submitLens();
+  _intakeSubmitting = false;
+}
 
 // ── ThinkOS Companion ────────────────────────────────────────────────────────
 
