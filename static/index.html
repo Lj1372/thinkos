@@ -8881,6 +8881,52 @@ function saveReflection(lensId) {
   showClarityRating(lensId);
 }
 
+function showClarityRating(lensId) {
+  const wrap = document.querySelector('.reflect-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <div class="clarity-rating">
+      <div class="clarity-rating-title">Did this help you think more clearly?</div>
+      <div class="clarity-rating-sub">Tracks which lenses work best for you over time</div>
+      <div class="clarity-btns">
+        <button class="clarity-btn yes" onclick="rateClarity('${lensId}', true)">
+          <span class="clarity-btn-emoji">👍</span>
+          <span class="clarity-btn-label">Yes, clearer</span>
+        </button>
+        <button class="clarity-btn no" onclick="rateClarity('${lensId}', false)">
+          <span class="clarity-btn-emoji">👎</span>
+          <span class="clarity-btn-label">Not really</span>
+        </button>
+      </div>
+      <div class="clarity-saved-note">Either way — your vault card is saved ✓</div>
+    </div>
+  `;
+}
+
+function rateClarity(lensId, helpful) {
+  // Store locally keyed by timestamp
+  const key = 'thinkos_clarity_' + Date.now();
+  localStorage.setItem(key, JSON.stringify({ lensId, helpful, ts: Date.now() }));
+
+  // Sync to sessions.clarity in Supabase if logged in
+  if (_sbUser && _journalSessions) {
+    const recent = _journalSessions.find(s => s.tool === lensId || s.lens_id === lensId);
+    if (recent?.id) {
+      _sb.from('sessions')
+        .update({ clarity: helpful })
+        .eq('id', recent.id)
+        .eq('user_id', _sbUser.id)
+        .catch(e => console.warn('Clarity sync failed:', e));
+    }
+  }
+
+  // Dismiss rating UI
+  const wrap = document.querySelector('.reflect-wrap');
+  if (wrap) {
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:8px 0;">✓ Thanks — feedback saved</div>`;
+  }
+}
+
 // ── ThinkOS Companion ────────────────────────────────────────────────────────
 
 let _companionHistory  = [];
