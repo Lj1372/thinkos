@@ -1800,6 +1800,7 @@ body.on-home .fab-council { display: block; }
   <button class="btn-templates" onclick="openProCouncil()" style="margin-top:4px;background:linear-gradient(135deg,rgba(236,72,153,.15),rgba(167,139,250,.15));border-color:rgba(236,72,153,.3);color:var(--probabilistic);">🔮 Pro Council</button>
   <button class="btn-templates" onclick="switchTool('planner')" style="margin-top:4px;background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(56,189,248,.08));border-color:rgba(45,212,191,.3);color:var(--secondorder);">🗺️ Decision Planner</button>
   <button class="btn-templates" onclick="switchTool('analytics')" style="margin-top:4px;">📊 Analytics</button>
+  <button class="btn-templates" onclick="switchTool('vault')" style="margin-top:4px;">💡 Insight Vault</button>
   <button class="btn-templates" onclick="switchTool('journal')" style="margin-top:4px;">📔 Decision Journal</button>
   <button class="btn-templates" onclick="openWeeklyReport()" style="margin-top:4px;">🗓 Weekly Report</button>
 
@@ -1914,6 +1915,56 @@ body.on-home .fab-council { display: block; }
 
     <!-- ── Home / Welcome ── -->
     <div class="tool-view" id="view-home">
+      <!-- ── Personal Dashboard ── -->
+      <div class="dashboard-wrap" id="dashboard-wrap">
+        <div class="dashboard-greeting" id="dashboard-greeting">Welcome to ThinkOS 👋</div>
+        <div class="dashboard-streak-line" id="dashboard-streak-line">Ready to think clearly today.</div>
+
+        <!-- Stats bar -->
+        <div class="dashboard-stats">
+          <div class="dash-stat">
+            <div class="dash-stat-value" id="dashboard-stat-sessions">—</div>
+            <div class="dash-stat-label">Sessions</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-value" id="dashboard-stat-streak">—</div>
+            <div class="dash-stat-label">Streak</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-value" id="dashboard-stat-insights">—</div>
+            <div class="dash-stat-label">Insights</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-value" id="dashboard-stat-models">—</div>
+            <div class="dash-stat-label">Models used</div>
+          </div>
+        </div>
+
+        <!-- Daily Workout -->
+        <div class="dash-workout" id="dashboard-workout">
+          <div class="dash-workout-label">⚡ TODAY'S WORKOUT</div>
+          <div class="dash-workout-lens" id="dash-workout-lens">Loading…</div>
+        </div>
+
+        <!-- Recent Sessions -->
+        <div class="dash-section-label" style="margin-top:4px;">Recent Sessions</div>
+        <div class="dash-section">
+          <div id="dashboard-recent"><div class="dash-empty">No sessions yet.</div></div>
+        </div>
+
+        <!-- Last Insight Peek -->
+        <div id="dashboard-last-insight" style="display:none;">
+          <div class="dash-section-label">Last Insight</div>
+          <div class="dash-section">
+            <div class="dash-insight-text" id="dash-insight-text"></div>
+            <button class="dash-insight-vault-link" onclick="switchTool('vault')">View Insight Vault →</button>
+          </div>
+        </div>
+
+        <div class="home-divider-label" style="margin-top:8px;">Or start a new thought</div>
+      </div>
+      <!-- end dashboard-wrap -->
+
       <div class="home-hero">
         <div class="home-tagline">Think clearer.<br><span>Decide better.</span></div>
         <div class="home-sub">Bring any decision you can't make, emotion you can't name, situation that feels stuck, or idea you want to pressure-test. ThinkOS runs it through 29 of the world's best thinking frameworks — Stoic, Socratic, Systems, Biblical, Probabilistic and more — and surfaces exactly what your own thinking is missing.</div>
@@ -2625,6 +2676,20 @@ body.on-home .fab-council { display: block; }
   </div>
 </div>
 
+    <!-- ── Insight Vault ── -->
+    <div class="tool-view" id="view-vault">
+      <div style="padding: 0 0 32px;">
+        <div class="vault-header">
+          <div class="vault-header-title">💡 Insight Vault</div>
+        </div>
+        <div class="vault-header-count" id="vault-header-count">Loading…</div>
+        <div class="vault-filters" id="vault-filters"></div>
+        <div class="vault-cards" id="vault-cards">
+          <div class="vault-empty">Loading insights…</div>
+        </div>
+      </div>
+    </div>
+
 <!-- ── Account Management Modal ── -->
 <div class="modal-overlay" id="account-modal" onclick="if(event.target===this)closeAccountModal()" style="display:none;z-index:8000;">
   <div class="modal-box" style="max-width:520px;">
@@ -3223,6 +3288,7 @@ async function onLogin(user, authEvent) {
   //    This fixes the "journal blank on refresh" bug where renderJournal() fired
   //    via switchTool() BEFORE the async profile fetch finished.
   if (currentTool === 'journal') renderJournal();
+    if (currentTool === 'home')    renderDashboard();
 
   // 7. Toast — only on session restore (page reload), not every SIGNED_IN click
   if (authEvent === 'INITIAL_SESSION' || authEvent === 'TOKEN_REFRESHED') {
@@ -3516,7 +3582,7 @@ function renderCloudHistory(cloudSessions) {
 }
 
 // ── State ──────────────────────────────────────────────────────
-let currentTool = 'rei';
+let currentTool = 'home';
 let lastResults = {};
 let socratiMessages = [];
 
@@ -3710,6 +3776,8 @@ function switchTool(tool) {
   if (tool === 'analytics') setTimeout(loadAnalytics,    50);
   if (tool === 'journal')   setTimeout(renderJournal,    50);
   if (tool === 'planner')   setTimeout(renderSavedPlans, 50);
+  if (tool === 'home')      setTimeout(renderDashboard,  80);
+  if (tool === 'vault')     setTimeout(renderVault,      50);
   // FAB only shows on home screen
   document.body.classList.toggle('on-home', tool === 'home');
   document.body.classList.remove('results-visible');
@@ -8216,6 +8284,363 @@ async function executeDeleteAccount() {
     btn.style.opacity = '1';
     if (statusEl) statusEl.textContent = 'Deletion failed. Email ThinkOS137@outlook.com and we will delete your account manually within 24 hours.';
   }
+}
+
+// ── Dashboard Utilities ──────────────────────────────────────────────────────
+
+function _getDashboardGreeting() {
+  const h = new Date().getHours();
+  const tod = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  let name = '';
+  if (_sbUser) {
+    name = _sbUser.user_metadata?.full_name || _sbUser.user_metadata?.name || '';
+    if (!name && _sbUser.email) name = _sbUser.email.split('@')[0];
+    name = name.split(' ')[0]; // first name only
+  }
+  return name ? `Good ${tod}, ${name} 👋` : `Welcome to ThinkOS 👋`;
+}
+
+function _computeStreak() {
+  const local = getSessions() || [];
+  const cloud = _journalSessions || [];
+  const idsSeen = new Set(local.map(s => String(s.id)));
+  const all = [...local];
+  cloud.forEach(s => { if (!idsSeen.has(String(s.id))) all.push(s); });
+
+  const dates = new Set(
+    all
+      .filter(s => s.created_at)
+      .map(s => new Date(s.created_at).toISOString().slice(0, 10))
+  );
+
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if (dates.has(key)) {
+      streak++;
+    } else if (i > 0) {
+      break; // allow today to be missing (haven't used it yet)
+    }
+  }
+  return streak;
+}
+
+function _computeDashboardStats() {
+  const local = getSessions() || [];
+  const cloud = _journalSessions || [];
+  const idsSeen = new Set(local.map(s => String(s.id)));
+  const all = [...local];
+  cloud.forEach(s => { if (!idsSeen.has(String(s.id))) all.push(s); });
+
+  const sessionCount = all.length;
+  const streak = _computeStreak();
+  const insightCount = (getLocalMemories() || []).length;
+  const modelsUsed = new Set(
+    all.map(s => s.tool || s.lens_id).filter(Boolean)
+  ).size;
+
+  return { sessionCount, streak, insightCount, modelsUsed };
+}
+
+// ── Daily Workout ─────────────────────────────────────────────────────────────
+
+const WORKOUT_LENSES = [
+  'inversion','first_principles','stoic','premortem','feynman',
+  'systems','regret','steelman','energy','probabilistic',
+  'secondorder','antifragile','future_self','kahneman','frankl',
+  'historical','competence','naval','mentor','virtue',
+  'memento','character','mimetic','stakeholder','legal',
+  'medical','scientist','math_teacher','therapist','strategist'
+];
+
+const WORKOUT_PROMPTS = {
+  inversion:        'What would guarantee this fails? List everything.',
+  first_principles: 'Strip every assumption. What do you know for certain?',
+  stoic:            "What's in your control here — and what must you release?",
+  premortem:        "It's 12 months from now and it failed. Why?",
+  feynman:          "Explain this like you're teaching a 12-year-old.",
+  systems:          'What feedback loops are running this situation?',
+  regret:           'From age 80, which path do you regret more?',
+  steelman:         'Build the strongest argument against your current view.',
+  energy:           'What charges you here — and what will drain you by month 3?',
+  probabilistic:    'Assign honest probabilities to the 3 most likely outcomes.',
+  secondorder:      'What happens after what happens? Think 2 steps ahead.',
+  antifragile:      'Does this make you stronger when things go wrong — or fragile?',
+  future_self:      'What does your 10-year future self want you to know right now?',
+  kahneman:         'Which cognitive bias is most distorting your view here?',
+  frankl:           'What meaning is available through this difficulty?',
+  historical:       'Who has faced this before — and what did they do?',
+  competence:       "Are you acting from genuine knowledge — or confidence that isn't earned?",
+  naval:            'What is the highest-leverage thing you could do here?',
+  mentor:           'What would the wisest version of you say right now?',
+  virtue:           'What would a person of excellent character do?',
+  memento:          'You will die. Does that change this decision?',
+  character:        "What archetype is driving you — and what's the shadow?",
+  mimetic:          'Is this your desire — or are you imitating someone?',
+  stakeholder:      'Who wins and who loses in each path?',
+  legal:            'What rights, risks, and protections are you ignoring?',
+  medical:          'What is your body telling you that your mind is ignoring?',
+  scientist:        'What is your hypothesis — and how would you test it?',
+  math_teacher:     'Define the problem precisely. What do you actually know?',
+  therapist:        'What is this situation really about — beneath the surface?',
+  strategist:       'What is the highest-leverage strategic move on this board?',
+};
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+function getTodaysWorkout() {
+  const dayIndex = Math.floor(Date.now() / 86400000); // days since Unix epoch
+  return WORKOUT_LENSES[dayIndex % WORKOUT_LENSES.length];
+}
+
+function getWorkoutStatus() {
+  return localStorage.getItem('thinkos_workout_' + getTodayKey());
+}
+
+function markWorkoutComplete(lensId) {
+  localStorage.setItem('thinkos_workout_' + getTodayKey(), lensId);
+}
+
+function startDailyWorkout() {
+  const lensId = getTodaysWorkout();
+  markWorkoutComplete(lensId);
+  // Seed thought from last session if input is empty
+  if (!getThought()) {
+    const last = (_journalSessions || getSessions() || [])[0];
+    if (last?.thought) {
+      document.getElementById('global-thought').value = last.thought;
+    }
+  }
+  launchLens(lensId);
+}
+
+// ── Render Dashboard ──────────────────────────────────────────────────────────
+
+function renderDashboard() {
+  // ── Greeting ──
+  const greetEl = document.getElementById('dashboard-greeting');
+  const streakLineEl = document.getElementById('dashboard-streak-line');
+  if (greetEl) greetEl.textContent = _getDashboardGreeting();
+
+  // ── Stats ──
+  const stats = _computeDashboardStats();
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('dashboard-stat-sessions', stats.sessionCount || 0);
+  set('dashboard-stat-streak',   stats.streak > 0 ? '🔥' + stats.streak : stats.streak);
+  set('dashboard-stat-insights', stats.insightCount || 0);
+  set('dashboard-stat-models',   stats.modelsUsed || 0);
+  if (streakLineEl) {
+    streakLineEl.textContent = stats.streak >= 2
+      ? `You've been thinking clearly for ${stats.streak} days.`
+      : 'Ready to think clearly today.';
+  }
+
+  // ── Workout card ──
+  const workoutEl = document.getElementById('dashboard-workout');
+  if (workoutEl) {
+    const lensId     = getTodaysWorkout();
+    const cfg        = getLensById(lensId) || LP_CORE_LENSES.find(l => l.id === lensId) || { id: lensId, name: lensId, icon: '🧠' };
+    const prompt     = WORKOUT_PROMPTS[lensId] || 'Apply this lens to your most pressing decision.';
+    const done       = !!getWorkoutStatus();
+    const rawThought = getThought() || ((_journalSessions || getSessions() || [])[0]?.thought || '');
+    const situation  = rawThought
+      ? `Apply it to: "${rawThought.slice(0, 60)}${rawThought.length > 60 ? '…' : ''}"`
+      : 'Apply it to your most pressing decision right now.';
+
+    if (done) {
+      workoutEl.innerHTML = `
+        <div class="dash-workout-label">⚡ TODAY'S WORKOUT</div>
+        <div class="dash-workout-done">✓ Done today &nbsp;·&nbsp; <span style="color:var(--muted)">${cfg.icon} ${cfg.name}</span></div>`;
+    } else {
+      workoutEl.innerHTML = `
+        <div class="dash-workout-label">⚡ TODAY'S WORKOUT</div>
+        <div class="dash-workout-lens">${cfg.icon} ${cfg.name}</div>
+        <div class="dash-workout-prompt">${esc(prompt)}</div>
+        <div class="dash-workout-situation">${esc(situation)}</div>
+        <button class="dash-workout-btn" onclick="startDailyWorkout()">Start workout →</button>`;
+    }
+  }
+
+  // ── Recent sessions ──
+  const recentEl = document.getElementById('dashboard-recent');
+  if (recentEl) {
+    const all = [...(_journalSessions || [])];
+    // merge local sessions not already in cloud list
+    const cloudIds = new Set(all.map(s => String(s.id)));
+    (getSessions() || []).forEach(s => { if (!cloudIds.has(String(s.id))) all.push(s); });
+    const recent = all.slice(0, 3);
+
+    if (!recent.length) {
+      recentEl.innerHTML = '<div class="dash-empty">No sessions yet. Run your first lens above.</div>';
+    } else {
+      recentEl.innerHTML = recent.map(s => {
+        const thought  = (s.thought || '').slice(0, 60);
+        const ellipsis = (s.thought || '').length > 60 ? '…' : '';
+        const time     = s.created_at ? _relativeTime(s.created_at) : '';
+        const sid      = JSON.stringify(String(s.id));
+        return `<div class="dash-session-row" onclick="dashOpenSession(${sid})">
+          <span class="dash-session-thought">${esc(thought)}${ellipsis}</span>
+          <span class="dash-session-time">${time}</span>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Last insight peek ──
+  const insightWrap = document.getElementById('dashboard-last-insight');
+  const insightText = document.getElementById('dash-insight-text');
+  const memories = getLocalMemories() || [];
+  if (insightWrap && memories.length > 0) {
+    const last = memories[0];
+    const preview = (last.takeaway || '').slice(0, 100);
+    const ellipsis = (last.takeaway || '').length > 100 ? '…' : '';
+    if (insightText) insightText.textContent = `"${preview}${ellipsis}"`;
+    insightWrap.style.display = 'block';
+  } else if (insightWrap) {
+    insightWrap.style.display = 'none';
+  }
+}
+
+function dashOpenSession(id) {
+  // Set the thought in the global input then go to journal
+  const all = [...(_journalSessions || []), ...(getSessions() || [])];
+  const session = all.find(s => String(s.id) === String(id));
+  if (session?.thought) {
+    document.getElementById('global-thought').value = session.thought;
+  }
+  switchTool('journal');
+}
+
+// ── Insight Vault ─────────────────────────────────────────────────────────────
+
+let _vaultFilter = 'all';
+
+function setVaultFilter(f) {
+  _vaultFilter = f;
+  renderVault();
+}
+
+function renderVault() {
+  const memories = getLocalMemories() || [];
+  const enrichedCount = memories.filter(m => m.insight_title).length;
+
+  // Header count
+  const countEl = document.getElementById('vault-header-count');
+  if (countEl) {
+    countEl.textContent = `${memories.length} insight${memories.length !== 1 ? 's' : ''} saved · ${enrichedCount} enriched`;
+  }
+
+  // Filter tabs
+  const filterEl = document.getElementById('vault-filters');
+  if (filterEl) {
+    const lensIds = [...new Set(memories.map(m => m.tool).filter(Boolean))];
+    filterEl.innerHTML = [
+      `<button class="vault-filter ${_vaultFilter === 'all' ? 'active' : ''}" onclick="setVaultFilter('all')">All</button>`,
+      `<button class="vault-filter ${_vaultFilter === 'enriched' ? 'active' : ''}" onclick="setVaultFilter('enriched')">Enriched ✦</button>`,
+      ...lensIds.map(id => {
+        const cfg = getLensById(id) || LP_CORE_LENSES.find(l => l.id === id) || { icon: '🔭', name: id };
+        return `<button class="vault-filter ${_vaultFilter === id ? 'active' : ''}" onclick="setVaultFilter('${id}')">${cfg.icon} ${cfg.name}</button>`;
+      })
+    ].join('');
+  }
+
+  // Filter memories
+  let filtered = memories;
+  if (_vaultFilter === 'enriched') {
+    filtered = memories.filter(m => m.insight_title);
+  } else if (_vaultFilter !== 'all') {
+    filtered = memories.filter(m => m.tool === _vaultFilter);
+  }
+
+  // Cards
+  const cardsEl = document.getElementById('vault-cards');
+  if (!cardsEl) return;
+
+  if (!filtered.length) {
+    cardsEl.innerHTML = `<div class="vault-empty">${
+      memories.length === 0
+        ? 'No insights yet. Run a lens and save your takeaway to start building your vault.'
+        : 'No insights match this filter.'
+    }</div>`;
+    return;
+  }
+
+  cardsEl.innerHTML = filtered.map(m => _renderVaultCard(m)).join('');
+}
+
+function _renderVaultCard(m) {
+  const cfg  = getLensById(m.tool) || LP_CORE_LENSES.find(l => l.id === m.tool) || { icon: '🔭', name: m.tool || 'Lens' };
+  const date = m.created_at ? _relativeTime(m.created_at) : '';
+  const id   = String(m.id);
+
+  if (m.insight_title) {
+    return `<div class="vault-card enriched" id="vault-card-${id}">
+      <div class="vault-card-star">✦</div>
+      <div class="vault-card-meta">${cfg.icon} ${cfg.name} · ${date}</div>
+      <div class="vault-card-title">${esc(m.insight_title)}</div>
+      <div class="vault-card-takeaway">${esc(m.takeaway || '')}</div>
+      ${m.next_action ? `<div class="vault-card-action"><span class="vault-action-label">Next Action</span>${esc(m.next_action)}</div>` : ''}
+    </div>`;
+  }
+
+  return `<div class="vault-card" id="vault-card-${id}">
+    <div class="vault-card-meta">${cfg.icon} ${cfg.name} · ${date}</div>
+    <div class="vault-card-takeaway">${esc(m.takeaway || '')}</div>
+    <button class="vault-enrich-btn" onclick="openEnrichForm('${id}')">+ Enrich →</button>
+    <div class="vault-enrich-form" id="vault-enrich-form-${id}" style="display:none;">
+      <input class="vault-enrich-input" id="vault-title-${id}" placeholder="Title for this insight…" />
+      <input class="vault-enrich-input" id="vault-action-${id}" placeholder="Next action (optional)…" />
+      <button class="vault-save-btn" onclick="saveEnrichment('${id}')">Save insight ✓</button>
+    </div>
+  </div>`;
+}
+
+function openEnrichForm(id) {
+  const form = document.getElementById(`vault-enrich-form-${id}`);
+  if (!form) return;
+  const isOpen = form.style.display !== 'none';
+  form.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    document.getElementById(`vault-title-${id}`)?.focus();
+  }
+}
+
+async function saveEnrichment(id) {
+  const titleEl  = document.getElementById(`vault-title-${id}`);
+  const actionEl = document.getElementById(`vault-action-${id}`);
+  const title    = titleEl?.value?.trim() || '';
+  const action   = actionEl?.value?.trim() || '';
+
+  if (!title) { showToast('Add a title first'); return; }
+
+  // 1. Update localStorage
+  const memories = getLocalMemories();
+  const idx = memories.findIndex(m => String(m.id) === String(id));
+  if (idx !== -1) {
+    memories[idx].insight_title = title;
+    memories[idx].next_action   = action;
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(memories));
+  }
+
+  // 2. Update Supabase if logged in
+  if (_sbUser) {
+    const numId = parseInt(id, 10);
+    if (!isNaN(numId)) {
+      await _sb.from('memories')
+        .update({ insight_title: title, next_action: action })
+        .eq('id', numId)
+        .eq('user_id', _sbUser.id)
+        .catch(e => console.warn('Vault enrichment sync failed:', e));
+    }
+  }
+
+  showToast('✦ Insight enriched!', 2000);
+  renderVault();
 }
 
 // ── ThinkOS Companion ────────────────────────────────────────────────────────
