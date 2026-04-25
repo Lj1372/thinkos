@@ -1555,6 +1555,70 @@ body.on-home .fab-council { display: block; }
 .fab-feedback:hover { color: var(--text); border-color: var(--ladder); }
 @media(max-width:640px) { .fab-feedback { bottom: 72px; right: 14px; padding: 9px 13px; font-size: 12px; } }
 
+/* ── Personal Dashboard ── */
+.dashboard-wrap { padding: 0 0 24px; }
+.dashboard-greeting { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 4px; line-height: 1.2; }
+.dashboard-streak-line { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.dashboard-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.dash-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 10px; text-align: center; }
+.dash-stat-value { font-size: 22px; font-weight: 800; color: var(--text); line-height: 1; margin-bottom: 4px; }
+.dash-stat-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+@media(max-width:480px) { .dashboard-stats { grid-template-columns: repeat(2, 1fr); } }
+
+/* Daily Workout Card */
+.dash-workout { background: linear-gradient(135deg, rgba(124,58,237,.15), rgba(167,139,250,.08)); border: 1px solid rgba(167,139,250,.35); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+.dash-workout-label { font-size: 10px; font-weight: 800; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.dash-workout-lens { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.dash-workout-prompt { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
+.dash-workout-situation { font-size: 12px; color: var(--muted); font-style: italic; margin-bottom: 12px; }
+.dash-workout-btn { background: #7c3aed; border: none; color: #fff; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+.dash-workout-btn:hover { opacity: .85; }
+.dash-workout-done { font-size: 13px; color: var(--muted); }
+
+/* Recent Sessions on Dashboard */
+.dash-section-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.dash-section { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+.dash-session-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: color .15s; gap: 8px; }
+.dash-session-row:last-child { border-bottom: none; padding-bottom: 0; }
+.dash-session-row:hover .dash-session-thought { color: var(--text); }
+.dash-session-thought { font-size: 13px; color: #aaa; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-session-time { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.dash-empty { font-size: 12px; color: var(--muted); font-style: italic; }
+
+/* Last Insight Peek */
+.dash-insight-text { font-size: 13px; color: #aaa; font-style: italic; line-height: 1.5; margin-bottom: 8px; }
+.dash-insight-vault-link { background: none; border: none; color: #a78bfa; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; }
+.dash-insight-vault-link:hover { text-decoration: underline; }
+
+/* ── Insight Vault ── */
+.vault-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.vault-header-title { font-size: 20px; font-weight: 800; }
+.vault-header-count { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.vault-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.vault-filter { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 6px 12px; font-size: 12px; color: var(--muted); cursor: pointer; transition: border-color .15s, color .15s; }
+.vault-filter:hover { border-color: #a78bfa; color: #a78bfa; }
+.vault-filter.active { background: rgba(167,139,250,.15); border-color: #a78bfa; color: #a78bfa; font-weight: 700; }
+.vault-cards { display: flex; flex-direction: column; gap: 12px; }
+.vault-empty { font-size: 13px; color: var(--muted); font-style: italic; padding: 24px 0; text-align: center; }
+
+/* Vault card — unenriched */
+.vault-card { background: var(--surface2); border: 1px dashed rgba(167,139,250,.4); border-radius: 14px; padding: 16px; position: relative; }
+/* Vault card — enriched */
+.vault-card.enriched { border-style: solid; border-color: rgba(167,139,250,.6); box-shadow: 0 0 20px rgba(167,139,250,.08); }
+.vault-card-star { position: absolute; top: 12px; right: 14px; color: #f59e0b; font-size: 16px; }
+.vault-card-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.vault-card-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; padding-right: 24px; }
+.vault-card-takeaway { font-size: 13px; color: #aaa; line-height: 1.6; border-left: 2px solid var(--border); padding-left: 10px; margin-bottom: 10px; }
+.vault-card-action { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.2); border-radius: 8px; padding: 8px 12px; margin-top: 8px; }
+.vault-action-label { display: block; font-size: 9px; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.vault-enrich-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 12px; color: var(--muted); cursor: pointer; margin-top: 6px; transition: border-color .15s, color .15s; }
+.vault-enrich-btn:hover { border-color: #a78bfa; color: #a78bfa; }
+.vault-enrich-form { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.vault-enrich-input { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--text); outline: none; font-family: inherit; }
+.vault-enrich-input:focus { border-color: #7c3aed; }
+.vault-save-btn { background: #7c3aed; border: none; color: #fff; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; align-self: flex-start; }
+.vault-save-btn:hover { opacity: .85; }
+
 /* ── ThinkOS Companion ── */
 .companion-fab { position:fixed; bottom:24px; left:24px; width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#7c3aed,#a78bfa); border:none; color:#fff; font-size:22px; cursor:pointer; z-index:300; box-shadow:0 4px 24px rgba(124,58,237,.45); display:flex; align-items:center; justify-content:center; transition:transform .2s,box-shadow .2s; }
 .companion-fab:hover { transform:scale(1.1); box-shadow:0 6px 30px rgba(124,58,237,.6); }
