@@ -6521,6 +6521,7 @@ async function submitLens() {
     trackUseAndMaybeCapture('lens');
     injectContinueBar('lens-results', _activeLens?.id || 'lens');
     injectPostCouncilActions('lens-results', _activeLens || 'lens');
+    injectReflectButton('lens-results', _activeLens || 'lens');
   } catch(e) {
     alert('Error: ' + e.message);
   } finally {
@@ -8809,6 +8810,75 @@ function skipIntake(lensId) {
   _intakeSubmitting = true;
   submitLens();
   _intakeSubmitting = false;
+}
+
+function injectReflectButton(containerId, lensId) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.querySelector('.reflect-wrap')?.remove();
+
+  const div = document.createElement('div');
+  div.className = 'reflect-wrap';
+  div.innerHTML = `<button class="reflect-btn" onclick="showReflection('${lensId}')">✦ Reflect on this →</button>`;
+  wrap.appendChild(div);
+}
+
+function showReflection(lensId) {
+  const wrap = document.querySelector('.reflect-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <div class="reflection-form">
+      <div class="reflection-form-title">✦ Turn this insight into action</div>
+      <label class="reflection-label">What surprised you most?</label>
+      <input class="reflection-input" id="reflection-title" placeholder="e.g. I hadn't considered the opportunity cost…" />
+      <label class="reflection-label">What will you do this week?</label>
+      <input class="reflection-input" id="reflection-action" placeholder="e.g. Have an honest conversation with my manager…" />
+      <button class="reflection-save-btn" onclick="saveReflection('${lensId}')">Save to Vault →</button>
+    </div>
+  `;
+  setTimeout(() => document.getElementById('reflection-title')?.focus(), 100);
+}
+
+function saveReflection(lensId) {
+  const title  = document.getElementById('reflection-title')?.value?.trim()  || '';
+  const action = document.getElementById('reflection-action')?.value?.trim() || '';
+  if (!title) { showToast('Add a title first'); return; }
+
+  const thought    = getThought();
+  const lastResult = window._lastLensResult;
+  const takeaway   = (lastResult?.result?.synthesis || lastResult?.result?.action || '').slice(0, 200) || title;
+
+  const mem = {
+    id:            Date.now().toString(),
+    thought:       thought.slice(0, 200),
+    takeaway:      takeaway,
+    tool:          lensId,
+    insight_title: title,
+    next_action:   action || null,
+    created_at:    new Date().toISOString()
+  };
+
+  // Save to localStorage
+  const all = getLocalMemories();
+  all.unshift(mem);
+  if (all.length > MEMORY_MAX) all.splice(MEMORY_MAX);
+  localStorage.setItem(MEMORY_KEY, JSON.stringify(all));
+
+  // Sync to Supabase if logged in
+  if (_sbUser) {
+    _sb.from('memories').insert({
+      user_id:       _sbUser.id,
+      thought:       mem.thought,
+      takeaway:      mem.takeaway,
+      tool:          mem.tool,
+      created_at:    mem.created_at,
+      insight_title: title,
+      next_action:   action || null
+    }).catch(e => console.warn('Reflection sync failed:', e));
+  }
+
+  showToast('✦ Insight saved to Vault');
+  showClarityRating(lensId);
 }
 
 // ── ThinkOS Companion ────────────────────────────────────────────────────────
