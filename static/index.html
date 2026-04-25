@@ -8681,6 +8681,53 @@ async function saveEnrichment(id) {
   renderVault();
 }
 
+// ── Applied Mental Model Flow ─────────────────────────────────────────────────
+
+const LENS_INTAKE = {
+  inversion: [
+    { id: 'outcome',     label: 'What outcome do you want?',                         placeholder: 'e.g. Feel confident I made the right call…' },
+    { id: 'fear',        label: "What's your biggest fear about this?",               placeholder: "e.g. That I'm making this up to escape…" }
+  ],
+  first_principles: [
+    { id: 'wisdom',      label: "What's the conventional wisdom you've been following?", placeholder: 'e.g. You need 2 years of savings before leaving…' },
+    { id: 'constraints', label: 'What constraints feel non-negotiable?',              placeholder: 'e.g. Family, mortgage, health insurance…' }
+  ],
+  stoic: [
+    { id: 'worry',       label: "What's worrying you most?",                          placeholder: 'e.g. Making the wrong call and regretting it…' },
+    { id: 'ideal',       label: "What's your ideal outcome?",                         placeholder: 'e.g. Peace of mind whatever I decide…' }
+  ],
+  premortem: [
+    { id: 'plan',        label: "What's the plan you're stress-testing?",             placeholder: 'e.g. Leaving my job in 3 months…' },
+    { id: 'deadline',    label: 'When do you need to decide?',                        placeholder: 'e.g. End of this month…' }
+  ],
+  feynman: [
+    { id: 'concept',     label: "What are you trying to understand?",                 placeholder: 'e.g. Why I keep procrastinating on this…' },
+    { id: 'gap',         label: 'Where does your explanation break down?',            placeholder: 'e.g. I can explain it to myself but not to others…' }
+  ],
+  systems: [
+    { id: 'system',      label: "What system are you operating in?",                  placeholder: 'e.g. A corporate job with a risk-averse culture…' },
+    { id: 'change',      label: "What's changed recently that's causing problems?",   placeholder: 'e.g. New manager, restructure, shifted priorities…' }
+  ],
+  steelman: [
+    { id: 'view',        label: "What's your current view?",                          placeholder: "e.g. I should leave because I'm undervalued…" },
+    { id: 'opponent',    label: "Who's most likely to disagree with you?",            placeholder: 'e.g. My partner, my manager, my risk-averse self…' }
+  ],
+  regret: [
+    { id: 'paths',       label: "What are the two paths?",                            placeholder: 'e.g. Stay for another year vs leave now…' },
+    { id: 'timeframe',   label: "Are you thinking 1 year or 10 years out?",           placeholder: 'e.g. 10 years — I want to look back with no regrets…' }
+  ],
+  secondorder: [
+    { id: 'decision',    label: "What decision are you about to make?",               placeholder: 'e.g. Accept the offer and give notice…' },
+    { id: 'timeline',    label: "What's your timeline?",                              placeholder: 'e.g. Need to decide by Friday…' }
+  ],
+  future_self: [
+    { id: 'stuck',       label: "What are you stuck on?",                             placeholder: 'e.g. Whether to bet on myself or play it safe…' },
+    { id: 'horizon',     label: "1 year or 10 years — which timeframe matters most?", placeholder: 'e.g. 10 years — short term pain is acceptable…' }
+  ]
+};
+
+let _intakeSubmitting = false;
+
 // ── ThinkOS Companion ────────────────────────────────────────────────────────
 
 let _companionHistory  = [];
