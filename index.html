@@ -2269,7 +2269,10 @@
       question: "",
       prompts: [],
       stage: "Guided chat",
-      status: "The companion should feel like a calm conversation: what it is noticing, what matters most, and the next question to answer."
+      status: "The companion should feel like a calm conversation: what it is noticing, what matters most, and the next question to answer.",
+      lastQuestion: "",
+      lastFocus: "",
+      turnCount: 0
     };
 
     state.cloud = {
@@ -2410,6 +2413,149 @@
       };
     }
 
+    function tokenizeCoachText(value) {
+      return (value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter((word) => word.length > 3);
+    }
+
+    function didUserAddressQuestion(reply, stateQuestion, stateFocus) {
+      const replyTokens = new Set(tokenizeCoachText(reply));
+      const targetTokens = [...new Set([
+        ...tokenizeCoachText(stateQuestion),
+        ...tokenizeCoachText(stateFocus)
+      ])].slice(0, 12);
+      if (!targetTokens.length) return replyTokens.size > 3;
+      const overlap = targetTokens.filter((token) => replyTokens.has(token)).length;
+      const directMarkers = /(because|actually|truth|really|part of me|i want|i feel|the issue|the problem|the fear|the decision)/i.test(reply || "");
+      const partialTopicMarkers = /(reason|emotion|instinct|fear|risk|consequence|boundary|truth|desire|stability|people|approval|money)/i.test(reply || "");
+      return overlap >= 1 || directMarkers || partialTopicMarkers;
+    }
+
+    function nextCoachFollowUp(reply, input, need, edge, comboNames) {
+      const addressed = didUserAddressQuestion(reply, state.coach.lastQuestion, state.coach.lastFocus);
+      const text = (reply || "").toLowerCase();
+      const stage = coachStageForInput(input, need);
+
+      if (!addressed) {
+        if (/reason|emotion|instinct/.test((state.coach.lastQuestion || "").toLowerCase()) && /(fear|afraid|stability|safe|people|approval|money|want|truth)/i.test(reply || "")) {
+          return {
+            message: buildGuideMessage(
+              "Clarify",
+              "You gave one live channel clearly, which is useful.",
+              "Instead of restarting, let’s complete the picture by mapping the other missing channels around that same issue.",
+              "You named one part already. Now what does reason say, and what does emotion say, about that same fear?"
+            ),
+            prompts: [
+              "Reason says...",
+              "Emotion says...",
+              "Instinct says..."
+            ],
+            meta: "The companion is accepting a partial answer and helping complete the map instead of repeating itself."
+          };
+        }
+        return {
+          message: buildGuideMessage(
+            "Clarify",
+            "You may have added signal, but the heart of the question still feels slightly untouched.",
+            "Before we branch wider, it would help to answer the live question more directly so we are not skipping the key tension.",
+            state.coach.lastQuestion || "What feels most true here?"
+          ),
+          prompts: [
+            "The most honest answer is...",
+            "What I was avoiding saying is...",
+            "The real tension is..."
+          ],
+          meta: "The companion is slowing the conversation down so the core issue does not get blurred."
+        };
+      }
+
+      if (/afraid|fear|scared|unsafe/.test(text)) {
+        return {
+          message: buildGuideMessage(
+            "Fear",
+            "You answered the question, and fear still seems central.",
+            `Using ${comboNames || "the current lens mix"}, the next move is to separate realistic danger from protective imagination.`,
+            "What is the most realistic consequence you are afraid of, and what would you do if it happened?"
+          ),
+          prompts: [
+            "The realistic consequence is...",
+            "If that happened, I would...",
+            "What fear is exaggerating is..."
+          ],
+          meta: "Now the companion is moving from naming fear into reality-testing it."
+        };
+      }
+
+      if (/want|desire|wish|longing|truer/.test(text)) {
+        return {
+          message: buildGuideMessage(
+            stage,
+            "Your answer gave a clearer signal about desire.",
+            "That usually means the next job is not more analysis, but checking whether the desire is aligned, costly, and worth acting on.",
+            "If you honored that desire in a grounded way, what would the smallest honest move be?"
+          ),
+          prompts: [
+            "The smallest honest move is...",
+            "What makes this grounded is...",
+            "What stops me from doing it is..."
+          ],
+          meta: "The companion is turning insight into a small next move."
+        };
+      }
+
+      if (/they|them|partner|friend|family|boss|team/.test(text) || input.arena === "relationships") {
+        return {
+          message: buildGuideMessage(
+            "Relationship",
+            "Your reply points strongly toward a people dynamic, not just an internal debate.",
+            "The next layer is usually truth, boundary, expectation, or a conversation that has not been faced cleanly yet.",
+            "What is the clearest sentence you may need to say to the other person, even if you say it gently?"
+          ),
+          prompts: [
+            "The sentence I may need to say is...",
+            "The boundary underneath this is...",
+            "What I hope they understand is..."
+          ],
+          meta: "The companion is moving from internal processing toward relational clarity."
+        };
+      }
+
+      if (edge === "Decisiveness" || /decide|choice|whether|stay|leave|move/.test(text + " " + input.situation)) {
+        return {
+          message: buildGuideMessage(
+            "Decision",
+            "You answered the main question with more clarity.",
+            `Through ${comboNames || "these lenses"}, the conversation is now ready to narrow toward decision design instead of more open reflection.`,
+            "What is the next step that would reduce uncertainty the fastest without requiring you to commit to the whole future today?"
+          ),
+          prompts: [
+            "The next evidence-gathering step is...",
+            "What I could test this week is...",
+            "The commitment I am not ready for yet is..."
+          ],
+          meta: "The companion is now guiding toward a lower-drama, higher-learning decision path."
+        };
+      }
+
+      return {
+        message: buildGuideMessage(
+          stage,
+          "That answer moved the conversation forward.",
+          "The next layer is to convert what is true into something testable, sayable, or actionable so the insight does not stay abstract.",
+          "Given what now feels most true, what would a grounded next move look like in the next 48 hours?"
+        ),
+        prompts: [
+          "In the next 48 hours I could...",
+          "The honest next move is...",
+          "What would make this grounded is..."
+        ],
+        meta: "The companion is shifting from understanding into movement."
+      };
+    }
+
     function renderIdleLensSuite() {
       lensFilters.innerHTML = lensCategories.map((category) => `
         <button class="lens-filter ${state.lensCategory === category ? "active" : ""} ${category === "all" ? "recommended" : ""}" data-category="${category}" type="button">${capitalize(category)}</button>
@@ -2514,6 +2660,9 @@
       state.coach.stage = "Start";
       state.coach.status = "Start with what is real. The companion will then narrow the issue, reflect what matters, and guide the next move.";
       state.coach.meta = "The companion becomes contextual once you give it something real to work with.";
+      state.coach.lastQuestion = state.coach.question;
+      state.coach.lastFocus = "Start with the real situation, what feels hard about it, or the decision you are trying to make.";
+      state.coach.turnCount = 0;
       renderCoach();
       renderIdleLensSuite();
       renderIdleExecutionPlan();
@@ -4677,6 +4826,8 @@
       if (!state.coach.messages.length || changed) {
         state.coach.messages = [structuredOpening];
       }
+      state.coach.lastQuestion = coachState.question;
+      state.coach.lastFocus = structuredOpening.focus || "";
 
       renderCoach();
     }
@@ -4688,8 +4839,18 @@
       const input = getCurrentInput();
       const need = inferCoreNeed(input);
       const edge = inferGrowthEdge(input);
+      const comboNames = currentRecommendedCombo(input).lenses.map((lens) => lens.title).join(", ");
+      const followUp = nextCoachFollowUp(text, input, need, edge, comboNames);
       state.coach.messages.push(buildUserMessage(text));
-      state.coach.messages.push(buildCoachReply(text, input, need, edge));
+      state.coach.messages.push(followUp.message);
+      state.coach.question = followUp.message.question || state.coach.question;
+      state.coach.prompts = followUp.prompts || state.coach.prompts;
+      state.coach.meta = followUp.meta || state.coach.meta;
+      state.coach.stage = followUp.message.stage || state.coach.stage;
+      state.coach.status = followUp.message.focus || state.coach.status;
+      state.coach.lastQuestion = followUp.message.question || state.coach.lastQuestion;
+      state.coach.lastFocus = followUp.message.focus || state.coach.lastFocus;
+      state.coach.turnCount = (state.coach.turnCount || 0) + 1;
       coachInput.value = "";
       renderCoach();
       awardXp(10);
