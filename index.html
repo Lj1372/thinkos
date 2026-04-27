@@ -1,0 +1,4127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1422">
+  <link rel="manifest" href="manifest.webmanifest">
+  <script src="app-config.js"></script>
+  <title>Compass OS</title>
+  <style>
+    :root {
+      --bg: #0b1422;
+      --bg-soft: #11223a;
+      --panel: rgba(13, 24, 42, 0.78);
+      --panel-strong: rgba(12, 22, 38, 0.92);
+      --card: rgba(255, 255, 255, 0.05);
+      --line: rgba(161, 199, 255, 0.14);
+      --text: #eff5ff;
+      --muted: #9db0c8;
+      --teal: #5ddcc6;
+      --gold: #f6c26b;
+      --rose: #ff8a7a;
+      --sky: #77baff;
+      --violet: #b59cff;
+      --shadow: 0 22px 70px rgba(0, 0, 0, 0.35);
+      --radius: 28px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: Georgia, "Times New Roman", serif;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(93, 220, 198, 0.12), transparent 28%),
+        radial-gradient(circle at 88% 16%, rgba(246, 194, 107, 0.12), transparent 24%),
+        radial-gradient(circle at 84% 88%, rgba(119, 186, 255, 0.1), transparent 24%),
+        linear-gradient(165deg, #07111d 0%, #0b1422 48%, #0f1930 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 96%);
+    }
+
+    .wrap {
+      width: min(1240px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 64px;
+    }
+
+    .topbar,
+    .panel,
+    .card,
+    .lens-card,
+    .memory-item,
+    .badge,
+    .quest,
+    .plan-step {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar {
+      border-radius: 999px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), var(--sky));
+      box-shadow: 0 0 0 8px rgba(93, 220, 198, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .brand-title {
+      font-size: 0.96rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #d8e7ff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .panel {
+      border-radius: var(--radius);
+      padding: 28px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+
+    .panel-head-copy {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .panel-head-copy .section-title {
+      margin-top: 14px;
+    }
+
+    .panel-toggle {
+      flex: 0 0 auto;
+      min-width: 54px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.09);
+    }
+
+    .panel-toggle span {
+      display: inline-block;
+      transition: transform 180ms ease;
+    }
+
+    .panel[data-collapsed="true"] .panel-toggle span {
+      transform: rotate(-90deg);
+    }
+
+    .panel-body {
+      display: grid;
+      gap: 0;
+    }
+
+    .panel[data-collapsed="true"] .panel-body {
+      display: none;
+    }
+
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(246, 194, 107, 0.24), transparent 68%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(93, 220, 198, 0.08);
+      color: var(--teal);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      margin-top: 18px;
+      max-width: 8ch;
+      font-size: clamp(3.1rem, 6.8vw, 6rem);
+      line-height: 0.92;
+      letter-spacing: -0.05em;
+      position: relative;
+      z-index: 1;
+    }
+
+    .accent {
+      color: var(--gold);
+      font-style: italic;
+    }
+
+    .lede {
+      margin-top: 20px;
+      max-width: 60ch;
+      color: #d4e0ef;
+      font-size: clamp(1.05rem, 1.9vw, 1.18rem);
+      line-height: 1.68;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    button,
+    select,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #1e8c83, #0f5f64);
+      color: #f8fffe;
+      box-shadow: 0 16px 32px rgba(15, 118, 110, 0.25);
+    }
+
+    .secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    .sidebar-stack {
+      display: grid;
+      gap: 16px;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      border-radius: 24px;
+      padding: 18px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      margin-top: 8px;
+      font-size: 1.85rem;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .stat-copy {
+      margin-top: 8px;
+      color: #d8e3f1;
+      line-height: 1.56;
+      font-size: 0.96rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    .section-title {
+      margin-top: 14px;
+      font-size: clamp(1.85rem, 3vw, 2.6rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .section-copy {
+      margin-top: 12px;
+      color: #cad8e8;
+      line-height: 1.7;
+      max-width: 64ch;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      color: #d8e7f8;
+      font-size: 0.95rem;
+    }
+
+    .field-label {
+      color: #cad7e7;
+      font-size: 0.84rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    textarea,
+    input,
+    select {
+      width: 100%;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      padding: 15px 16px;
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    textarea {
+      min-height: 160px;
+      resize: vertical;
+      line-height: 1.58;
+    }
+
+    textarea:focus,
+    input:focus,
+    select:focus,
+    button:focus {
+      outline: 2px solid rgba(119, 186, 255, 0.24);
+      outline-offset: 3px;
+    }
+
+    .range-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    input[type="range"] {
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .range-meta {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .feelings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: #dbe7f7;
+      cursor: pointer;
+      transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+    }
+
+    .chip.active,
+    .chip:hover {
+      transform: translateY(-2px);
+      background: rgba(93, 220, 198, 0.14);
+      border-color: rgba(93, 220, 198, 0.3);
+      color: white;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .results-stack,
+    .right-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .companion-voice {
+      font-size: 1.16rem;
+      line-height: 1.72;
+      color: #edf4ff;
+      margin-top: 18px;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 0.94rem;
+      margin-top: 10px;
+      line-height: 1.58;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .badge-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .badge {
+      border-radius: 18px;
+      padding: 12px 14px;
+      min-width: 130px;
+    }
+
+    .badge strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .badge span {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .lens-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .lens-card {
+      border-radius: 24px;
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+    }
+
+    .lens-card h3 {
+      font-size: 1.04rem;
+      margin-bottom: 8px;
+    }
+
+    .lens-card p {
+      color: #d5e1f0;
+      line-height: 1.62;
+    }
+
+    .lens-card small {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .lens-suite {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 16px;
+      margin-top: 20px;
+      align-items: start;
+    }
+
+    .lens-library {
+      display: grid;
+      gap: 10px;
+      max-height: 720px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .lens-controls {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .lens-suggestions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .suggestion-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .suggestion-card {
+      border-radius: 18px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #dbe7f6;
+    }
+
+    .suggestion-card strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .combo-card {
+      border-radius: 18px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #dbe7f6;
+    }
+
+    .combo-card p {
+      margin-top: 6px;
+      color: #d2dff0;
+      line-height: 1.55;
+    }
+
+    .lens-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .lens-filter {
+      border-radius: 999px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .lens-filter.active {
+      background: rgba(246, 194, 107, 0.14);
+      border-color: rgba(246, 194, 107, 0.28);
+    }
+
+    .lens-tile {
+      border-radius: 20px;
+      padding: 14px 15px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
+      transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+      text-align: left;
+      color: var(--text);
+    }
+
+    .lens-tile:hover,
+    .lens-tile.active {
+      transform: translateY(-2px);
+      background: rgba(119, 186, 255, 0.12);
+      border-color: rgba(119, 186, 255, 0.26);
+    }
+
+    .lens-tile strong {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+      font-size: 1rem;
+    }
+
+    .lens-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(246,194,107,0.22), rgba(119,186,255,0.18));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+      font-size: 1rem;
+    }
+
+    .lens-tile span {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .lens-tile small {
+      display: inline-block;
+      margin-top: 8px;
+      color: #dce8f8;
+      font-size: 0.82rem;
+      opacity: 0.88;
+    }
+
+    .lens-detail {
+      border-radius: 24px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      min-height: 100%;
+    }
+
+    .compare-shell {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .compare-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .compare-card {
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .compare-card h4 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .compare-card p,
+    .compare-card li {
+      color: #d8e3f2;
+      line-height: 1.55;
+    }
+
+    .compare-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .lens-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .lens-meta span {
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .lens-blocks {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .lens-block {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .lens-block strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .lens-block p,
+    .lens-block li {
+      color: #d7e4f4;
+      line-height: 1.6;
+    }
+
+    .lens-block ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .scripture-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .scripture-item {
+      border-left: 3px solid rgba(246, 194, 107, 0.7);
+      padding-left: 12px;
+      color: #dae7f8;
+    }
+
+    .progress-shell {
+      margin-top: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, var(--teal), var(--gold));
+      transition: width 180ms ease;
+    }
+
+    .plan-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .plan-toolbar .subtle {
+      margin-top: 0;
+    }
+
+    .plan-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .plan-step {
+      border-radius: 20px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .plan-step .index {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--gold), var(--rose));
+      color: #241300;
+      font-weight: 700;
+    }
+
+    .plan-step strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 1rem;
+    }
+
+    .plan-step p {
+      color: #d2dfef;
+      line-height: 1.58;
+    }
+
+    .step-howto {
+      margin: 10px 0 0;
+      padding-left: 20px;
+      color: #deebfa;
+    }
+
+    .step-howto li {
+      margin-bottom: 6px;
+      line-height: 1.52;
+    }
+
+    .plan-step textarea {
+      min-height: 88px;
+      margin-top: 10px;
+      border-radius: 16px;
+    }
+
+    .step-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .step-chip {
+      border-radius: 999px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .step-chip.active {
+      background: rgba(93, 220, 198, 0.16);
+      border-color: rgba(93, 220, 198, 0.3);
+    }
+
+    .plan-adder {
+      display: grid;
+      grid-template-columns: 1fr 170px 150px auto;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .plan-adder input {
+      height: 52px;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .history-item {
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      color: #d7e4f2;
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+
+    .journal-form {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .custom-lens-form,
+    .life-plan-form {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .milestone-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .milestone-item {
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      display: grid;
+      gap: 8px;
+    }
+
+    .milestone-item-top {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .journal-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+      max-height: 360px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .journal-item {
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .journal-item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .journal-item p {
+      color: #d6e2f1;
+      line-height: 1.55;
+      margin-bottom: 8px;
+    }
+
+    .section-divider {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .feedback-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      align-items: center;
+    }
+
+    .feedback-pill {
+      border-radius: 999px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #dce7f7;
+      cursor: pointer;
+    }
+
+    .feedback-pill.active {
+      background: rgba(93, 220, 198, 0.16);
+      border-color: rgba(93, 220, 198, 0.28);
+    }
+
+    .quest-board {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .quest {
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .quest strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .quest span {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .memory-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .memory-item {
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .memory-top,
+    .journal-top {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .memory-actions,
+    .journal-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .mini-btn {
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.09);
+    }
+
+    .memory-item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .memory-item p {
+      color: #d7e4f4;
+      line-height: 1.56;
+      margin-bottom: 8px;
+    }
+
+    .memory-item small {
+      color: var(--muted);
+    }
+
+    .empty {
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .coach-shell {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .coach-thread {
+      display: grid;
+      gap: 10px;
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .coach-msg {
+      border-radius: 22px;
+      padding: 15px 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      line-height: 1.62;
+    }
+
+    .coach-msg.ai {
+      background: linear-gradient(180deg, rgba(119, 186, 255, 0.12), rgba(255,255,255,0.04));
+    }
+
+    .coach-msg.user {
+      background: linear-gradient(180deg, rgba(93, 220, 198, 0.12), rgba(255,255,255,0.03));
+    }
+
+    .coach-msg strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #dce8f8;
+    }
+
+    .coach-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .coach-input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+    }
+
+    .coach-microcopy {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .sync-shell {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .sync-status {
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #dce8f8;
+      line-height: 1.55;
+    }
+
+    .link-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .link-row a {
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    .fade-up {
+      opacity: 0;
+      transform: translateY(18px);
+      animation: rise 700ms ease forwards;
+    }
+
+    .delay-1 { animation-delay: 110ms; }
+    .delay-2 { animation-delay: 220ms; }
+    .delay-3 { animation-delay: 330ms; }
+    .delay-4 { animation-delay: 440ms; }
+
+    @keyframes rise {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .wrap {
+        width: min(100% - 18px, 1240px);
+      }
+
+      .topbar {
+        border-radius: 24px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .mini-grid,
+      .grid-2,
+      .result-grid,
+      .lens-grid,
+      .lens-suite,
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar fade-up">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <div class="brand-title">Compass OS / gamified second brain with emotional intelligence</div>
+      </div>
+      <div class="top-meta">
+        <span class="pill" id="liveNow">Loading local time...</span>
+        <span class="pill" id="levelPill">Level 1 / 0 XP</span>
+        <span class="pill" id="streakPill">0 day streak</span>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div class="panel hero-panel fade-up delay-1">
+        <div class="eyebrow">✨ Adaptive Life App</div>
+        <h1>Your <span class="accent">thinking companion</span> for decisions, emotions, and growth.</h1>
+        <p class="lede">
+          This is designed like a life operating system: you bring a situation, feeling, or decision, and it responds with
+          emotional reflection, blind-spot detection, multiple mental-model lenses, a synthesized point of view, and a concrete
+          action plan. The more you use it, the more its memory starts reflecting your recurring patterns back to you.
+        </p>
+        <div class="hero-actions">
+          <button class="primary" id="startReflection" type="button">Start a reflection</button>
+          <button class="secondary" id="loadDemo" type="button">Load a meaningful example</button>
+        </div>
+      </div>
+
+      <div class="sidebar-stack">
+        <div class="panel fade-up delay-2" data-collapsible data-section="player-state">
+          <div class="eyebrow">🎮 Player State</div>
+          <h2 class="section-title">Growth engine</h2>
+          <div class="badge-grid">
+            <div class="badge">
+              <strong id="xpValue">0 XP</strong>
+              <span>earned by reflective reps</span>
+            </div>
+            <div class="badge">
+              <strong id="streakValue">0 days</strong>
+              <span>consistency streak</span>
+            </div>
+            <div class="badge">
+              <strong id="memoryValue">0 entries</strong>
+              <span>stored reflections</span>
+            </div>
+          </div>
+          <p class="subtle" id="adaptiveSummary">
+            Right now the system knows almost nothing about you. With repeated use, it will start surfacing your pressure patterns,
+            decision style, emotional triggers, and common blind spots.
+          </p>
+        </div>
+
+        <div class="mini-grid fade-up delay-3">
+          <div class="card">
+            <div class="stat-label">Primary mode</div>
+            <div class="stat-value" id="modeChip">Calibrating</div>
+            <p class="stat-copy">This updates based on the shape of your current reflection.</p>
+          </div>
+          <div class="card">
+            <div class="stat-label">Dominant need</div>
+            <div class="stat-value" id="needChip">Clarity</div>
+            <p class="stat-copy">The system infers the need beneath the noise, not just the surface task.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="results-stack">
+        <div class="panel fade-up delay-2" id="reflectionPanel" data-collapsible data-section="reflection-console">
+          <div class="eyebrow">🪞 Reflection Console</div>
+          <h2 class="section-title">Tell the system what is happening.</h2>
+          <p class="section-copy">
+            Include the facts, your feelings, the decision you are facing, and what is making the situation hard. This app is trying
+            to become a compassionate strategist, not just a productivity machine.
+          </p>
+
+          <div class="form-grid">
+            <label>
+              <span class="field-label">Situation or decision</span>
+              <textarea id="situationInput" placeholder="Example: I have an opportunity to leave a stable role and start my own thing, but I feel torn between security, identity, money pressure, and the fear that waiting too long will make me regret it."></textarea>
+            </label>
+
+            <div class="grid-2">
+              <label>
+                <span class="field-label">What are you feeling most?</span>
+                <div class="feelings" id="feelingsWrap"></div>
+              </label>
+              <label>
+                <span class="field-label">What is the dominant arena?</span>
+                <select id="arenaSelect">
+                  <option value="career">Career</option>
+                  <option value="relationships">Relationships</option>
+                  <option value="health">Health</option>
+                  <option value="money">Money</option>
+                  <option value="purpose">Purpose</option>
+                  <option value="identity">Identity</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid-2">
+              <label class="range-wrap">
+                <span class="field-label">Energy level</span>
+                <input id="energyRange" type="range" min="1" max="10" value="6">
+                <span class="range-meta"><span>depleted</span><strong id="energyValue">6/10</strong><span>charged</span></span>
+              </label>
+              <label class="range-wrap">
+                <span class="field-label">Pressure level</span>
+                <input id="pressureRange" type="range" min="1" max="10" value="7">
+                <span class="range-meta"><span>light</span><strong id="pressureValue">7/10</strong><span>intense</span></span>
+              </label>
+            </div>
+
+            <div class="action-row">
+              <button class="primary" id="runReflection" type="button">Run the companion</button>
+              <button class="secondary" id="saveReflection" type="button">Save to memory</button>
+              <button class="secondary" id="resetReflection" type="button">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel fade-up delay-3" data-collapsible data-section="companion-voice">
+          <div class="eyebrow">🫶 Companion Voice</div>
+          <h2 class="section-title">What the emotionally intelligent guide sees</h2>
+          <p class="companion-voice" id="mirrorOutput">
+            You seem to be carrying both urgency and ambiguity at once. Before solving too fast, name what part of this is external pressure
+            and what part is inner conflict. Good decisions usually get sharper when those are separated.
+          </p>
+          <p class="subtle" id="blindSpotOutput">
+            Blind spot watch: you may be treating uncertainty like evidence against yourself, when it may simply be the price of a meaningful choice.
+          </p>
+
+          <div class="result-grid">
+            <div class="card">
+              <div class="stat-label">Core need</div>
+              <div class="stat-value" id="coreNeedOutput">Clarity</div>
+              <p class="stat-copy" id="coreNeedCopy">The system believes the main job is to make the situation more thinkable.</p>
+            </div>
+            <div class="card">
+              <div class="stat-label">Current growth edge</div>
+              <div class="stat-value" id="growthEdgeOutput">Courage</div>
+              <p class="stat-copy" id="growthEdgeCopy">The next level often involves acting with more truth than comfort.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel fade-up delay-4" data-collapsible data-section="thinking-lenses">
+          <div class="eyebrow">🧠 Thinking Lenses</div>
+          <h2 class="section-title">Massive selectable lens suite</h2>
+          <p class="section-copy">
+            Choose a lens and the app will assess the exact same situation from that lens alone, using the logic of that perspective rather than a blended answer.
+          </p>
+          <p class="subtle">You now have a growing field guide of strategic, spiritual, emotional, technical, commercial, safety, and practical lenses to inspect the same situation from radically different angles.</p>
+          <div class="lens-controls">
+            <div class="lens-suggestions">
+              <div class="suggestion-card">
+                <strong>🎯 Suggested starting pack</strong>
+                <span id="lensPackSuggestion">Waiting for a situation...</span>
+              </div>
+              <div class="combo-card">
+                <strong>🧩 Best 3-lens combo</strong>
+                <span id="bestComboTitle">Waiting for a situation...</span>
+                <p id="bestComboWhy">Type more detail and the app will explain why these lenses fit together.</p>
+              </div>
+              <div class="suggestion-bar" id="suggestedLenses"></div>
+            </div>
+            <input id="lensSearch" type="text" placeholder="Search lenses, disciplines, or ways of thinking...">
+            <div class="lens-filters" id="lensFilters"></div>
+          </div>
+          <div class="lens-suite">
+            <div class="lens-library" id="lensGrid"></div>
+            <div>
+              <div class="lens-detail" id="lensDetail"></div>
+              <div class="compare-shell">
+                <div class="compare-toolbar">
+                  <p class="subtle" id="compareSummary">Select up to 3 lenses to compare their advice side by side.</p>
+                  <div class="action-row">
+                    <button class="secondary" id="mergeCompare" type="button">Merge selected lenses</button>
+                    <button class="secondary" id="clearCompare" type="button">Clear compare</button>
+                  </div>
+                </div>
+                <div class="lens-detail" id="compareMergeOutput"></div>
+                <div class="compare-grid" id="compareGrid"></div>
+              </div>
+            </div>
+          </div>
+          <div class="section-divider">
+            <h3>Build your own lens</h3>
+            <p class="subtle">Create a custom way of thinking and let it live beside the built-in lenses.</p>
+            <div class="custom-lens-form">
+              <div class="grid-2">
+                <input id="customLensTitle" type="text" placeholder="Lens name, e.g. My Mentor Lens">
+                <input id="customLensCategory" type="text" placeholder="Category, e.g. mentor">
+              </div>
+              <div class="grid-2">
+                <input id="customLensIcon" type="text" placeholder="Icon or emoji, e.g. 🧭">
+                <input id="customLensAngle" type="text" placeholder="Short angle, e.g. Think like the wisest version of my mentor">
+              </div>
+              <textarea id="customLensPerspective" placeholder="Perspective: how this lens sees situations..."></textarea>
+              <input id="customLensQuestions" type="text" placeholder="Questions, comma-separated">
+              <div class="grid-2">
+                <input id="customLensAction" type="text" placeholder="Recommended move from this lens">
+                <input id="customLensCaution" type="text" placeholder="Watch-out from this lens">
+              </div>
+              <button class="secondary" id="addCustomLens" type="button">Add custom lens ✨</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel fade-up delay-4" data-collapsible data-section="execution-board">
+          <div class="eyebrow">🛠️ Execution Board</div>
+          <h2 class="section-title">Interactive planning, execution, and review</h2>
+          <p class="section-copy" id="synthesisOutput">
+            Across the lenses, the emerging signal is this: simplify the decision into what is essential, tell the truth about the fear beneath it,
+            and move with a small brave action instead of waiting for complete certainty.
+          </p>
+          <div class="progress-shell">
+            <div class="plan-toolbar">
+              <p class="subtle" id="planSummary">No execution steps yet.</p>
+              <strong id="planPercent">0% complete</strong>
+            </div>
+            <div class="grid-2">
+              <input id="planOutcome" type="text" placeholder="Desired outcome / what success looks like">
+              <input id="planReviewDate" type="date">
+            </div>
+            <textarea id="planSuccessCriteria" placeholder="Success criteria, key assumptions, or what would tell you this plan is working..."></textarea>
+            <div class="progress-bar">
+              <div class="progress-fill" id="planProgressFill"></div>
+            </div>
+            <div class="plan-adder">
+              <input id="newStepInput" type="text" placeholder="Add a custom execution step...">
+              <input id="newStepDue" type="date">
+              <select id="newStepPriority">
+                <option value="low">Low priority</option>
+                <option value="medium" selected>Medium priority</option>
+                <option value="high">High priority</option>
+              </select>
+              <button class="secondary" id="addStepButton" type="button">Add step ➕</button>
+            </div>
+            <div class="plan-list" id="planList"></div>
+            <div class="history-list" id="planHistory"></div>
+          </div>
+          <div class="feedback-bar">
+            <span class="subtle">💬 Was this plan helpful?</span>
+            <button class="feedback-pill" id="helpfulYes" type="button">Helpful 👍</button>
+            <button class="feedback-pill" id="helpfulMixed" type="button">Partly helpful 🤏</button>
+            <button class="feedback-pill" id="helpfulNo" type="button">Not helpful 👎</button>
+            <span class="subtle" id="helpfulSummary">No feedback saved yet.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-stack">
+        <div class="panel fade-up delay-2" data-collapsible data-section="quest-board">
+          <div class="eyebrow">🏁 Gamified Progress</div>
+          <h2 class="section-title">Quest board</h2>
+          <div class="quest-board" id="questBoard"></div>
+        </div>
+
+        <div class="panel fade-up delay-2" data-collapsible data-section="cloud-backup">
+          <div class="eyebrow">☁️ Cloud & Backup</div>
+          <h2 class="section-title">Protect progress and sync across devices</h2>
+          <p class="section-copy">Use local backup right away, then connect cloud auth and sync so the app can travel safely across PC and mobile.</p>
+          <div class="sync-shell">
+            <div class="sync-status" id="cloudStatus">Cloud sync is not configured yet. Local backup still works now.</div>
+            <div class="grid-2">
+              <input id="cloudEmail" type="email" placeholder="Email for magic link login">
+              <button class="secondary" id="cloudSendLink" type="button">Send magic link 🔐</button>
+            </div>
+            <div class="action-row">
+              <button class="secondary" id="cloudPush" type="button">Sync to cloud ⬆️</button>
+              <button class="secondary" id="cloudPull" type="button">Load from cloud ⬇️</button>
+              <button class="secondary" id="cloudSignOut" type="button">Sign out</button>
+            </div>
+            <div class="action-row">
+              <button class="secondary" id="exportBackup" type="button">Export backup JSON 💾</button>
+              <button class="secondary" id="importBackup" type="button">Import backup JSON 📥</button>
+              <input id="backupFileInput" type="file" accept="application/json" hidden>
+            </div>
+            <div class="link-row">
+              <a href="https://supabase.com/docs/guides/auth" target="_blank" rel="noreferrer">Supabase Auth</a>
+              <a href="https://vercel.com/docs/deployments" target="_blank" rel="noreferrer">Deploy on Vercel</a>
+              <a href="https://developer.mozilla.org/en-US/docs/Web/Manifest" target="_blank" rel="noreferrer">PWA / install docs</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel fade-up delay-3" data-collapsible data-section="memory">
+          <div class="eyebrow">🧬 Memory</div>
+          <h2 class="section-title">What the system is learning</h2>
+          <p class="section-copy" id="memoryInsight">
+            Memory is empty right now. Save reflections and this area will start noticing patterns across your decisions.
+          </p>
+          <div class="memory-list" id="memoryList"></div>
+        </div>
+
+        <div class="panel fade-up delay-3" data-collapsible data-section="journal">
+          <div class="eyebrow">📥 Journal / Inbox</div>
+          <h2 class="section-title">Store unresolved decisions and notes</h2>
+          <p class="section-copy">Use this when multiple live decisions start stacking up. Think of it as a parking bay for open loops that still need future thought.</p>
+          <div class="journal-form">
+            <input id="journalTitle" type="text" placeholder="Decision / note title">
+            <textarea id="journalBody" placeholder="Context, current state, what remains unresolved, and what you want future-you to remember..."></textarea>
+            <div class="grid-2">
+              <select id="journalStatus">
+                <option value="open">Open</option>
+                <option value="parked">Parked</option>
+                <option value="active">Active</option>
+                <option value="resolved">Resolved</option>
+              </select>
+              <input id="journalReviewDate" type="date">
+            </div>
+            <button class="secondary" id="addJournalEntry" type="button">Add to journal 📝</button>
+          </div>
+          <div class="journal-list" id="journalList"></div>
+        </div>
+
+        <div class="panel fade-up delay-3" data-collapsible data-section="life-plan">
+          <div class="eyebrow">🌄 Life Plan</div>
+          <h2 class="section-title">Dreams, goals, and the map forward</h2>
+          <p class="section-copy">Use this as the longer arc. Big dreams, identity direction, milestones, and the practical path that gets future-you there.</p>
+          <div class="life-plan-form">
+            <input id="lifeVision" type="text" placeholder="Life vision or big dream">
+            <textarea id="lifeIdentity" placeholder="Who are you becoming? What kind of person and life are you building?"></textarea>
+            <textarea id="lifeGoals" placeholder="Key life goals across work, relationships, health, service, money, craft, or calling..."></textarea>
+            <textarea id="lifeMap" placeholder="Map the path: what needs to happen, in what order, and what must be learned or built?"></textarea>
+            <div class="grid-2">
+              <input id="milestoneTitle" type="text" placeholder="Add a milestone">
+              <input id="milestoneTimeline" type="text" placeholder="Timeline, e.g. 90 days">
+            </div>
+            <button class="secondary" id="addMilestone" type="button">Add milestone 🗺️</button>
+          </div>
+          <div class="milestone-list" id="milestoneList"></div>
+        </div>
+
+        <div class="panel fade-up delay-4" data-collapsible data-section="ai-companion">
+          <div class="eyebrow">🤖 AI Companion</div>
+          <h2 class="section-title">A guide that asks the next right question</h2>
+          <p class="section-copy" id="coachSummary">
+            This companion uses your current reflection, emotional tone, and saved patterns to ask questions that improve your thinking instead of drowning you in advice.
+          </p>
+          <div class="coach-shell">
+            <div class="coach-thread" id="coachThread"></div>
+            <div class="coach-prompts" id="coachPrompts"></div>
+            <div class="coach-input-row">
+              <input id="coachInput" type="text" placeholder="Answer the companion or add more context...">
+              <button class="primary" id="sendCoach" type="button">Reply</button>
+            </div>
+            <p class="coach-microcopy" id="coachMeta">
+              The companion will keep shifting between emotional clarity, decision quality, blind spots, and action depending on what you reveal.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "compass-os-profile-v1";
+    const feelings = [
+      "anxious", "hopeful", "stuck", "overwhelmed", "excited", "resentful",
+      "grateful", "uncertain", "lonely", "driven", "tired", "conflicted"
+    ];
+
+    const lenses = [
+      { key: "first_principles", title: "First Principles", category: "strategic", angle: "Reduce the problem to what is irreducibly true." },
+      { key: "stoic", title: "Stoic Lens", category: "philosophy", angle: "Focus on agency, character, and control." },
+      { key: "inversion", title: "Inversion", category: "strategic", angle: "Study failure patterns first, then design against them." },
+      { key: "systems", title: "Systems Lens", category: "systems", angle: "Look for loops, structures, incentives, and second-order effects." },
+      { key: "opportunity", title: "Opportunity Cost", category: "economic", angle: "Ask what this choice crowds out." },
+      { key: "second_order", title: "Second-Order Thinking", category: "strategic", angle: "Think beyond the first visible outcome." },
+      { key: "shadow", title: "Shadow Lens", category: "psychology", angle: "Detect ego, shame, defensiveness, and hidden fear." },
+      { key: "identity", title: "Identity Lens", category: "self", angle: "Ask what kind of self this decision rehearses." },
+      { key: "kingdom", title: "Kingdom Lens", category: "spiritual", angle: "View the moment through God's values, Jesus' way, and Scripture-shaped wisdom." },
+      { key: "rei", title: "R.E.I Lens", category: "psyche", angle: "Break the situation into reason, emotion, and instinct and examine the tension between them." },
+      { key: "regret", title: "Regret Minimization", category: "future", angle: "Ask what future-you is least likely to regret." },
+      { key: "pattern", title: "Pattern Lens", category: "self", angle: "Compare the current moment to recurring inner loops." },
+      { key: "negativa", title: "Via Negativa", category: "philosophy", angle: "Find clarity through removal and subtraction." },
+      { key: "ooda", title: "OODA Loop", category: "execution", angle: "Observe, orient, decide, act with speed and learning." },
+      { key: "family_systems", title: "Relational Systems", category: "relationships", angle: "Notice roles, loyalties, and emotional systems." },
+      { key: "trauma_informed", title: "Trauma-Informed", category: "psychology", angle: "Distinguish present truth from nervous-system activation." },
+      { key: "daily_workout", title: "Daily Workout Lens", category: "growth", angle: "Turn what the app knows about you into a daily mental and emotional training rep." },
+      { key: "health", title: "Health Lens", category: "health", angle: "Assess what the body, recovery, sleep, and stress load are saying." },
+      { key: "nutrition", title: "Nutrition Lens", category: "health", angle: "Consider how fuel, blood sugar, hydration, and habits affect judgment." },
+      { key: "psychology", title: "Psychology Lens", category: "psychology", angle: "Look at cognition, attachment, behavior, and emotional patterns." },
+      { key: "jung", title: "Carl Jung Lens", category: "psychology", angle: "Interpret the situation through shadow, individuation, symbol, and the deeper psyche." },
+      { key: "archetype", title: "Archetype Lens", category: "psyche", angle: "Ask which character pattern, role, or mythic energy is active in the moment." },
+      { key: "dream_analysis", title: "Dream Analysis Lens", category: "psyche", angle: "Treat strange images, repeated dreams, and symbols as messages from the inner life." },
+      { key: "socratic", title: "Socratic Lens", category: "philosophy", angle: "Interrogate assumptions through careful questioning instead of rushing to answers." },
+      { key: "historical", title: "Historical Lens", category: "history", angle: "Compare the situation to patterns from history and learn from how similar tensions played out." },
+      { key: "future_self", title: "Future Self Lens", category: "future", angle: "Stand in the shoes of your wiser future self and decide from the longer arc." },
+      { key: "jordan_peterson", title: "Jordan Peterson Lens", category: "philosophy", angle: "Look at responsibility, meaning, order versus chaos, and truthful voluntary burden-bearing." },
+      { key: "frankl", title: "Frankl Meaning Lens", category: "philosophy", angle: "Search for meaning, responsibility, and dignity in how you answer suffering and choice." },
+      { key: "antifragile", title: "Antifragile Lens", category: "strategic", angle: "Ask how this could make you stronger through volatility instead of merely surviving it." },
+      { key: "kahneman", title: "Kahneman Lens", category: "psychology", angle: "Check cognitive biases, fast thinking errors, framing effects, and decision distortions." },
+      { key: "naval", title: "Naval Lens", category: "philosophy", angle: "Think in terms of leverage, specific knowledge, judgment, freedom, and long-term compounding." },
+      { key: "mimetic", title: "Mimetic Desire Lens", category: "psychology", angle: "Ask whether this desire is truly yours or borrowed from the people and status games around you." },
+      { key: "mentor", title: "Mentor Lens", category: "self", angle: "Hear the situation through the voice of a wise mentor who knows your strengths and excuses." },
+      { key: "competence", title: "Competence Lens", category: "growth", angle: "Reduce the problem to the skill gap, practice gap, or standards gap that can actually be trained." },
+      { key: "memento_mori", title: "Memento Mori Lens", category: "philosophy", angle: "Remember mortality and let finiteness clarify what matters now." },
+      { key: "premortem", title: "Premortem Lens", category: "strategic", angle: "Imagine the plan failed badly, then work backward to find the reasons before they happen." },
+      { key: "scientific", title: "Scientific Lens", category: "science", angle: "Use evidence, hypotheses, uncertainty, and experiment design." },
+      { key: "mathematical", title: "Mathematical Lens", category: "science", angle: "Look for variables, constraints, probabilities, and optimization logic." },
+      { key: "teacher", title: "Teacher Lens", category: "education", angle: "Translate complexity into what can be understood, practiced, and retained." },
+      { key: "carpenter", title: "Carpenter Lens", category: "trade", angle: "Measure twice, build on sound structure, and respect sequence and workmanship." },
+      { key: "boilermaker", title: "Boilermaker Lens", category: "trade", angle: "Think in terms of pressure, integrity, safety, fit-up, and consequences of weak joins." },
+      { key: "financial", title: "Financial Lens", category: "economic", angle: "Assess downside, runway, leverage, and cash reality." },
+      { key: "business_strategy", title: "Business Strategy", category: "business", angle: "Clarify positioning, leverage, timing, and sustainable advantage." },
+      { key: "analytics", title: "Analytics Lens", category: "data", angle: "Separate signal from noise with metrics, baselines, and trend interpretation." },
+      { key: "hr", title: "HR Lens", category: "people", angle: "Consider roles, expectations, people risk, fairness, and talent impact." },
+      { key: "ohs", title: "OHS Lens", category: "risk", angle: "Check physical, psychological, and process safety before speed or output." },
+      { key: "operations", title: "Operations Lens", category: "business", angle: "Turn intent into repeatable process, ownership, and steady throughput." },
+      { key: "product", title: "Product Lens", category: "business", angle: "Focus on user pain, adoption, feedback loops, and product-market fit." },
+      { key: "marketing", title: "Marketing Lens", category: "business", angle: "Ask how the value is framed, positioned, and communicated to the right people." },
+      { key: "sales", title: "Sales Lens", category: "business", angle: "Test whether the path to trust, commitment, and exchange is clear." },
+      { key: "entrepreneurship", title: "Entrepreneur Lens", category: "business", angle: "Balance conviction, iteration, market pull, and survival while building something new." },
+      { key: "investor", title: "Investor Lens", category: "economic", angle: "Judge the move through allocation, asymmetric upside, downside protection, and compound returns." },
+      { key: "compliance", title: "Compliance Lens", category: "institutional", angle: "Check policy alignment, auditability, and obligations before moving." },
+      { key: "governance", title: "Governance Lens", category: "institutional", angle: "Clarify decision rights, accountability, escalation paths, and stewardship." },
+      { key: "procurement", title: "Procurement Lens", category: "operations", angle: "Think in terms of vendor fit, total cost, supply reliability, and contract leverage." },
+      { key: "cybersecurity", title: "Cybersecurity Lens", category: "technical", angle: "Look for exposure, access risk, attack surfaces, and security-by-design." },
+      { key: "qa", title: "QA / Testing Lens", category: "technical", angle: "Stress the plan against defects, edge cases, regressions, and proof of quality." },
+      { key: "ethics", title: "Ethics Lens", category: "philosophy", angle: "Test what is right, responsible, and humane beyond convenience or gain." },
+      { key: "customer", title: "Customer Lens", category: "business", angle: "See the situation through the felt experience, friction, and trust of the end user." },
+      { key: "logistics", title: "Logistics Lens", category: "operations", angle: "Look at sequencing, dependencies, timing, supply, and practical coordination." },
+      { key: "mediation", title: "Mediation Lens", category: "relationships", angle: "Reduce heat, surface interests, and move parties toward workable clarity." },
+      { key: "negotiation", title: "Negotiation Lens", category: "relationships", angle: "Clarify leverage, interests, alternatives, concessions, and the shape of a workable deal." },
+      { key: "legal", title: "Legal Lens", category: "institutional", angle: "Clarify obligations, risk exposure, documentation, and precedent." },
+      { key: "designer", title: "Designer Lens", category: "creative", angle: "Improve clarity, hierarchy, user experience, and signal-to-noise." },
+      { key: "engineer", title: "Engineer Lens", category: "technical", angle: "Look for failure modes, constraints, modularity, and reliability." }
+    ];
+
+    const questTemplates = [
+      { title: "Name the real problem", reward: 15, copy: "Write the truest single-sentence description of what is actually hard." },
+      { title: "Take one clarifying action", reward: 25, copy: "Choose a small action that reduces confusion instead of hiding from it." },
+      { title: "Tell the truth kindly", reward: 20, copy: "If another person is involved, identify the honest conversation that would bring relief." }
+    ];
+
+    const demoSituation = "I keep thinking about leaving my stable role to build something of my own, but part of me wants safety, part of me wants aliveness, and part of me is afraid that if I wait too long I will shrink into a life that looks good from the outside but feels false from the inside.";
+
+    const state = {
+      selectedFeeling: "conflicted",
+      profile: loadProfile(),
+      selectedLens: "first_principles",
+      lensSearch: "",
+      lensCategory: "all",
+      compareLenses: ["first_principles", "rei", "kingdom"],
+      editingEntryId: null
+    };
+
+    const situationInput = document.getElementById("situationInput");
+    const feelingsWrap = document.getElementById("feelingsWrap");
+    const arenaSelect = document.getElementById("arenaSelect");
+    const energyRange = document.getElementById("energyRange");
+    const pressureRange = document.getElementById("pressureRange");
+    const energyValue = document.getElementById("energyValue");
+    const pressureValue = document.getElementById("pressureValue");
+    const mirrorOutput = document.getElementById("mirrorOutput");
+    const blindSpotOutput = document.getElementById("blindSpotOutput");
+    const coreNeedOutput = document.getElementById("coreNeedOutput");
+    const coreNeedCopy = document.getElementById("coreNeedCopy");
+    const growthEdgeOutput = document.getElementById("growthEdgeOutput");
+    const growthEdgeCopy = document.getElementById("growthEdgeCopy");
+    const modeChip = document.getElementById("modeChip");
+    const needChip = document.getElementById("needChip");
+    const lensGrid = document.getElementById("lensGrid");
+    const lensDetail = document.getElementById("lensDetail");
+    const lensSearch = document.getElementById("lensSearch");
+    const lensFilters = document.getElementById("lensFilters");
+    const lensPackSuggestion = document.getElementById("lensPackSuggestion");
+    const suggestedLenses = document.getElementById("suggestedLenses");
+    const bestComboTitle = document.getElementById("bestComboTitle");
+    const bestComboWhy = document.getElementById("bestComboWhy");
+    const compareGrid = document.getElementById("compareGrid");
+    const compareSummary = document.getElementById("compareSummary");
+    const compareMergeOutput = document.getElementById("compareMergeOutput");
+    const synthesisOutput = document.getElementById("synthesisOutput");
+    const planList = document.getElementById("planList");
+    const planSummary = document.getElementById("planSummary");
+    const planPercent = document.getElementById("planPercent");
+    const planProgressFill = document.getElementById("planProgressFill");
+    const newStepInput = document.getElementById("newStepInput");
+    const newStepDue = document.getElementById("newStepDue");
+    const newStepPriority = document.getElementById("newStepPriority");
+    const planHistory = document.getElementById("planHistory");
+    const planOutcome = document.getElementById("planOutcome");
+    const planReviewDate = document.getElementById("planReviewDate");
+    const planSuccessCriteria = document.getElementById("planSuccessCriteria");
+    const helpfulYes = document.getElementById("helpfulYes");
+    const helpfulMixed = document.getElementById("helpfulMixed");
+    const helpfulNo = document.getElementById("helpfulNo");
+    const helpfulSummary = document.getElementById("helpfulSummary");
+    const questBoard = document.getElementById("questBoard");
+    const memoryList = document.getElementById("memoryList");
+    const memoryInsight = document.getElementById("memoryInsight");
+    const journalTitle = document.getElementById("journalTitle");
+    const journalBody = document.getElementById("journalBody");
+    const journalStatus = document.getElementById("journalStatus");
+    const journalReviewDate = document.getElementById("journalReviewDate");
+    const journalList = document.getElementById("journalList");
+    const customLensTitle = document.getElementById("customLensTitle");
+    const customLensCategory = document.getElementById("customLensCategory");
+    const customLensIcon = document.getElementById("customLensIcon");
+    const customLensAngle = document.getElementById("customLensAngle");
+    const customLensPerspective = document.getElementById("customLensPerspective");
+    const customLensQuestions = document.getElementById("customLensQuestions");
+    const customLensAction = document.getElementById("customLensAction");
+    const customLensCaution = document.getElementById("customLensCaution");
+    const lifeVision = document.getElementById("lifeVision");
+    const lifeIdentity = document.getElementById("lifeIdentity");
+    const lifeGoals = document.getElementById("lifeGoals");
+    const lifeMap = document.getElementById("lifeMap");
+    const milestoneTitle = document.getElementById("milestoneTitle");
+    const milestoneTimeline = document.getElementById("milestoneTimeline");
+    const milestoneList = document.getElementById("milestoneList");
+    const cloudStatus = document.getElementById("cloudStatus");
+    const cloudEmail = document.getElementById("cloudEmail");
+    const cloudSendLink = document.getElementById("cloudSendLink");
+    const cloudPush = document.getElementById("cloudPush");
+    const cloudPull = document.getElementById("cloudPull");
+    const cloudSignOut = document.getElementById("cloudSignOut");
+    const exportBackup = document.getElementById("exportBackup");
+    const importBackup = document.getElementById("importBackup");
+    const backupFileInput = document.getElementById("backupFileInput");
+    const xpValue = document.getElementById("xpValue");
+    const streakValue = document.getElementById("streakValue");
+    const memoryValue = document.getElementById("memoryValue");
+    const adaptiveSummary = document.getElementById("adaptiveSummary");
+    const levelPill = document.getElementById("levelPill");
+    const streakPill = document.getElementById("streakPill");
+    const liveNow = document.getElementById("liveNow");
+    const saveReflectionButton = document.getElementById("saveReflection");
+    const coachThread = document.getElementById("coachThread");
+    const coachPrompts = document.getElementById("coachPrompts");
+    const coachInput = document.getElementById("coachInput");
+    const coachSummary = document.getElementById("coachSummary");
+    const coachMeta = document.getElementById("coachMeta");
+
+    let lensCategories = ["all", ...new Set(lenses.map((lens) => lens.category))];
+    const lensPacks = {
+      business: ["business_strategy", "financial", "analytics", "operations", "first_principles"],
+      spiritual: ["kingdom", "identity", "rei", "shadow", "regret"],
+      health: ["health", "nutrition", "trauma_informed", "psychology", "systems"],
+      relationships: ["family_systems", "psychology", "kingdom", "shadow", "teacher"],
+      execution: ["ooda", "engineer", "designer", "teacher", "first_principles"],
+      growth: ["daily_workout", "future_self", "rei", "identity", "regret"],
+      philosophy: ["socratic", "stoic", "jordan_peterson", "frankl", "kingdom"],
+      psyche: ["jung", "archetype", "dream_analysis", "shadow", "rei"],
+      trade: ["carpenter", "boilermaker", "systems", "engineer", "inversion"],
+      science: ["scientific", "mathematical", "first_principles", "systems", "inversion"],
+      people: ["hr", "mediation", "psychology", "family_systems", "teacher"],
+      risk: ["ohs", "compliance", "legal", "engineer", "inversion"],
+      operations: ["operations", "logistics", "analytics", "ooda", "engineer"],
+      technical: ["engineer", "qa", "cybersecurity", "scientific", "systems"],
+      venture: ["entrepreneurship", "business_strategy", "product", "customer", "investor"],
+      history: ["historical", "future_self", "regret", "socratic", "systems"],
+      legacy: ["memento_mori", "future_self", "frankl", "kingdom", "regret"]
+    };
+
+    state.coach = {
+      messages: [],
+      question: "",
+      prompts: []
+    };
+
+    state.cloud = {
+      ready: false,
+      user: null,
+      status: "Local-only mode",
+      client: null
+    };
+
+    function loadProfile() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (saved && Array.isArray(saved.entries)) {
+          return hydrateProfile(saved);
+        }
+      } catch (error) {
+        console.error("Failed to load profile", error);
+      }
+      return hydrateProfile({});
+    }
+
+    function saveProfile() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.profile));
+    }
+
+    function hydrateProfile(saved) {
+      const profile = {
+        xp: 0,
+        entries: [],
+        streak: 0,
+        lastSavedDay: null,
+        executionPlan: { signature: "", steps: [], history: [], meta: { outcome: "", reviewDate: "", successCriteria: "", helpfulness: "" } },
+        comboHistory: [],
+        journalEntries: [],
+        customLenses: [],
+        lifePlan: { vision: "", identity: "", goals: "", map: "", milestones: [] },
+        helpfulnessScore: 0,
+        panelPrefs: {},
+        ...saved
+      };
+      if (!profile.executionPlan) {
+        profile.executionPlan = { signature: "", steps: [], history: [], meta: { outcome: "", reviewDate: "", successCriteria: "", helpfulness: "" } };
+      }
+      if (!profile.executionPlan.history) profile.executionPlan.history = [];
+      if (!profile.executionPlan.meta) profile.executionPlan.meta = { outcome: "", reviewDate: "", successCriteria: "", helpfulness: "" };
+      if (!Array.isArray(profile.comboHistory)) profile.comboHistory = [];
+      if (!Array.isArray(profile.journalEntries)) profile.journalEntries = [];
+      if (!Array.isArray(profile.customLenses)) profile.customLenses = [];
+      if (!profile.lifePlan) profile.lifePlan = { vision: "", identity: "", goals: "", map: "", milestones: [] };
+      if (!Array.isArray(profile.lifePlan.milestones)) profile.lifePlan.milestones = [];
+      if (typeof profile.helpfulnessScore !== "number") profile.helpfulnessScore = 0;
+      if (!profile.panelPrefs) profile.panelPrefs = {};
+      return profile;
+    }
+
+    function refreshLensCategories() {
+      lensCategories = ["all", ...new Set(lenses.map((lens) => lens.category))];
+    }
+
+    function syncCustomLenses() {
+      const baseOnly = lenses.filter((lens) => !lens.custom);
+      const custom = (state.profile.customLenses || []).map((lens) => ({
+        ...lens,
+        custom: true
+      }));
+      lenses.length = 0;
+      lenses.push(...baseOnly, ...custom);
+      refreshLensCategories();
+    }
+
+    function renderFeelings() {
+      feelingsWrap.innerHTML = feelings.map((feeling) => `
+        <button class="chip ${feeling === state.selectedFeeling ? "active" : ""}" data-feeling="${feeling}" type="button">${capitalize(feeling)}</button>
+      `).join("");
+
+      feelingsWrap.querySelectorAll(".chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          state.selectedFeeling = chip.dataset.feeling;
+          renderFeelings();
+          runReflection();
+        });
+      });
+    }
+
+    function capitalize(value) {
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function getCurrentInput() {
+      return {
+        situation: situationInput.value.trim(),
+        feeling: state.selectedFeeling,
+        arena: arenaSelect.value,
+        energy: Number(energyRange.value),
+        pressure: Number(pressureRange.value)
+      };
+    }
+
+    function inferCoreNeed(input) {
+      if (input.pressure >= 8) return "Safety";
+      if (input.energy <= 3) return "Recovery";
+      if (/decide|choice|leave|move|change|whether|opportunity/i.test(input.situation)) return "Clarity";
+      if (/hurt|conflict|relationship|conversation|family/i.test(input.situation)) return "Connection";
+      if (/stuck|procrastin|avoid|fear/i.test(input.situation)) return "Courage";
+      return "Clarity";
+    }
+
+    function inferMode(input) {
+      if (/leave|change|choice|decide|move|opportunity|risk/i.test(input.situation)) return "Decision";
+      if (/sad|anxious|overwhelmed|conflicted|hurt|lonely/i.test(input.feeling + " " + input.situation)) return "Emotional";
+      if (/work|build|launch|plan|project|career/i.test(input.situation)) return "Execution";
+      return "Reflection";
+    }
+
+    function inferGrowthEdge(input) {
+      if (input.pressure >= 8 && input.energy <= 4) return "Self-regulation";
+      if (input.feeling === "conflicted" || /torn|stuck|uncertain/i.test(input.situation)) return "Decisiveness";
+      if (input.feeling === "anxious") return "Trust";
+      if (input.feeling === "resentful") return "Honesty";
+      if (input.feeling === "excited") return "Discipline";
+      return "Courage";
+    }
+
+    function buildMirror(input, need, edge) {
+      const pressureTone = input.pressure >= 8 ? "high-pressure" : input.pressure <= 4 ? "lower-pressure" : "mixed-pressure";
+      const historyHint = buildHistoryHint(input);
+
+      const base = {
+        "high-pressure": `You seem to be carrying a lot of intensity right now. That usually means the nervous system wants quick relief, but the wiser move is often to slow the story down enough that you can tell fear apart from truth.`,
+        "mixed-pressure": `This feels like a real crossroads, not just a passing mood. There is enough signal here that you should listen carefully, but not so reactively that you let the loudest feeling become the whole truth.`,
+        "lower-pressure": `This may not be a crisis, but it does look meaningful. Sometimes the quiet decisions shape a life more than the dramatic ones.`
+      }[pressureTone];
+
+      return `${base} Beneath the surface, the strongest need looks like ${need.toLowerCase()}, and your current growth edge seems to be ${edge.toLowerCase()}. ${historyHint}`;
+    }
+
+    function buildHistoryHint(input) {
+      if (!state.profile.entries.length) {
+        return "The system is still getting to know your patterns, so this read is based mostly on the present moment.";
+      }
+
+      const recent = state.profile.entries.slice(0, 5);
+      const sameFeelingCount = recent.filter((entry) => entry.feeling === input.feeling).length;
+
+      if (sameFeelingCount >= 3) {
+        return `A pattern is emerging: this emotional tone has shown up repeatedly in recent reflections, which suggests this is not a one-off moment but part of a deeper loop worth respecting.`;
+      }
+
+      return "Compared with your recent entries, this looks like a meaningful but not identical pattern, which may mean you are dealing with a familiar theme in a new form.";
+    }
+
+    function buildBlindSpot(input) {
+      if (/everyone|always|never|should/i.test(input.situation)) {
+        return "Blind spot watch: absolute language often signals that emotion has started narrating the whole world for you.";
+      }
+      if (input.feeling === "driven" && input.pressure >= 7) {
+        return "Blind spot watch: ambition under pressure can disguise exhaustion as purpose and urgency as importance.";
+      }
+      if (input.feeling === "conflicted") {
+        return "Blind spot watch: you may be trying to negotiate between incompatible identities instead of naming which one is truest.";
+      }
+      if (input.feeling === "resentful") {
+        return "Blind spot watch: resentment often contains unspoken boundaries, ungrieved expectations, or truth withheld too long.";
+      }
+      return "Blind spot watch: there may be a temptation to seek the perfect feeling before taking the next honest step.";
+    }
+
+    function contextualReasonLine(input, need) {
+      const facts = [];
+      if (/stable role|stable job|salary|runway|money|cost|financial/i.test(input.situation)) facts.push("stability and risk are real constraints");
+      if (/leave|move|change|opportunity|start|build/i.test(input.situation)) facts.push("there is a genuine change decision on the table");
+      if (/sleep|eating|health|body|tired|exhausted|burnout/i.test(input.situation)) facts.push("your physical state may be distorting the read");
+      if (/relationship|family|partner|friend|conversation/i.test(input.situation)) facts.push("relational consequences matter here");
+      if (!facts.length) facts.push(`the decision appears to hinge on ${need.toLowerCase()} and tradeoffs, not just emotion`);
+      return `Reason is trying to organize the situation around ${facts.join(", ")}. It wants a cleaner map, stronger evidence, and fewer vague stories.`;
+    }
+
+    function contextualEmotionLine(input, need) {
+      const feelingMap = {
+        anxious: "Emotion seems to be signaling possible loss, uncertainty, and the fear of getting hurt or trapped.",
+        conflicted: "Emotion seems split between two meaningful goods, which is why the situation feels heavy instead of simply obvious.",
+        resentful: "Emotion is carrying unmet expectations, hidden boundaries, or pain that has not been named clearly.",
+        overwhelmed: "Emotion is overloaded and may be blending many different problems into one felt cloud.",
+        excited: "Emotion is alive and energized, but may be underestimating friction or cost.",
+        tired: "Emotion may be less about truth and more about depletion asking for mercy and recovery.",
+        uncertain: "Emotion is asking for safety before commitment."
+      };
+      return feelingMap[input.feeling] || `Emotion is revealing that ${need.toLowerCase()} matters deeply here and that the situation is not neutral to you.`;
+    }
+
+    function contextualInstinctLine(input) {
+      const lines = [];
+      if (input.pressure >= 8) lines.push("Instinct is in a threat-sensitive posture and wants fast relief or protection.");
+      if (input.energy <= 4) lines.push("Instinct is also conserving energy, which can make retreat feel wiser than it really is.");
+      if (/approval|disappoint|belong|status|look good|impressive/i.test(input.situation)) lines.push("It may also be scanning for social safety, belonging, and status consequences.");
+      if (/leave|risk|change|jump|start my own/i.test(input.situation)) lines.push("Because change is involved, instinct is watching for danger in uncertainty and loss of control.");
+      if (!lines.length) lines.push("Instinct is reading the situation for safety, danger, belonging, and immediate consequence before reason finishes speaking.");
+      return lines.join(" ");
+    }
+
+    function reiTensionLine(input) {
+      if (/sleep|eating|health|body|tired|exhausted|burnout/i.test(input.situation)) {
+        return "The likely tension is that reason wants clarity, emotion feels distress, and instinct is reacting to physiological strain, so the body may be amplifying the whole problem.";
+      }
+      if (input.feeling === "conflicted") {
+        return "The likely tension is that reason can argue multiple valid sides, emotion is attached to more than one future, and instinct wants the least dangerous social or survival path.";
+      }
+      if (input.feeling === "anxious") {
+        return "The likely tension is that reason may be more measured than emotion, while instinct is already acting like danger is near.";
+      }
+      return "The key R.E.I question is which channel is supplying signal and which channel is currently overdriving the whole system.";
+    }
+
+    function patternSnapshot() {
+      const entries = state.profile.entries || [];
+      if (!entries.length) {
+        return {
+          topFeeling: "conflicted",
+          topArena: "career",
+          topCombo: "",
+          insight: "The app needs more saved reflections before it can detect a reliable long-run pattern."
+        };
+      }
+      const feelingsCount = {};
+      const arenasCount = {};
+      entries.forEach((entry) => {
+        feelingsCount[entry.feeling] = (feelingsCount[entry.feeling] || 0) + 1;
+        arenasCount[entry.arena] = (arenasCount[entry.arena] || 0) + 1;
+      });
+      const comboCounts = {};
+      for (const item of state.profile.comboHistory || []) {
+        const name = item.lenses.join(" + ");
+        comboCounts[name] = (comboCounts[name] || 0) + 1;
+      }
+      const topFeeling = Object.entries(feelingsCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "conflicted";
+      const topArena = Object.entries(arenasCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "career";
+      const topCombo = Object.entries(comboCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+      return {
+        topFeeling,
+        topArena,
+        topCombo,
+        insight: `Your reflections most often cluster around ${topFeeling} energy in ${topArena} situations${topCombo ? `, and the lens mix ${topCombo.replaceAll("+", " + ")} keeps recurring.` : "."}`
+      };
+    }
+
+    function lensSpecificAnalysis(lens, input, need, edge) {
+      const lowEnergy = input.energy <= 4;
+      const pressure = input.pressure >= 8 ? "high" : input.pressure <= 4 ? "low" : "moderate";
+      const patterns = patternSnapshot();
+      const generic = {
+        perspective: `${lens.title} would ask you to interpret this ${input.arena} situation through ${lens.angle.toLowerCase()}`,
+        questions: [
+          "What does this lens notice that your default style misses?",
+          "If this lens was the only advisor in the room, what would it urge you to stop assuming?",
+          "What next move becomes clearer when you stay faithful to this lens?"
+        ],
+        action: `Use ${lens.title} to choose one concrete move that respects ${need.toLowerCase()} while training ${edge.toLowerCase()}.`,
+        caution: lowEnergy ? "This lens should not push you into heroic overreaction while energy is low." : "Use this lens for clarity, not self-judgment."
+      };
+
+      if (lens.customConfig) {
+        return {
+          perspective: lens.customConfig.perspective || generic.perspective,
+          questions: lens.customConfig.questions?.length ? lens.customConfig.questions : generic.questions,
+          action: lens.customConfig.action || generic.action,
+          caution: lens.customConfig.caution || generic.caution
+        };
+      }
+
+      const map = {
+        first_principles: {
+          perspective: `From first principles, strip away reputation, noise, and inherited scripts. The real problem appears to be about ${need.toLowerCase()}, identity coherence, and whether the current path matches what is fundamentally true.`,
+          questions: ["What facts are actually true?", "Which assumptions are borrowed from fear or status?", "What remains if you remove social performance?"],
+          action: "Write the decision in one sentence using only facts, values, and constraints.",
+          caution: "Do not confuse emotional discomfort with logical disproof."
+        },
+        stoic: {
+          perspective: `The Stoic reading separates what is yours from what is not. Your honesty, discipline, and next step are yours. Timing, applause, and outcomes are not.`,
+          questions: ["What is under my control today?", "Where am I spending energy on uncontrollables?", "What would courage with calm look like?"],
+          action: "Choose the smallest action that expresses character rather than control.",
+          caution: "Stoicism is not emotional suppression. It is disciplined focus."
+        },
+        inversion: {
+          perspective: "The inversion lens starts by asking how this would predictably fail. Failure here likely comes from avoidance, fog, and pretending the tradeoffs are not real.",
+          questions: ["What would make this go badly in a totally predictable way?", "What am I not saying that increases failure risk?", "What can be prevented now instead of repaired later?"],
+          action: "Build one safeguard against the most likely self-sabotage pattern.",
+          caution: "Do not stay in defensive pessimism. Use inversion to design better action."
+        },
+        systems: {
+          perspective: `This is not just an isolated decision. It is part of a system involving energy, beliefs, environment, habits, and incentives. If the system remains unchanged, the same result tends to repeat.`,
+          questions: ["What loop keeps recreating this outcome?", "What incentive is rewarding the current pattern?", "Which system variable would most change the result?"],
+          action: "Change one system input: schedule, environment, accountability, or constraint.",
+          caution: "Insight alone does not change systems. Structure does."
+        },
+        opportunity: {
+          perspective: "Every yes spends life. This lens highlights what this choice quietly displaces in time, identity, focus, and possibility.",
+          questions: ["What am I saying no to by continuing this path?", "What future option becomes more expensive if I delay?", "Which path compounds better?"],
+          action: "List the top three hidden costs of staying exactly as you are.",
+          caution: "Do not evaluate only visible gains. Hidden costs matter."
+        },
+        second_order: {
+          perspective: "The first consequence may be relief, fear, or disruption. The second-order view asks what this compounds into over time.",
+          questions: ["What happens after the first obvious outcome?", "What will this train me to tolerate or pursue?", "Which choice leaves me stronger six months later?"],
+          action: "Rank options by the quality of their downstream consequences.",
+          caution: "Short-term relief can create long-term erosion."
+        },
+        shadow: {
+          perspective: "The shadow lens asks what wounded pride, shame, envy, or fear of exposure might be doing behind the scenes.",
+          questions: ["What part of my ego is involved?", "What am I trying not to feel?", "What image of myself am I protecting?"],
+          action: "Name the embarrassing truth that may be driving the pattern.",
+          caution: "Do shadow work gently. Brutality without compassion distorts the read."
+        },
+        identity: {
+          perspective: `This situation is not just asking what to do. It is shaping who you become. The key issue is what identity this choice rehearses over time.`,
+          questions: ["Who do I become if I repeat this?", "Which version of me does this strengthen?", "Does this choice make me more divided or more integrated?"],
+          action: "Choose the next move based on the person you want to be training.",
+          caution: "Do not choose an identity that is only impressive from the outside."
+        },
+        kingdom: {
+          perspective: "The Kingdom Lens asks how God would see this moment: through truth, love, humility, stewardship, courage, mercy, and freedom from self-protective status games. Jesus would likely care not only about outcomes, but about the fruit your choice bears in character and relationship.",
+          questions: ["What choice best reflects truth in love?", "Where is fear or pride distorting discernment?", "What would faithful stewardship and courageous obedience look like here?"],
+          action: "Act in the direction that bears good fruit, tells the truth, and does not require you to betray love or integrity.",
+          caution: "Do not use spiritual language to baptize fear, ego, or passivity.",
+          scriptures: [
+            "Matthew 6:33: Seek first the kingdom of God and his righteousness.",
+            "John 8:32: You will know the truth, and the truth will set you free.",
+            "James 1:5: If any of you lacks wisdom, let him ask God.",
+            "Galatians 5:22-23: Look for the fruit of the Spirit in the path you choose.",
+            "Matthew 11:28-30: Christ's way does not glorify crushing burdens and false striving."
+          ]
+        },
+        rei: {
+          perspective: `R.E.I breaks the situation into three live channels, and in this case they are not saying the same thing. ${reiTensionLine(input)}`,
+          questions: ["Where are reason, emotion, and instinct aligned?", "Which channel is carrying the truest warning?", "Which channel is overdriving the decision and needs to be re-balanced?"],
+          action: "Write three short statements: one from Reason, one from Emotion, one from Instinct, then note where they agree or fight.",
+          caution: "The goal is not to silence one channel. It is to stop any one channel from ruling without the others.",
+          breakdown: {
+            reason: contextualReasonLine(input, need),
+            emotion: contextualEmotionLine(input, need),
+            instinct: contextualInstinctLine(input)
+          }
+        },
+        regret: {
+          perspective: "The regret lens projects forward and asks which path future-you will least resent avoiding.",
+          questions: ["What will hurt more later: courageous discomfort now or slow self-betrayal?", "Which path creates cleaner self-respect?", "What will look obviously true in retrospect?"],
+          action: "Journal from the voice of your older self looking back at this choice.",
+          caution: "Regret minimization is not reckless. It still has to respect real constraints."
+        },
+        pattern: {
+          perspective: "Pattern thinking asks whether this is truly new or another costume worn by an old loop.",
+          questions: ["Where has this theme shown up before?", "What repeat story am I living again?", "What usually happens next if I do nothing different?"],
+          action: "Interrupt the usual sequence at the earliest possible step.",
+          caution: "Do not fatalistically assume repetition. The point is to see the loop so you can break it."
+        },
+        negativa: {
+          perspective: "Via Negativa finds truth by subtraction. Clarity may come less from adding answers and more from removing distortions.",
+          questions: ["What needs to stop?", "What noise or false obligation is making this harder?", "What drains should be removed before optimizing anything else?"],
+          action: "Subtract one commitment, one story, and one distraction.",
+          caution: "Not every problem is solved by addition. Many are solved by removal."
+        },
+        ooda: {
+          perspective: "The OODA lens values fast learning. Observe, orient, decide, and act before overthinking becomes disguised avoidance.",
+          questions: ["What am I observing right now?", "How should I orient to what it means?", "What is the next provisional decision?", "What immediate action earns better data?"],
+          action: "Run one quick experiment within 24-48 hours.",
+          caution: "Speed without orientation becomes thrashing."
+        },
+        family_systems: {
+          perspective: "Relational systems thinking looks at hidden loyalties, family roles, approval dynamics, and emotional contagion.",
+          questions: ["Whose approval or disappointment is shaping this?", "What role am I unconsciously playing?", "What system becomes unstable if I change?"],
+          action: "Name the relational system pressure before treating it as a purely personal problem.",
+          caution: "Not every inner conflict is private. Some are systemic."
+        },
+        trauma_informed: {
+          perspective: `This lens asks whether your body is reading the present through old pain. With ${pressure} pressure and energy at ${input.energy}/10, regulation matters to discernment.`,
+          questions: ["Am I activated or actually clear?", "What would this look like from a steadier nervous system?", "What does safety need before strategy can work?"],
+          action: "Regulate first, then re-evaluate the choice.",
+          caution: "Activation can masquerade as certainty."
+        },
+        daily_workout: {
+          perspective: `The Daily Workout Lens turns your patterns into practice. ${patterns.insight} Today the goal is not just to understand the situation, but to train the next mental rep you usually avoid.`,
+          questions: [
+            `What would a strong daily rep look like if you were no longer ruled by ${patterns.topFeeling} drift in ${patterns.topArena} moments?`,
+            "What is one thought pattern you can challenge today that usually runs automatically?",
+            "What encouragement would help you move one notch beyond your current default?"
+          ],
+          action: `Do one daily rep: name the pattern, interrupt it once, and replace it with a better move before the day ends.${patterns.topCombo ? ` Your historically useful combo is ${patterns.topCombo.replaceAll("+", " + ")}.` : ""}`,
+          caution: "This is training, not perfection. The point is repetition with honesty, not self-attack."
+        },
+        health: {
+          perspective: "The health lens asks what your body, stress load, sleep, recovery, and nervous system are contributing to the way the situation feels.",
+          questions: ["How much of this is worsened by depletion?", "What would this look like after better sleep and lower stress?", "Is the body sounding an alarm I should respect?"],
+          action: "Protect recovery before making a major call from exhaustion.",
+          caution: "A dysregulated body changes thought quality."
+        },
+        nutrition: {
+          perspective: "Nutrition thinking checks whether energy crashes, poor fuel, dehydration, or inconsistent routines are destabilizing judgment and mood.",
+          questions: ["Am I under-fueled, overstimulated, or physiologically erratic?", "What intake patterns are affecting mood and clarity?", "Would steadier nutrition reduce reactivity?"],
+          action: "Stabilize hydration, protein, meal timing, and stimulant swings for several days.",
+          caution: "Not every mental spiral is purely philosophical."
+        },
+        psychology: {
+          perspective: "Psychology examines cognition, attachment, defense mechanisms, conditioning, and emotional meaning.",
+          questions: ["What belief is shaping the reaction?", "What attachment fear is active?", "What behavior pattern gets reinforced here?"],
+          action: "Identify the thought-feeling-behavior loop and intervene upstream.",
+          caution: "Insight is useful, but change also needs repetition and behavior."
+        },
+        jung: {
+          perspective: "The Jungian lens asks what deeper symbolic pattern is alive here: shadow, persona, unlived potential, or the tension between who you appear to be and who you are becoming.",
+          questions: ["What part of me is being disowned or overperformed?", "Where is persona winning over individuation?", "What symbol, image, or repeated inner scene keeps trying to speak?"],
+          action: "Name the split between the performed self and the deeper self, then choose one move that reduces that split.",
+          caution: "Do not use depth language to become vague. Symbolic truth still needs grounded action."
+        },
+        archetype: {
+          perspective: "The archetype lens asks which role is driving the moment: hero, orphan, sage, rebel, caregiver, ruler, lover, warrior, creator, or trickster.",
+          questions: ["Which archetype am I inhabiting right now?", "What strength is that archetype offering?", "What distortion appears when that archetype takes over too much?"],
+          action: "Choose the archetype you want leading the next step, instead of unconsciously letting the loudest one run the show.",
+          caution: "Archetypes are maps, not boxes. Use them to reveal energy patterns, not reduce your whole identity."
+        },
+        dream_analysis: {
+          perspective: "The dream analysis lens treats repeated dreams, symbols, and strange inner images as clues about what the psyche is processing beneath conscious control.",
+          questions: ["If this situation were a dream, what image or symbol would represent it?", "What keeps repeating in your inner world that you are not quite facing awake?", "What emotional truth might the strange image be carrying?"],
+          action: "Write the strongest image, symbol, or dream fragment linked to this issue and ask what emotion or warning it carries.",
+          caution: "Dream language is suggestive, not literal. Look for emotional truth and symbolism, not prediction."
+        },
+        socratic: {
+          perspective: "The Socratic lens slows everything down with disciplined questions, exposing assumptions, contradictions, and claims you have not really tested.",
+          questions: ["What do I mean by that exactly?", "What assumption is hiding inside this conclusion?", "How do I know this is true rather than merely familiar?"],
+          action: "Take your strongest claim about the situation and interrogate it with three rounds of questions.",
+          caution: "Questioning should clarify truth, not become a clever way to avoid commitment forever."
+        },
+        historical: {
+          perspective: "The historical lens asks how similar human tensions have played out before: ambition versus duty, fear versus freedom, stability versus calling, and order versus upheaval.",
+          questions: ["What does history suggest people usually regret in situations like this?", "Which historical pattern or figure does this resemble?", "What example warns against drift or cowardice here?"],
+          action: "Choose one historical example that mirrors your tension and extract the practical lesson instead of repeating the same avoidable mistake.",
+          caution: "History offers patterns, not exact scripts. Learn analogically, not mechanically."
+        },
+        future_self: {
+          perspective: "The future self lens stands in the longer arc and asks what the wiser, older, more integrated version of you would thank you for starting now.",
+          questions: ["What would future-you beg you not to postpone?", "What present discomfort buys future freedom?", "Which choice grows a life you will want to inhabit?"],
+          action: "Write from the voice of future-you for five minutes, then act on the clearest instruction that emerges.",
+          caution: "Do not romanticize the future self. Let it sharpen courage, not create fantasy."
+        },
+        jordan_peterson: {
+          perspective: "This lens asks where truthful responsibility, meaningful burden-bearing, order-versus-chaos tension, and voluntary courage are being demanded of you.",
+          questions: ["What responsibility is life placing in front of me?", "Where am I avoiding the burden that would actually mature me?", "What truthful order needs to be restored here?"],
+          action: "Pick the smallest meaningful responsibility you know you should shoulder and carry it voluntarily today.",
+          caution: "Responsibility should deepen meaning, not become another mask for rigid self-punishment."
+        },
+        frankl: {
+          perspective: "The Frankl lens asks what meaning is being invited here, especially through suffering, constraint, and the responsibility to answer life well.",
+          questions: ["What is life asking of me here?", "Where can dignity still be chosen?", "How can I respond in a way that gives suffering meaning instead of letting it become only bitterness?"],
+          action: "Frame the situation as a question life is asking you, then answer with one responsible act.",
+          caution: "Meaning is not denial of pain. It is the manner in which pain is answered."
+        },
+        antifragile: {
+          perspective: "The antifragile lens asks how this challenge could strengthen you through volatility, feedback, and stressors instead of merely being endured.",
+          questions: ["What part of this could make me stronger if I engage it correctly?", "Where do I need optionality rather than brittle certainty?", "What small stress exposure would build real capacity?"],
+          action: "Turn the situation into a manageable stress-rep that makes you less fragile over time.",
+          caution: "Do not confuse reckless exposure with constructive stress."
+        },
+        kahneman: {
+          perspective: "The Kahneman lens checks whether fast thinking, loss aversion, framing effects, overconfidence, or availability bias are warping the decision.",
+          questions: ["What bias is most likely active here?", "How would this look if framed the opposite way?", "Am I overweighting vivid fears and underweighting base rates?"],
+          action: "Reframe the decision at least two different ways and test whether your judgment changes too easily.",
+          caution: "Bias-awareness is useful only if it changes how you decide, not just how clever your commentary sounds."
+        },
+        naval: {
+          perspective: "The Naval lens asks where leverage, specific knowledge, judgment, and long-term freedom are hiding beneath the obvious decision.",
+          questions: ["What here could compound instead of merely pay once?", "Where is my specific knowledge strongest?", "What would buy more freedom rather than a shinier cage?"],
+          action: "Favor the move that builds leverage and long-term independence over short-lived status.",
+          caution: "Leverage is powerful, but it should still be grounded in reality and craftsmanship."
+        },
+        mimetic: {
+          perspective: "The mimetic lens asks whether this desire is truly yours or copied from the models, peers, and status hierarchies around you.",
+          questions: ["Who taught me to want this?", "Would I still want it if nobody could see it?", "Is this desire original, borrowed, or reactive?"],
+          action: "Separate your true desire from social imitation before making a costly move.",
+          caution: "Borrowed desire can feel intensely real until you name where it came from."
+        },
+        mentor: {
+          perspective: "The mentor lens imagines a wise guide who knows both your potential and your avoidance patterns, and speaks with care but not indulgence.",
+          questions: ["What would a trusted mentor call me toward here?", "What excuse would they see through quickly?", "What strength would they remind me I already have?"],
+          action: "Write the blunt but loving advice your best mentor would give, then follow the most practical line.",
+          caution: "A real mentor voice strengthens agency, not dependency."
+        },
+        competence: {
+          perspective: "The competence lens reduces the problem to capability, standards, reps, and where skill development would change the whole picture.",
+          questions: ["What skill gap is making this feel bigger than it is?", "What would competence change here?", "What practice or standard would make this easier next month?"],
+          action: "Turn the problem into a trainable gap with a clear rep, standard, and review loop.",
+          caution: "Not every hard feeling is a philosophy problem. Some are a practice problem."
+        },
+        memento_mori: {
+          perspective: "The memento mori lens remembers finiteness. Time is not abstract, so the question becomes what truly deserves this life before it closes.",
+          questions: ["If time felt more real today, what would stop mattering?", "What would I be ashamed to postpone for another year?", "What is worth giving this finite life to?"],
+          action: "Make one mortality-aware choice that honors what matters more than comfort.",
+          caution: "Mortality should clarify, not create panic theater."
+        },
+        premortem: {
+          perspective: "The premortem lens imagines the plan failed and then works backward to surface the reasons early enough to change them.",
+          questions: ["If this failed in six months, why did it fail?", "What did I underestimate?", "What warning sign would show up first?"],
+          action: "Write the failure story first, then build one safeguard against each major cause.",
+          caution: "Premortems are for design strength, not fear spirals."
+        },
+        scientific: {
+          perspective: "The scientific lens treats the situation like a hypothesis problem: define variables, admit uncertainty, and test instead of guessing.",
+          questions: ["What is the hypothesis?", "What evidence supports or weakens it?", "What experiment would clarify the truth fastest?"],
+          action: "Turn the next step into a measurable test, not a dramatic identity declaration.",
+          caution: "Anecdotes and vibes are not enough when evidence can be gathered."
+        },
+        mathematical: {
+          perspective: "Mathematical thinking seeks variables, constraints, probability, expected value, thresholds, and optimization under limits.",
+          questions: ["What are the key variables?", "Which constraints are hard vs soft?", "What option has the best downside-adjusted value?"],
+          action: "Score options against weighted criteria rather than letting whichever feeling is loudest win.",
+          caution: "Not everything meaningful can be quantified, but quantification can expose sloppy thinking."
+        },
+        teacher: {
+          perspective: "The teacher lens asks whether the situation is actually understood well enough to explain simply and practice clearly.",
+          questions: ["Can I explain the problem in plain language?", "What lesson keeps repeating here?", "What would I teach someone else in my situation?"],
+          action: "Write the lesson, then design the next practice rep.",
+          caution: "If you cannot explain it simply, you may not understand it cleanly yet."
+        },
+        carpenter: {
+          perspective: "A carpenter thinks in terms of sound measurements, sequence, fit, and structure. Bad foundations create expensive rework.",
+          questions: ["Is the foundation sound?", "Am I rushing before measuring properly?", "What sequence prevents waste and rework?"],
+          action: "Slow down, square the frame, and fix the foundation before cosmetic work.",
+          caution: "Beautiful finishes do not rescue crooked structure."
+        },
+        boilermaker: {
+          perspective: "A boilermaker thinks about pressure, containment, integrity, and what happens when weak joins fail under load.",
+          questions: ["Where is pressure building?", "Which seam or weak joint is most likely to fail?", "What safety step is non-negotiable before load increases?"],
+          action: "Strengthen the weak join before the system takes more pressure.",
+          caution: "High-pressure systems punish ignored flaws."
+        },
+        financial: {
+          perspective: "The financial lens tests whether the move is viable in terms of runway, downside, opportunity cost, and cash risk.",
+          questions: ["What is the downside case?", "How much runway exists?", "What buffer is needed before movement feels wise rather than reckless?"],
+          action: "Get precise about numbers, buffers, and risk tolerance.",
+          caution: "Fear and prudence are not the same thing."
+        },
+        business_strategy: {
+          perspective: "Business strategy asks whether this move creates leverage, differentiation, and a coherent long-game instead of a scattered burst of effort.",
+          questions: ["What game am I really trying to win?", "Where is the strategic advantage or unfair edge?", "What should I deliberately not do so the core move can work?"],
+          action: "Define the real strategic position before multiplying activity.",
+          caution: "More motion is not the same as better positioning."
+        },
+        analytics: {
+          perspective: "The analytics lens wants the situation translated into baselines, leading indicators, and concrete signals so you are not steering by mood alone.",
+          questions: ["What is actually measurable here?", "What trend or baseline tells me if things are improving?", "Which metric matters most in the next two weeks?"],
+          action: "Pick one leading indicator and one outcome metric, then review them on a fixed cadence.",
+          caution: "Tracking everything creates noise. Track the few numbers that change decisions."
+        },
+        hr: {
+          perspective: "The HR lens looks at role clarity, expectation gaps, team fit, fairness, burnout risk, and the people consequences of the decision.",
+          questions: ["Whose expectations are unclear?", "Is this a role, capability, boundary, or culture issue?", "What people risk grows if this stays vague?"],
+          action: "Clarify roles, expectations, and support needs before treating the issue as a motivation problem.",
+          caution: "When people problems stay unnamed, they harden into performance or trust problems."
+        },
+        ohs: {
+          perspective: "The OHS lens checks physical safety, psychological safety, fatigue, process risk, and whether pressure is normalizing unsafe behavior.",
+          questions: ["What could hurt someone here physically or mentally?", "Where is fatigue or stress increasing risk?", "What control measure should exist before pushing ahead?"],
+          action: "Slow down long enough to identify the hazard, rank the risk, and put a control in place.",
+          caution: "Urgency is one of the most common disguises worn by avoidable risk."
+        },
+        operations: {
+          perspective: "Operations thinking turns intention into a workable system with owners, sequence, handoffs, and repeatability.",
+          questions: ["Where does this get stuck in practice?", "Who owns each part of the process?", "What handoff, dependency, or bottleneck keeps breaking flow?"],
+          action: "Map the workflow step by step and assign clear ownership to the constraint.",
+          caution: "If nobody owns the bottleneck, the bottleneck owns the outcome."
+        },
+        product: {
+          perspective: "The product lens cares about whether a real problem is being solved in a way users will actually adopt and keep using.",
+          questions: ["What pain is most acute for the user?", "What would make this obviously valuable?", "How will I learn quickly whether this is being adopted or ignored?"],
+          action: "Get closer to real user pain before polishing secondary features or abstractions.",
+          caution: "A beautifully built answer still fails if it solves the wrong problem."
+        },
+        marketing: {
+          perspective: "Marketing thinking asks whether the value is framed in a way people can notice, understand, and care about.",
+          questions: ["What is the clearest promise here?", "Who is this really for?", "What confusion or weak positioning is hiding the value?"],
+          action: "Rewrite the message so the audience, pain, and value are unmistakable in one pass.",
+          caution: "If the value is buried, the right people may never reach the right conclusion."
+        },
+        sales: {
+          perspective: "The sales lens looks at trust, objection handling, timing, commitment, and whether the path to action is easy enough to say yes to.",
+          questions: ["What objection is most likely?", "What evidence would increase trust?", "What is the smallest commitment that moves this forward?"],
+          action: "Lower friction and answer the key objection before asking for a larger commitment.",
+          caution: "People often resist unclear risk more than the offer itself."
+        },
+        entrepreneurship: {
+          perspective: "The entrepreneur lens asks whether this move creates learning, momentum, market contact, and survival at the same time rather than just satisfying ambition in theory.",
+          questions: ["What proves real demand fastest?", "How do I keep the venture alive while learning?", "What am I building that someone may actually pull from me rather than politely praise?"],
+          action: "Bias toward market contact, fast learning, and preserving enough runway to keep iterating.",
+          caution: "Founders often overbuild certainty and underbuild feedback."
+        },
+        investor: {
+          perspective: "The investor lens judges the decision by capital allocation, optionality, risk-adjusted upside, and whether the return profile justifies the exposure.",
+          questions: ["What is the downside if I am wrong?", "What upside compounds if I am right?", "Is this a concentrated bet, a small option, or a poor allocation?"],
+          action: "Size the move according to conviction, downside protection, and how reversible it is.",
+          caution: "Not every exciting opportunity deserves equal allocation."
+        },
+        compliance: {
+          perspective: "The compliance lens checks whether your move aligns with policy, obligations, reporting needs, and the kind of audit trail future-you may need.",
+          questions: ["What rule, standard, or policy applies here?", "What needs to be documented?", "Who needs visibility before the move is made?"],
+          action: "Document the decision path and confirm the minimum obligations before acting.",
+          caution: "Informal shortcuts feel efficient until scrutiny arrives."
+        },
+        governance: {
+          perspective: "The governance lens asks who gets to decide, who is accountable, what escalation path exists, and whether stewardship is strong enough for the consequence of the move.",
+          questions: ["Who owns the final call?", "What decisions are unclear or duplicated?", "Where does this need oversight before execution?"],
+          action: "Clarify decision rights, accountability, and review points before the plan scales.",
+          caution: "When authority is fuzzy, conflict and drift fill the space."
+        },
+        procurement: {
+          perspective: "The procurement lens checks whether the external vendor, tool, or input is fit for purpose in cost, reliability, supply, and contractual leverage.",
+          questions: ["What am I really buying and at what total cost?", "How reliable is the supplier or dependency?", "What terms, alternatives, or fallback options matter before committing?"],
+          action: "Compare options on total value, reliability, and leverage before locking in.",
+          caution: "Cheap inputs can become expensive when they add fragility or rework."
+        },
+        cybersecurity: {
+          perspective: "The cybersecurity lens looks for access risk, weak defaults, hidden exposure, data sensitivity, and how the system could be misused under stress.",
+          questions: ["What is exposed that should not be?", "Who has access and should they?", "What would the failure or breach path most likely look like?"],
+          action: "Reduce the attack surface, tighten access, and secure the most sensitive point first.",
+          caution: "Convenience-driven shortcuts often become tomorrow's incident report."
+        },
+        qa: {
+          perspective: "The QA lens assumes defects exist until proven otherwise and asks how the plan behaves under edge cases, regressions, and real-world messiness.",
+          questions: ["What is most likely to break?", "Which edge case would embarrass this plan fastest?", "How will I know the result is actually good rather than just apparently done?"],
+          action: "Define acceptance criteria, test the riskiest path first, and check for regression after changes.",
+          caution: "Completion is not the same as quality."
+        },
+        ethics: {
+          perspective: "The ethics lens asks not only what works, but what is right, fair, and humanly responsible when power, tradeoffs, or hidden harm are involved.",
+          questions: ["Who carries the hidden cost?", "Would this still feel right if made public?", "Am I rationalizing convenience over integrity?"],
+          action: "Choose the path you could explain without flinching to the people most affected by it.",
+          caution: "A clever move can still be a corrosive one."
+        },
+        customer: {
+          perspective: "The customer lens experiences the situation from the receiving end, where trust, clarity, speed, and emotional friction matter most.",
+          questions: ["What does this feel like for the end user?", "Where is the friction, confusion, or disappointment?", "What would create relief or confidence fastest?"],
+          action: "Walk the journey from the user's side and remove the sharpest point of friction first.",
+          caution: "Internal logic can look excellent while the external experience still feels rough."
+        },
+        logistics: {
+          perspective: "The logistics lens asks whether timing, sequence, access, supply, and coordination have been made practical enough to actually execute.",
+          questions: ["What has to be where, when, and in what order?", "Which dependency could stall the whole chain?", "What lead time am I underestimating?"],
+          action: "Make the sequence visible and protect the critical dependency before it becomes a delay.",
+          caution: "Plans often fail because movement was assumed, not coordinated."
+        },
+        mediation: {
+          perspective: "The mediation lens tries to cool the heat, separate positions from interests, and move people toward workable honesty instead of winner-loser escalation.",
+          questions: ["What is each side really trying to protect?", "Where is the heat higher than the actual issue?", "What shared ground can be named first?"],
+          action: "Translate hard positions into underlying needs, then reopen the conversation from there.",
+          caution: "Conflict gets harder when both sides only defend positions."
+        },
+        negotiation: {
+          perspective: "The negotiation lens looks at interests, leverage, alternatives, concessions, and how to move from a stuck stance to a workable agreement.",
+          questions: ["What do I need versus merely prefer?", "What is my best alternative if no deal happens?", "What concession trades well without costing too much?"],
+          action: "Enter with clear interests, a walk-away line, and one creative trade to test.",
+          caution: "People who negotiate from vagueness usually concede more than they realize."
+        },
+        legal: {
+          perspective: "The legal lens asks what obligations, rights, liabilities, and documentation matter before acting.",
+          questions: ["What commitments or exposures exist?", "What needs to be documented?", "What precedent am I setting by this move?"],
+          action: "Clarify obligations and protect yourself from foreseeable dispute.",
+          caution: "Ambiguity feels harmless until conflict appears."
+        },
+        designer: {
+          perspective: "The designer lens looks for clarity, hierarchy, friction, and whether the situation is overloaded with noise.",
+          questions: ["What is the core message?", "Where is the clutter?", "What would make this easier to see and navigate?"],
+          action: "Simplify the interface between you and the decision.",
+          caution: "When everything is emphasized, nothing is clear."
+        },
+        engineer: {
+          perspective: "Engineering thinking examines constraints, reliability, modularity, testing, and failure modes.",
+          questions: ["What are the critical dependencies?", "Where are the failure modes?", "How can I make the next step reversible and testable?"],
+          action: "Reduce risk by making the next move modular and inspectable.",
+          caution: "Elegant plans still fail if they ignore constraints."
+        }
+      };
+
+      return map[lens.key] || generic;
+    }
+
+    function synthesize(input, need, edge) {
+      const arenaLine = {
+        career: "Your work story seems tightly tied to identity and risk tolerance.",
+        relationships: "This looks like a moment where emotional honesty may matter more than tactical correctness.",
+        health: "The body may be delivering part of the wisdom, especially if fatigue is shaping perception.",
+        money: "Financial caution may be wise, but fear of instability can also disguise itself as prudence.",
+        purpose: "Purpose questions often ask for alignment before speed.",
+        identity: "Identity questions usually get clearer when you stop asking what sounds impressive and start asking what feels true."
+      }[input.arena];
+
+      return `Across the lenses, the shared insight is this: the real decision is less about surface logistics and more about ${need.toLowerCase()}, identity, and the kind of life you are reinforcing. ${arenaLine} The healthiest next move is probably not a giant leap or a retreat, but a truth-revealing step that honors ${edge.toLowerCase()} without demanding perfection.`;
+    }
+
+    function buildPlan(input, need, edge) {
+      const steps = [
+        {
+          id: "truth",
+          title: "Name the cleanest truth",
+          body: `Write one sentence that states the real issue without performance, blame, or fog. This gives your mind something honest to organize around.`,
+          howTo: [
+            "Write the issue in one plain sentence starting with `The real issue is...`.",
+            "Strip out dramatic language, other people's motives, and vague words like `everything` or `always`.",
+            "Test the sentence by asking whether it names a decision, a fear, or a missing fact."
+          ]
+        },
+        {
+          id: "experiment",
+          title: "Design a low-drama experiment",
+          body: `Choose one action in the next 48 hours that increases information or alignment without requiring a total life leap. Small truthful experiments beat fantasy loops.`,
+          howTo: [
+            "Pick a step that can be done in under an hour or booked today.",
+            "Make it information-gathering, not identity-proving: call, ask, draft, test, shadow, price, or prototype.",
+            "Decide what answer or evidence this experiment is supposed to reveal."
+          ]
+        },
+        {
+          id: "support",
+          title: "Protect the state you need",
+          body: `Since the core need looks like ${need.toLowerCase()}, build one environmental support around it: a boundary, rest block, calendar space, financial number, or hard conversation.`,
+          howTo: [
+            `Choose one support that directly increases ${need.toLowerCase()}.`,
+            "Put it in the calendar, budget, or message thread so it exists outside your head.",
+            "Remove one obvious drain that would sabotage the plan before it starts."
+          ]
+        },
+        {
+          id: "edge",
+          title: "Train the growth edge",
+          body: `Practice ${edge.toLowerCase()} in a concrete way this week. If the next version of you needs this trait, it has to be rehearsed, not admired.`,
+          howTo: [
+            `Translate ${edge.toLowerCase()} into one visible behavior.`,
+            "Choose a moment this week where you will deliberately practice it.",
+            "Review afterward: what did you do, what happened, and what should be repeated next time?"
+          ]
+        }
+      ];
+
+      if (input.feeling === "resentful" || input.arena === "relationships") {
+        steps[1] = {
+          id: "conversation",
+          title: "Prepare the honest conversation",
+          body: "Sketch the conversation that says what is true without making the other person the villain. Relief often follows clarity.",
+          howTo: [
+            "Write three lines: what happened, what it has cost, and what needs to change.",
+            "Remove accusations and mind-reading so the message stays clean.",
+            "End with a concrete request, boundary, or question that can actually move the situation."
+          ]
+        };
+      }
+
+      if (input.energy <= 3) {
+        steps[2] = {
+          id: "stabilize",
+          title: "Stabilize before strategizing",
+          body: "Protect sleep, reduce one drain, and simplify commitments. A depleted system will misread almost any decision.",
+          howTo: [
+            "Identify the biggest drain on sleep, energy, or nervous-system load this week.",
+            "Cut or postpone one non-essential demand for 72 hours.",
+            "Revisit the decision only after a better baseline of rest, food, and mental space."
+          ]
+        };
+      }
+
+      return steps;
+    }
+
+    function buildExecutionPlan(input, need, edge) {
+      const signature = `${input.situation}|${input.feeling}|${input.arena}|${need}|${edge}`;
+      const generated = buildPlan(input, need, edge).map((step) => ({
+        id: step.id,
+        title: step.title,
+        body: step.body,
+        status: "todo",
+        note: "",
+        dueDate: "",
+        priority: "medium",
+        blocker: ""
+      }));
+
+      const saved = state.profile.executionPlan;
+      if (saved.signature === signature && saved.steps.length) {
+        const mergedSteps = saved.steps.map((savedStep, index) => ({
+          ...generated[index],
+          ...savedStep,
+          howTo: savedStep.howTo?.length ? savedStep.howTo : (generated[index]?.howTo || [])
+        }));
+        state.profile.executionPlan.steps = mergedSteps;
+        saveProfile();
+        return { signature, steps: mergedSteps };
+      }
+
+      state.profile.executionPlan = {
+        signature,
+        steps: generated,
+        history: saved.history || [],
+        meta: saved.meta || { outcome: "", reviewDate: "", successCriteria: "", helpfulness: "" }
+      };
+      saveProfile();
+      return state.profile.executionPlan;
+    }
+
+    function suggestLensPack(input) {
+      const text = `${input.situation} ${input.feeling} ${input.arena}`.toLowerCase();
+      if (/body|sleep|stress|food|health|energy|burnout|tired/.test(text)) return "health";
+      if (/god|faith|prayer|church|sin|calling|jesus|bible/.test(text)) return "spiritual";
+      if (/relationship|family|partner|marriage|friend|resent/.test(text)) return "relationships";
+      if (/build|launch|ship|execute|project|stuck/.test(text)) return "execution";
+      if (/money|runway|cost|business|job|career/.test(text)) return "business";
+      if (/dream|symbol|shadow|archetype|jung|inner world/.test(text)) return "psyche";
+      if (/meaning|responsibility|virtue|philosophy|truth|question my assumptions/.test(text)) return "philosophy";
+      if (/future self|legacy|older me|long term/.test(text)) return "growth";
+      if (/death|mortality|finite|time is short|legacy/.test(text)) return "legacy";
+      if (/team|manager|employee|hiring|staff|people|culture|conflict/.test(text)) return "people";
+      if (/risk|safety|hazard|incident|fatigue|unsafe|injury/.test(text)) return "risk";
+      if (/workflow|handoff|process|delay|supply|operations|throughput/.test(text)) return "operations";
+      if (/code|bug|security|breach|test|qa|system|platform|software/.test(text)) return "technical";
+      if (/startup|founder|venture|invest|product-market|raise|customer discovery/.test(text)) return "venture";
+      if (/trade|construction|weld|fabrication|repair|build physically/.test(text)) return "trade";
+      if (/evidence|experiment|hypothesis|measure|data/.test(text)) return "science";
+      return input.arena === "health" ? "health" : input.arena === "relationships" ? "relationships" : input.arena === "career" ? "business" : "execution";
+    }
+
+    function comboMemoryBoost(input) {
+      const boosts = {};
+      for (const item of state.profile.comboHistory || []) {
+        let weight = 0;
+        if (item.arena === input.arena) weight += 2;
+        if (item.feeling === input.feeling) weight += 2;
+        if (weight === 0) continue;
+        for (const key of item.lenses) {
+          boosts[key] = (boosts[key] || 0) + weight;
+        }
+      }
+      return boosts;
+    }
+
+    function suggestSpecificLenses(input) {
+      const text = `${input.situation} ${input.feeling} ${input.arena}`.toLowerCase();
+      const memoryBoost = comboMemoryBoost(input);
+      const scored = lenses.map((lens) => {
+        let score = 0;
+        if (lens.category === "psychology" && /anxious|conflicted|resentful|trigger|pattern|emotion/.test(text)) score += 3;
+        if (lens.category === "spiritual" && /meaning|calling|truth|god|faith|jesus|bible/.test(text)) score += 4;
+        if (lens.category === "health" && /sleep|energy|health|tired|burnout|food|body/.test(text)) score += 4;
+        if (lens.category === "economic" && /money|cost|job|runway|salary|financial/.test(text)) score += 4;
+        if (lens.category === "execution" && /start|ship|build|project|action|execute/.test(text)) score += 3;
+        if (lens.category === "growth" && /future|habit|daily|grow|version of me|goal/.test(text)) score += 4;
+        if (lens.category === "history" && /history|historical|civilization|what happened before/.test(text)) score += 4;
+        if (lens.category === "business" && /business|market|customer|position|offer|product|team|operations/.test(text)) score += 4;
+        if (lens.category === "people" && /team|manager|employee|people|culture|hiring|conflict/.test(text)) score += 4;
+        if (lens.category === "risk" && /risk|safety|hazard|fatigue|incident|unsafe/.test(text)) score += 4;
+        if (lens.category === "data" && /data|metric|measure|trend|analytics|numbers/.test(text)) score += 4;
+        if (lens.category === "operations" && /workflow|process|handoff|delay|logistics|supply/.test(text)) score += 4;
+        if (lens.category === "technical" && /code|system|platform|bug|security|qa|test|software/.test(text)) score += 4;
+        if (lens.key === "rei" && /conflicted|anxious|overwhelmed|feel|emotion/.test(text)) score += 5;
+        if (lens.key === "daily_workout" && /habit|stuck|pattern|daily|grow|change/.test(text)) score += 5;
+        if (lens.key === "future_self" && /future|legacy|long term|older me/.test(text)) score += 5;
+        if (lens.key === "jung" && /shadow|symbol|dream|inner|persona/.test(text)) score += 5;
+        if (lens.key === "archetype" && /role|hero|villain|pattern|character/.test(text)) score += 4;
+        if (lens.key === "dream_analysis" && /dream|nightmare|symbol|recurring image/.test(text)) score += 5;
+        if (lens.key === "socratic" && /assumption|question|true|prove/.test(text)) score += 4;
+        if (lens.key === "historical" && /history|historical|pattern from the past/.test(text)) score += 4;
+        if (lens.key === "jordan_peterson" && /responsibility|chaos|order|meaning/.test(text)) score += 4;
+        if (lens.key === "frankl" && /meaning|suffering|purpose|dignity/.test(text)) score += 4;
+        if (lens.key === "antifragile" && /resilience|stress|volatility|fragile/.test(text)) score += 4;
+        if (lens.key === "kahneman" && /bias|framing|decision|probability/.test(text)) score += 4;
+        if (lens.key === "naval" && /freedom|leverage|specific knowledge|wealth|independent/.test(text)) score += 4;
+        if (lens.key === "mimetic" && /status|comparison|envy|copied desire|approval/.test(text)) score += 4;
+        if (lens.key === "mentor" && /advice|mentor|guidance|wise voice/.test(text)) score += 4;
+        if (lens.key === "competence" && /skill|practice|learn|not good enough|capability/.test(text)) score += 4;
+        if (lens.key === "memento_mori" && /death|mortality|finite|time is short|legacy/.test(text)) score += 5;
+        if (lens.key === "premortem" && /plan|project|launch|what if it fails|risk/.test(text)) score += 4;
+        if (lens.key === "kingdom" && /meaning|calling|spiritual|truth|service/.test(text)) score += 5;
+        if (lens.key === "first_principles" && /decide|choice|whether|should/.test(text)) score += 4;
+        if (lens.key === "systems" && /pattern|loop|repeat|stuck/.test(text)) score += 4;
+        if (lens.key === "financial" && input.arena === "money") score += 5;
+        if (lens.key === "business_strategy" && input.arena === "career") score += 4;
+        if (lens.key === "hr" && /manager|employee|team|culture|performance|people/.test(text)) score += 5;
+        if (lens.key === "ohs" && /safety|hazard|injury|fatigue|burnout|stress/.test(text)) score += 5;
+        if (lens.key === "analytics" && /data|metric|measure|numbers|trend/.test(text)) score += 5;
+        if (lens.key === "qa" && /bug|test|quality|regression|edge case/.test(text)) score += 5;
+        if (lens.key === "cybersecurity" && /security|breach|password|access|risk/.test(text)) score += 5;
+        if (lens.key === "entrepreneurship" && /startup|founder|build something|launch|venture/.test(text)) score += 5;
+        if (lens.key === "investor" && /invest|allocation|upside|downside|return/.test(text)) score += 5;
+        if (lens.key === "health" && input.arena === "health") score += 5;
+        if (lens.key === "family_systems" && input.arena === "relationships") score += 5;
+        if (lens.key === "identity" && input.arena === "identity") score += 5;
+        score += memoryBoost[lens.key] || 0;
+        return { lens, score };
+      }).sort((a, b) => b.score - a.score);
+
+      return scored.filter((item) => item.score > 0).slice(0, 5);
+    }
+
+    function explainLensChoice(lens, input) {
+      const text = `${input.situation} ${input.feeling} ${input.arena}`.toLowerCase();
+      if (lens.key === "rei") return "It fits because your input carries emotional tension, and R.E.I helps separate reason, emotion, and instinct instead of letting them blur together.";
+      if (lens.key === "daily_workout") return "It fits because this looks like something that can become a daily training rep, not only a one-off insight.";
+      if (lens.key === "future_self") return "It fits because the situation has long-arc consequences and benefits from a wiser, older perspective.";
+      if (lens.key === "jung") return "It fits because shadow, symbol, persona, or inner-life themes may be shaping more than the surface facts.";
+      if (lens.key === "archetype") return "It fits because the situation may be driven by a character-role pattern that is easier to see than to feel.";
+      if (lens.key === "dream_analysis") return "It fits because recurring symbols, dreams, or strange emotional imagery may be carrying insight here.";
+      if (lens.key === "socratic") return "It fits because the situation may need stronger questioning rather than more fast conclusions.";
+      if (lens.key === "historical") return "It fits because history often exposes recurring human patterns hiding inside modern problems.";
+      if (lens.key === "jordan_peterson") return "It fits because responsibility, truthful order, and meaningful burden-bearing seem relevant to the decision.";
+      if (lens.key === "frankl") return "It fits because meaning and dignified response may matter more here than comfort alone.";
+      if (lens.key === "antifragile") return "It fits because the challenge may be usable as a strengthening stressor if handled intelligently.";
+      if (lens.key === "kahneman") return "It fits because cognitive bias and framing effects may be distorting the judgment call.";
+      if (lens.key === "naval") return "It fits because leverage, freedom, and long-term compounding may matter more than surface prestige.";
+      if (lens.key === "mimetic") return "It fits because some of the desire or pressure may be socially borrowed rather than deeply owned.";
+      if (lens.key === "mentor") return "It fits because the situation may need a wise externalized voice more than another self-argument.";
+      if (lens.key === "competence") return "It fits because the right next move may be skill-building rather than more abstract reflection.";
+      if (lens.key === "memento_mori") return "It fits because remembering time is finite can expose what actually matters here.";
+      if (lens.key === "premortem") return "It fits because the plan will improve if failure is imagined early rather than explained late.";
+      if (lens.key === "kingdom") return "It fits because your situation has identity and meaning weight, so a values-and-fruit lens can test the decision beyond comfort or fear.";
+      if (lens.key === "first_principles") return "It fits because the problem sounds like a real decision, and first-principles thinking strips away social fog and borrowed assumptions.";
+      if (lens.key === "systems") return "It fits because your wording suggests a pattern or loop, which means the issue may be structural rather than purely motivational.";
+      if (lens.key === "financial") return "It fits because the situation touches runway, cost, or risk tolerance, so numbers need a seat at the table.";
+      if (lens.key === "business_strategy") return "It fits because the situation is not just emotional, it has leverage, timing, and positioning consequences.";
+      if (lens.key === "analytics") return "It fits because clearer metrics or baselines would make the next move less guessy.";
+      if (lens.key === "hr") return "It fits because people expectations, role clarity, or culture dynamics may be driving more of the situation than is obvious.";
+      if (lens.key === "ohs") return "It fits because fatigue, hazard, or psychological safety may need to be treated as first-order realities.";
+      if (lens.key === "operations") return "It fits because the issue may be less about intent and more about process, ownership, and bottlenecks.";
+      if (lens.key === "qa") return "It fits because the plan may fail on edge cases or hidden defects unless quality is made explicit.";
+      if (lens.key === "cybersecurity") return "It fits because exposure, access, or safety of the system may be part of the real decision.";
+      if (lens.key === "entrepreneurship") return "It fits because this situation sounds like a build-and-learn problem, not only a choose-and-think problem.";
+      if (lens.key === "investor") return "It fits because the move has allocation and risk-adjusted return implications, not just emotional ones.";
+      if (lens.key === "health") return "It fits because your state may be affecting your judgment, and body load changes how problems feel.";
+      if (lens.key === "family_systems") return "It fits because relationships, approval, and roles may be shaping the choice more than the surface story admits.";
+      if (lens.key === "psychology") return "It fits because the language suggests beliefs, fears, and recurring behavior patterns that benefit from psychological framing.";
+      if (lens.key === "ooda") return "It fits because this sounds action-stuck, and OODA helps move from analysis into learning loops.";
+      if (lens.key === "shadow") return "It fits because parts of the issue may be driven by pride, shame, image, or hidden fear.";
+      return `It fits because the situation carries signals that match ${lens.title.toLowerCase()} thinking.`;
+    }
+
+    function chooseBestCombo(scoredLenses, input) {
+      const picked = [];
+      const usedCategories = new Set();
+      for (const item of scoredLenses) {
+        if (picked.length >= 3) break;
+        if (!usedCategories.has(item.lens.category) || item.score >= 5) {
+          picked.push(item.lens);
+          usedCategories.add(item.lens.category);
+        }
+      }
+      while (picked.length < 3 && scoredLenses[picked.length]) {
+        picked.push(scoredLenses[picked.length].lens);
+      }
+      const why = picked.map((lens) => `${lens.title}: ${explainLensChoice(lens, input)}`).join(" ");
+      return { lenses: picked, why };
+    }
+
+    function applyRecommendedLensState(input) {
+      const scored = suggestSpecificLenses(input);
+      const combo = chooseBestCombo(scored, input);
+      if (combo.lenses.length) {
+        state.compareLenses = combo.lenses.map((lens) => lens.key);
+      }
+      if (scored.length && !state.lensSearch.trim()) {
+        state.selectedLens = scored[0].lens.key;
+      }
+      return { scored, combo };
+    }
+
+    function renderSuggestions(input) {
+      const pack = suggestLensPack(input);
+      const packLenses = lensPacks[pack] || [];
+      lensPackSuggestion.textContent = `${capitalize(pack)} pack: ${packLenses.map((key) => lenses.find((lens) => lens.key === key)?.title).filter(Boolean).join(", ")}`;
+
+      const scored = suggestSpecificLenses(input);
+      const topLenses = scored.map((item) => item.lens);
+      const combo = chooseBestCombo(scored, input);
+
+      bestComboTitle.textContent = combo.lenses.length
+        ? combo.lenses.map((lens) => lens.title).join(" + ")
+        : "Waiting for a situation...";
+      bestComboWhy.textContent = combo.why || "Type more detail and the app will explain why these lenses fit together.";
+
+      suggestedLenses.innerHTML = topLenses.length
+        ? topLenses.map((lens) => `<button class="chip suggested-lens" data-lens="${lens.key}" type="button">${lensIcon(lens)} ${lens.title}</button>`).join("")
+        : `<span class="subtle">Type more detail to get smarter lens recommendations.</span>`;
+
+      suggestedLenses.querySelectorAll(".suggested-lens").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.selectedLens = button.dataset.lens;
+          const packKey = Object.entries(lensPacks).find(([, packList]) => packList.includes(button.dataset.lens))?.[0];
+          if (packKey) state.lensCategory = "all";
+          runReflection();
+        });
+      });
+    }
+
+    function renderLensSuite(input, need, edge) {
+      lensFilters.innerHTML = lensCategories.map((category) => `
+        <button class="lens-filter ${state.lensCategory === category ? "active" : ""}" data-category="${category}" type="button">${capitalize(category)}</button>
+      `).join("");
+
+      lensFilters.querySelectorAll(".lens-filter").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.lensCategory = button.dataset.category;
+          renderLensSuite(input, need, edge);
+        });
+      });
+
+      const visibleLenses = lenses.filter((lens) => {
+        const matchesCategory = state.lensCategory === "all" || lens.category === state.lensCategory;
+        const q = state.lensSearch.trim().toLowerCase();
+        const haystack = `${lens.title} ${lens.category} ${lens.angle}`.toLowerCase();
+        const matchesSearch = !q || haystack.includes(q);
+        return matchesCategory && matchesSearch;
+      });
+
+      lensGrid.innerHTML = visibleLenses.map((lens) => `
+        <button class="lens-tile ${lens.key === state.selectedLens ? "active" : ""}" data-lens="${lens.key}" type="button">
+          <strong><span class="lens-icon">${lensIcon(lens)}</span>${lens.title}</strong>
+          <span>${lens.angle}</span>
+          <small>${state.compareLenses.includes(lens.key) ? "In compare set" : "Click to inspect, double-click to compare"}</small>
+        </button>
+      `).join("");
+
+      lensGrid.querySelectorAll(".lens-tile").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.selectedLens = button.dataset.lens;
+          renderLensSuite(input, need, edge);
+        });
+        button.addEventListener("dblclick", () => {
+          toggleCompareLens(button.dataset.lens);
+          renderLensSuite(input, need, edge);
+        });
+      });
+
+      const lens = lenses.find((item) => item.key === state.selectedLens) || lenses[0];
+      const detail = lensSpecificAnalysis(lens, input, need, edge);
+
+      lensDetail.innerHTML = `
+        <h3>${lensIcon(lens)} ${lens.title}</h3>
+        <p class="section-copy">${detail.perspective}</p>
+        <div class="lens-meta">
+          <span>Category: ${capitalize(lens.category)}</span>
+          <span>Core need: ${need}</span>
+          <span>Growth edge: ${edge}</span>
+          <span>Double-click a lens tile to add/remove it from compare</span>
+        </div>
+        <div class="lens-blocks">
+          ${detail.breakdown ? `
+            <div class="lens-block">
+              <strong>Breakdown</strong>
+              <ul>
+                <li><strong>Reason:</strong> ${detail.breakdown.reason}</li>
+                <li><strong>Emotion:</strong> ${detail.breakdown.emotion}</li>
+                <li><strong>Instinct:</strong> ${detail.breakdown.instinct}</li>
+              </ul>
+            </div>` : ""}
+          <div class="lens-block">
+            <strong>Questions</strong>
+            <ul>${detail.questions.map((question) => `<li>${question}</li>`).join("")}</ul>
+          </div>
+          <div class="lens-block">
+            <strong>Recommended move</strong>
+            <p>${detail.action}</p>
+          </div>
+          <div class="lens-block">
+            <strong>Watch-out</strong>
+            <p>${detail.caution}</p>
+          </div>
+          ${detail.scriptures ? `
+            <div class="lens-block">
+              <strong>Relevant scripture</strong>
+              <div class="scripture-list">
+                ${detail.scriptures.map((item) => `<div class="scripture-item">${item}</div>`).join("")}
+              </div>
+            </div>` : ""}
+        </div>
+      `;
+
+      renderCompare(input, need, edge);
+      renderSuggestions(input);
+    }
+
+    function toggleCompareLens(key) {
+      if (state.compareLenses.includes(key)) {
+        state.compareLenses = state.compareLenses.filter((item) => item !== key);
+        return;
+      }
+      if (state.compareLenses.length >= 3) {
+        state.compareLenses.shift();
+      }
+      state.compareLenses.push(key);
+    }
+
+    function renderCompare(input, need, edge) {
+      const selected = state.compareLenses
+        .map((key) => lenses.find((lens) => lens.key === key))
+        .filter(Boolean);
+
+      compareSummary.textContent = selected.length
+        ? `Comparing ${selected.map((lens) => lens.title).join(", ")}. Double-click any lens tile to change the compare set.`
+        : "Select up to 3 lenses to compare their advice side by side.";
+
+      compareGrid.innerHTML = selected.map((lens) => {
+        const detail = lensSpecificAnalysis(lens, input, need, edge);
+        return `
+          <div class="compare-card">
+            <h4><span class="lens-icon">${lensIcon(lens)}</span>${lens.title}</h4>
+            <p>${detail.perspective}</p>
+            <ul>
+              ${detail.questions.slice(0, 2).map((question) => `<li>${question}</li>`).join("")}
+            </ul>
+          </div>
+        `;
+      }).join("");
+
+      mergeComparedLenses(input, need, edge);
+    }
+
+    function mergeComparedLenses(input, need, edge) {
+      const selected = state.compareLenses
+        .map((key) => lenses.find((lens) => lens.key === key))
+        .filter(Boolean);
+
+      if (!selected.length) {
+        compareMergeOutput.innerHTML = "<p class=\"subtle\">No lenses selected for merge yet.</p>";
+        return;
+      }
+
+      const actionLines = selected.map((lens) => {
+        const detail = lensSpecificAnalysis(lens, input, need, edge);
+        return `${lens.title}: ${detail.action}`;
+      });
+
+      compareMergeOutput.innerHTML = `
+        <h3>Merged perspective</h3>
+        <p class="section-copy">Across ${selected.map((lens) => lens.title).join(", ")}, the combined advice is to honor ${need.toLowerCase()} while training ${edge.toLowerCase()}. The shared signal is that this situation should be clarified, grounded, and moved forward with a concrete but non-dramatic next step.</p>
+        <div class="lens-blocks">
+          <div class="lens-block">
+            <strong>Merged action</strong>
+            <ul>${actionLines.map((line) => `<li>${line}</li>`).join("")}</ul>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderExecutionPlan() {
+      const steps = state.profile.executionPlan.steps || [];
+      const meta = state.profile.executionPlan.meta || { outcome: "", reviewDate: "", successCriteria: "", helpfulness: "" };
+      const done = steps.filter((step) => step.status === "done").length;
+      const percent = steps.length ? Math.round((done / steps.length) * 100) : 0;
+      planPercent.textContent = `${percent}% complete`;
+      planProgressFill.style.width = `${percent}%`;
+      planSummary.textContent = steps.length
+        ? `${done} of ${steps.length} steps complete. Track progress, leave notes, and keep momentum visible.`
+        : "No execution steps yet.";
+      planOutcome.value = meta.outcome || "";
+      planReviewDate.value = meta.reviewDate || "";
+      planSuccessCriteria.value = meta.successCriteria || "";
+      helpfulSummary.textContent = meta.helpfulness
+        ? `Last feedback: ${meta.helpfulness}. This now informs future recommendation confidence.`
+        : "No feedback saved yet.";
+      helpfulYes.classList.toggle("active", meta.helpfulness === "helpful");
+      helpfulMixed.classList.toggle("active", meta.helpfulness === "partly helpful");
+      helpfulNo.classList.toggle("active", meta.helpfulness === "not helpful");
+
+      planList.innerHTML = steps.map((step, index) => `
+        <div class="plan-step">
+          <div class="index">${index + 1}</div>
+          <div>
+            <strong>${step.title}</strong>
+            <p>${step.body}</p>
+            ${step.howTo?.length ? `
+              <ul class="step-howto">
+                ${step.howTo.map((item) => `<li>${item}</li>`).join("")}
+              </ul>
+            ` : ""}
+            <p class="subtle">Priority: ${capitalize(step.priority || "medium")} ${step.dueDate ? ` / Due: ${step.dueDate}` : ""}</p>
+            <div class="step-actions">
+              ${["todo", "doing", "done"].map((status) => `
+                <button class="step-chip ${step.status === status ? "active" : ""}" data-step="${step.id}" data-status="${status}" type="button">${status}</button>
+              `).join("")}
+            </div>
+            <div class="grid-2" style="margin-top:10px;">
+              <input data-due="${step.id}" type="date" value="${step.dueDate || ""}">
+              <select data-priority="${step.id}">
+                <option value="low" ${step.priority === "low" ? "selected" : ""}>Low priority</option>
+                <option value="medium" ${step.priority === "medium" ? "selected" : ""}>Medium priority</option>
+                <option value="high" ${step.priority === "high" ? "selected" : ""}>High priority</option>
+              </select>
+            </div>
+            <input data-blocker="${step.id}" type="text" placeholder="Current blocker..." value="${step.blocker || ""}" style="margin-top:10px;">
+            <textarea data-note="${step.id}" placeholder="Add progress notes, blockers, or evidence of completion...">${step.note || ""}</textarea>
+          </div>
+        </div>
+      `).join("");
+
+      planList.querySelectorAll(".step-chip").forEach((button) => {
+        button.addEventListener("click", () => {
+          const step = state.profile.executionPlan.steps.find((item) => item.id === button.dataset.step);
+          if (!step) return;
+          if (step.status !== button.dataset.status) {
+            state.profile.executionPlan.history.unshift({
+              ts: new Date().toISOString(),
+              message: `${step.title} moved from ${step.status} to ${button.dataset.status}.`
+            });
+          }
+          step.status = button.dataset.status;
+          saveProfile();
+          renderExecutionPlan();
+        });
+      });
+
+      planList.querySelectorAll("textarea[data-note]").forEach((textarea) => {
+        textarea.addEventListener("input", () => {
+          const step = state.profile.executionPlan.steps.find((item) => item.id === textarea.dataset.note);
+          if (!step) return;
+          step.note = textarea.value;
+          saveProfile();
+        });
+      });
+
+      planList.querySelectorAll("input[data-due]").forEach((input) => {
+        input.addEventListener("input", () => {
+          const step = state.profile.executionPlan.steps.find((item) => item.id === input.dataset.due);
+          if (!step) return;
+          step.dueDate = input.value;
+          saveProfile();
+        });
+      });
+
+      planList.querySelectorAll("select[data-priority]").forEach((select) => {
+        select.addEventListener("change", () => {
+          const step = state.profile.executionPlan.steps.find((item) => item.id === select.dataset.priority);
+          if (!step) return;
+          step.priority = select.value;
+          saveProfile();
+        });
+      });
+
+      planList.querySelectorAll("input[data-blocker]").forEach((input) => {
+        input.addEventListener("input", () => {
+          const step = state.profile.executionPlan.steps.find((item) => item.id === input.dataset.blocker);
+          if (!step) return;
+          step.blocker = input.value;
+          saveProfile();
+        });
+      });
+
+      const history = state.profile.executionPlan.history || [];
+      planHistory.innerHTML = history.length
+        ? history.slice(0, 6).map((item) => `<div class="history-item">${item.message}<br><small>${new Date(item.ts).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</small></div>`).join("")
+        : `<p class="subtle">Execution history will appear here as you move steps through the board.</p>`;
+    }
+
+    function savePlanMeta() {
+      state.profile.executionPlan.meta = {
+        ...(state.profile.executionPlan.meta || {}),
+        outcome: planOutcome.value,
+        reviewDate: planReviewDate.value,
+        successCriteria: planSuccessCriteria.value,
+        helpfulness: state.profile.executionPlan.meta?.helpfulness || ""
+      };
+      saveProfile();
+    }
+
+    function setHelpfulness(value) {
+      state.profile.executionPlan.meta = {
+        ...(state.profile.executionPlan.meta || {}),
+        helpfulness: value
+      };
+      if (value === "helpful") state.profile.helpfulnessScore += 1;
+      if (value === "not helpful") state.profile.helpfulnessScore -= 1;
+      state.profile.executionPlan.history.unshift({
+        ts: new Date().toISOString(),
+        message: `Plan marked as ${value}.`
+      });
+      saveProfile();
+      renderExecutionPlan();
+      renderProfile();
+    }
+
+    function addCustomStep() {
+      const value = newStepInput.value.trim();
+      if (!value) return;
+      state.profile.executionPlan.steps.push({
+        id: `custom-${Date.now()}`,
+        title: value,
+        body: "Custom step added by the user to keep the execution board grounded in real work.",
+        howTo: [
+          "Break this custom step into the smallest concrete action you can complete without more planning.",
+          "Use the note field to define the exact output, person, or evidence needed.",
+          "Mark the blocker clearly if progress depends on someone else or missing information."
+        ],
+        status: "todo",
+        note: "",
+        dueDate: newStepDue.value,
+        priority: newStepPriority.value,
+        blocker: ""
+      });
+      state.profile.executionPlan.history.unshift({
+        ts: new Date().toISOString(),
+        message: `Added custom step: ${value}.`
+      });
+      newStepInput.value = "";
+      newStepDue.value = "";
+      newStepPriority.value = "medium";
+      saveProfile();
+      renderExecutionPlan();
+    }
+
+    function addJournalItem() {
+      const title = journalTitle.value.trim();
+      const body = journalBody.value.trim();
+      if (!title && !body) return;
+      state.profile.journalEntries.unshift({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        title: title || "Untitled note",
+        body,
+        status: journalStatus.value,
+        reviewDate: journalReviewDate.value,
+        createdAt: new Date().toISOString()
+      });
+      state.profile.journalEntries = state.profile.journalEntries.slice(0, 30);
+      journalTitle.value = "";
+      journalBody.value = "";
+      journalStatus.value = "open";
+      journalReviewDate.value = "";
+      saveProfile();
+      renderJournal();
+    }
+
+    function renderJournal() {
+      const items = state.profile.journalEntries || [];
+      journalList.innerHTML = items.length
+        ? items.map((item) => `
+            <article class="journal-item">
+              <strong>${item.title}</strong>
+              <p>${item.body || "No extra detail saved."}</p>
+              <small>Status: ${capitalize(item.status)}${item.reviewDate ? ` / Review: ${item.reviewDate}` : ""}</small>
+            </article>
+          `).join("")
+        : `<p class="empty">Your unresolved decisions and notes will appear here so open loops do not pile up in your head.</p>`;
+    }
+
+    function addCustomLens() {
+      const title = customLensTitle.value.trim();
+      const category = (customLensCategory.value.trim() || "custom").toLowerCase().replace(/[^a-z0-9_ -]/g, "").replace(/\s+/g, "_");
+      const angle = customLensAngle.value.trim();
+      const perspective = customLensPerspective.value.trim();
+      const action = customLensAction.value.trim();
+      if (!title || !angle || !perspective || !action) return;
+
+      const keyBase = title.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+      const key = `${keyBase}_${Date.now()}`;
+      const questions = customLensQuestions.value.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 5);
+
+      state.profile.customLenses.unshift({
+        key,
+        title,
+        category: category || "custom",
+        angle,
+        icon: customLensIcon.value.trim() || "✨",
+        customConfig: {
+          perspective,
+          questions: questions.length ? questions : [
+            "What does this custom lens notice that my default style misses?",
+            "What would this lens urge me to question or emphasize?",
+            "What move becomes clearer from this perspective?"
+          ],
+          action,
+          caution: customLensCaution.value.trim() || "Use this lens for clarity, not self-judgment."
+        }
+      });
+
+      customLensTitle.value = "";
+      customLensCategory.value = "";
+      customLensIcon.value = "";
+      customLensAngle.value = "";
+      customLensPerspective.value = "";
+      customLensQuestions.value = "";
+      customLensAction.value = "";
+      customLensCaution.value = "";
+
+      syncCustomLenses();
+      saveProfile();
+      runReflection();
+    }
+
+    function saveLifePlan() {
+      state.profile.lifePlan = {
+        ...(state.profile.lifePlan || { milestones: [] }),
+        vision: lifeVision.value,
+        identity: lifeIdentity.value,
+        goals: lifeGoals.value,
+        map: lifeMap.value
+      };
+      saveProfile();
+    }
+
+    function addLifeMilestone() {
+      const title = milestoneTitle.value.trim();
+      if (!title) return;
+      state.profile.lifePlan = state.profile.lifePlan || { vision: "", identity: "", goals: "", map: "", milestones: [] };
+      state.profile.lifePlan.milestones.unshift({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        title,
+        timeline: milestoneTimeline.value.trim(),
+        done: false
+      });
+      milestoneTitle.value = "";
+      milestoneTimeline.value = "";
+      saveProfile();
+      renderLifePlan();
+    }
+
+    function renderLifePlan() {
+      const plan = state.profile.lifePlan || { vision: "", identity: "", goals: "", map: "", milestones: [] };
+      lifeVision.value = plan.vision || "";
+      lifeIdentity.value = plan.identity || "";
+      lifeGoals.value = plan.goals || "";
+      lifeMap.value = plan.map || "";
+      milestoneList.innerHTML = (plan.milestones || []).length
+        ? plan.milestones.map((item) => `
+            <article class="milestone-item">
+              <div class="milestone-item-top">
+                <strong>${item.title}</strong>
+                <div class="memory-actions">
+                  <button class="mini-btn" type="button" data-toggle-milestone="${item.id}">${item.done ? "Done" : "Open"}</button>
+                  <button class="mini-btn" type="button" data-delete-milestone="${item.id}">Delete</button>
+                </div>
+              </div>
+              <small>${item.timeline ? `Timeline: ${item.timeline}` : "No timeline set yet."}</small>
+            </article>
+          `).join("")
+        : `<p class="empty">Build your longer arc here so the app can hold dreams, not only immediate decisions.</p>`;
+
+      milestoneList.querySelectorAll("[data-toggle-milestone]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.profile.lifePlan.milestones = state.profile.lifePlan.milestones.map((item) =>
+            item.id === button.dataset.toggleMilestone ? { ...item, done: !item.done } : item
+          );
+          saveProfile();
+          renderLifePlan();
+        });
+      });
+
+      milestoneList.querySelectorAll("[data-delete-milestone]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.profile.lifePlan.milestones = state.profile.lifePlan.milestones.filter((item) => item.id !== button.dataset.deleteMilestone);
+          saveProfile();
+          renderLifePlan();
+        });
+      });
+    }
+
+    function applyImportedProfile(rawProfile) {
+      state.profile = hydrateProfile(rawProfile);
+      state.editingEntryId = null;
+      saveReflectionButton.textContent = "Save to memory";
+      syncCustomLenses();
+      saveProfile();
+      renderFeelings();
+      renderProfile();
+      renderJournal();
+      renderLifePlan();
+      runReflection();
+    }
+
+    function exportProfileBackupJson() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        app: "Compass OS",
+        profile: state.profile
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `compass-os-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function importProfileBackupFile(file) {
+      if (!file) return;
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const profile = parsed.profile || parsed;
+      applyImportedProfile(profile);
+    }
+
+    function renderCloudPanel() {
+      if (!state.cloud.ready) {
+        cloudStatus.textContent = "Cloud sync is not configured yet. Local backup works now. Add Supabase keys in app-config.js and deploy to enable login + multi-device sync.";
+        return;
+      }
+      if (!state.cloud.user) {
+        cloudStatus.textContent = "Cloud is configured. Send yourself a magic link to sign in, then you can sync progress across devices.";
+        return;
+      }
+      cloudStatus.textContent = `Signed in as ${state.cloud.user.email || "authenticated user"}. Cloud sync is ready for this account.`;
+    }
+
+    async function initCloud() {
+      const config = window.COMPASS_CONFIG || {};
+      if (!config.supabaseUrl || !config.supabaseAnonKey) {
+        renderCloudPanel();
+        return;
+      }
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+        const client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
+        });
+        state.cloud.client = client;
+        state.cloud.ready = true;
+        const { data } = await client.auth.getSession();
+        state.cloud.user = data?.session?.user || null;
+        client.auth.onAuthStateChange((_event, session) => {
+          state.cloud.user = session?.user || null;
+          renderCloudPanel();
+        });
+        renderCloudPanel();
+      } catch (error) {
+        console.error("Cloud init failed", error);
+        cloudStatus.textContent = "Cloud setup failed to initialize. Check your app-config.js keys and network access.";
+      }
+    }
+
+    async function sendCloudMagicLink() {
+      if (!state.cloud.client) {
+        renderCloudPanel();
+        return;
+      }
+      const email = cloudEmail.value.trim();
+      if (!email) return;
+      const { error } = await state.cloud.client.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.href
+        }
+      });
+      cloudStatus.textContent = error
+        ? `Magic link failed: ${error.message}`
+        : `Magic link sent to ${email}. Open it on the same device or browser you want signed in.`;
+    }
+
+    async function pushCloudProfile() {
+      if (!state.cloud.client || !state.cloud.user) {
+        renderCloudPanel();
+        return;
+      }
+      const { error } = await state.cloud.client
+        .from("compass_profiles")
+        .upsert({
+          user_id: state.cloud.user.id,
+          profile_json: state.profile,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+      cloudStatus.textContent = error
+        ? `Cloud sync failed: ${error.message}`
+        : "Progress synced to the cloud successfully.";
+    }
+
+    async function pullCloudProfile() {
+      if (!state.cloud.client || !state.cloud.user) {
+        renderCloudPanel();
+        return;
+      }
+      const { data, error } = await state.cloud.client
+        .from("compass_profiles")
+        .select("profile_json")
+        .eq("user_id", state.cloud.user.id)
+        .maybeSingle();
+      if (error) {
+        cloudStatus.textContent = `Cloud load failed: ${error.message}`;
+        return;
+      }
+      if (!data?.profile_json) {
+        cloudStatus.textContent = "No cloud profile exists yet for this account. Sync one up first.";
+        return;
+      }
+      applyImportedProfile(data.profile_json);
+      cloudStatus.textContent = "Cloud profile loaded into this device.";
+    }
+
+    async function signOutCloud() {
+      if (!state.cloud.client) return;
+      await state.cloud.client.auth.signOut();
+      state.cloud.user = null;
+      renderCloudPanel();
+    }
+
+    function recurringProfileSignal(input) {
+      const entries = state.profile.entries;
+      if (!entries.length) return "";
+
+      const sameArena = entries.filter((entry) => entry.arena === input.arena).length;
+      const sameFeeling = entries.filter((entry) => entry.feeling === input.feeling).length;
+
+      if (sameArena >= 2 && sameFeeling >= 2) {
+        return `This looks like a recurring ${input.feeling} pattern in ${input.arena}, so the right question should challenge the loop, not just soothe it.`;
+      }
+      if (sameArena >= 3) {
+        return `You often reflect in the ${input.arena} arena, which suggests this area is carrying unusual identity weight for you.`;
+      }
+      if (sameFeeling >= 3) {
+        return `The emotional tone of ${input.feeling} has shown up repeatedly, so pattern awareness matters as much as immediate problem-solving.`;
+      }
+      return "";
+    }
+
+    function currentRecommendedCombo(input) {
+      const scored = suggestSpecificLenses(input);
+      return chooseBestCombo(scored, input);
+    }
+
+    function comboPromptSet(combo, input, need, edge) {
+      const keys = combo.lenses.map((lens) => lens.key);
+
+      if (keys.includes("rei") && keys.includes("kingdom")) {
+        return {
+          question: `Your recommended combo is ${combo.lenses.map((lens) => lens.title).join(", ")}. Start here: what does reason say, what does emotion say, what does instinct say, and which path still looks most aligned with truth, love, and good fruit?`,
+          prompts: ["Reason says...", "Emotion says...", "Instinct says...", "The path with the best fruit is..."],
+          meta: `Why these lenses: ${combo.why}`
+        };
+      }
+
+      if (keys.includes("health") || keys.includes("trauma_informed") || keys.includes("nutrition")) {
+        return {
+          question: `Your best combo suggests this may be partly a state problem, not just a life problem. What changes in the decision once you account for body load, nervous-system stress, and basic recovery?`,
+          prompts: ["My body is telling me...", "This might feel different if I was rested because...", "The first stabilizing step is..."],
+          meta: `Why these lenses: ${combo.why}`
+        };
+      }
+
+      if (keys.includes("financial") || keys.includes("first_principles")) {
+        return {
+          question: `Your top combo is pushing for grounded clarity. What is objectively true, what is financially or practically real, and what fear-based story is being added on top?`,
+          prompts: ["The hard facts are...", "The real constraint is...", "The fear story layered on top is..."],
+          meta: `Why these lenses: ${combo.why}`
+        };
+      }
+
+      if (keys.includes("family_systems") || keys.includes("psychology")) {
+        return {
+          question: `These lenses suggest the issue may be relational and psychological at the same time. What part of this is about the external situation, and what part is about an old pattern, loyalty, or attachment fear?`,
+          prompts: ["The external issue is...", "The old pattern underneath is...", "The approval I may be protecting is..."],
+          meta: `Why these lenses: ${combo.why}`
+        };
+      }
+
+      return {
+        question: `Your recommended combo is ${combo.lenses.map((lens) => lens.title).join(", ")}. If you let those three lenses work together, what truth becomes clearer and what next move becomes harder to avoid?`,
+        prompts: ["The clearest truth is...", "What these lenses agree on is...", "The next move I keep avoiding is..."],
+        meta: `Why these lenses: ${combo.why}`
+      };
+    }
+
+    function nextCoachQuestion(input, need, edge) {
+      const recurring = recurringProfileSignal(input);
+      const combo = currentRecommendedCombo(input);
+
+      if (combo.lenses.length >= 3) {
+        const comboDriven = comboPromptSet(combo, input, need, edge);
+        if (comboDriven) {
+          return {
+            question: comboDriven.question,
+            prompts: comboDriven.prompts,
+            meta: recurring ? `${comboDriven.meta} ${recurring}` : comboDriven.meta
+          };
+        }
+      }
+
+      if (input.pressure >= 8 && input.energy <= 4) {
+        return {
+          question: "If you stopped trying to solve everything for a moment, what part of this situation actually needs calming before it needs strategy?",
+          prompts: ["My nervous system feels...", "The biggest drain is...", "What would create immediate steadiness?"],
+          meta: "High pressure plus low energy usually means regulation should come before optimization."
+        };
+      }
+
+      if (input.feeling === "conflicted") {
+        return {
+          question: "What are the two identities or futures inside this conflict, and which one feels more true rather than merely safer or more impressive?",
+          prompts: ["The safer version of me wants...", "The truer version of me wants...", "What am I afraid this choice says about me?"],
+          meta: recurring || "Conflict often hides an identity split more than an information gap."
+        };
+      }
+
+      if (input.feeling === "resentful" || input.arena === "relationships") {
+        return {
+          question: "What truth, boundary, or disappointment has been present for a while but has not yet been spoken clearly and kindly?",
+          prompts: ["What I have not said is...", "The boundary I need is...", "What I keep hoping they will notice is..."],
+          meta: recurring || "Resentment usually points to unspoken truth, unlived boundaries, or grief."
+        };
+      }
+
+      if (/decide|whether|leave|move|change|opportunity|risk/i.test(input.situation)) {
+        return {
+          question: "Which single piece of uncertainty, if clarified in the next 48 hours, would make this decision dramatically easier to make?",
+          prompts: ["The most important unknown is...", "I could test this by...", "If I knew this, I would..."],
+          meta: recurring || "Better decisions often come from resolving the key uncertainty, not from thinking in circles."
+        };
+      }
+
+      if (/pattern|trigger|why do i keep|same thing|cycle|loop/i.test(input.situation)) {
+        return {
+          question: "If you separate reason, emotion, and instinct here, which one is dominating the situation and which one is being ignored?",
+          prompts: ["Reason says...", "Emotion says...", "Instinct says..."],
+          meta: recurring || "The R.E.I angle helps you stop confusing a single channel for the whole truth."
+        };
+      }
+
+      if (need === "Courage") {
+        return {
+          question: "What action already feels quietly right, but you keep postponing because you want a less vulnerable version of the same move?",
+          prompts: ["I already know I should...", "The brave but small step is...", "I keep waiting until..."],
+          meta: recurring || "Courage work usually improves with specificity and immediacy."
+        };
+      }
+
+      return {
+        question: "What is the truest sentence you can say about this situation once you remove image management, panic, and the need to sound reasonable?",
+        prompts: ["The honest truth is...", "What I keep avoiding is...", "If I were fully truthful, I would admit..."],
+        meta: recurring || "The companion starts with truth before tactics because clean seeing improves almost every next step."
+      };
+    }
+
+    function buildCoachReply(userText, input, need, edge) {
+      const text = userText.toLowerCase();
+      const combo = currentRecommendedCombo(input);
+      const comboNames = combo.lenses.map((lens) => lens.title).join(", ");
+      if (text.includes("afraid") || text.includes("fear") || text.includes("scared")) {
+        return `That fear matters. Through ${comboNames || "the current lens mix"}, the useful question is whether the fear is signaling a real constraint, an emotional wound, or an instinctive protection pattern. What would the fear say if it could speak in one full, brutally honest sentence?`;
+      }
+      if (text.includes("should")) {
+        return `I notice the word "should." That often means borrowed expectations are in the room. Which part of that "should" is reasoned conviction, which part is relational pressure, and which part is image management?`;
+      }
+      if (text.includes("tired") || text.includes("exhausted") || text.includes("burnt")) {
+        return `That changes the decision context. Your recommended lenses would treat exhaustion as decision-relevant data. What would this whole situation look like after two steadier days with less physiological noise in the system?`;
+      }
+      if (text.includes("want")) {
+        return `Desire is useful data. The next layer is to ask whether what you want is aligned with your values, your deeper truth, and the fruit you want your life to bear, or whether it is mostly a reaction against discomfort.`;
+      }
+      if (edge === "Decisiveness") {
+        return `You may already have enough information for a provisional move. If ${comboNames || "these lenses"} are right, what tiny decision could you make now that would create better evidence instead of demanding perfect certainty first?`;
+      }
+      return `What you just said adds signal. If we compress it through ${comboNames || "the current lens mix"}: what part of this feels most true, what part feels most conditioned, and what is the next honest move that respects the truth without turning the whole situation into a dramatic ultimatum?`;
+    }
+
+    function renderCoach() {
+      coachThread.innerHTML = state.coach.messages.map((message) => `
+        <div class="coach-msg ${message.role}">
+          <strong>${message.role === "ai" ? "Companion" : "You"}</strong>
+          <div>${message.text}</div>
+        </div>
+      `).join("");
+
+      coachPrompts.innerHTML = state.coach.prompts.map((prompt) => `
+        <button class="chip coach-prompt" type="button" data-prompt="${escapeAttr(prompt)}">${prompt}</button>
+      `).join("");
+
+      coachSummary.textContent = state.coach.question || coachSummary.textContent;
+      coachMeta.textContent = state.coach.meta || coachMeta.textContent;
+
+      coachPrompts.querySelectorAll(".coach-prompt").forEach((button) => {
+        button.addEventListener("click", () => {
+          coachInput.value = button.dataset.prompt || "";
+          coachInput.focus();
+        });
+      });
+    }
+
+    function escapeAttr(value) {
+      return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function lensIcon(lens) {
+      const icons = {
+        first_principles: "🧱",
+        stoic: "🏛️",
+        inversion: "🔄",
+        systems: "🕸️",
+        opportunity: "💸",
+        second_order: "🌊",
+        shadow: "🌒",
+        identity: "🪞",
+        kingdom: "👑",
+        rei: "🧠",
+        regret: "⏳",
+        pattern: "🌀",
+        negativa: "✂️",
+        ooda: "🎯",
+        family_systems: "🤝",
+        trauma_informed: "🫀",
+        daily_workout: "🏋️",
+        health: "❤️",
+        nutrition: "🥗",
+        psychology: "🛋️",
+        jung: "🌓",
+        archetype: "🎭",
+        dream_analysis: "🌙",
+        socratic: "❓",
+        historical: "🏺",
+        future_self: "🔮",
+        jordan_peterson: "🗻",
+        frankl: "🕯️",
+        antifragile: "🛠️",
+        kahneman: "🧮",
+        naval: "🧭",
+        mimetic: "🪞",
+        mentor: "🧙",
+        competence: "🎯",
+        memento_mori: "🕰️",
+        premortem: "⚠️",
+        scientific: "🔬",
+        mathematical: "📐",
+        teacher: "🍎",
+        carpenter: "🪚",
+        boilermaker: "🔥",
+        financial: "💰",
+        business_strategy: "♟️",
+        analytics: "📊",
+        hr: "🧑‍🤝‍🧑",
+        ohs: "🦺",
+        operations: "⚙️",
+        product: "📦",
+        marketing: "📣",
+        sales: "🤝",
+        entrepreneurship: "🚀",
+        investor: "📈",
+        compliance: "📋",
+        governance: "🏛️",
+        procurement: "🧾",
+        cybersecurity: "🛡️",
+        qa: "🧪",
+        ethics: "⚖️",
+        customer: "💬",
+        logistics: "🚚",
+        mediation: "🕊️",
+        negotiation: "🎭",
+        legal: "📚",
+        designer: "🎨",
+        engineer: "🔧"
+      };
+      return lens.icon || icons[lens.key] || "✨";
+    }
+
+    function initializeCollapsiblePanels() {
+      document.querySelectorAll(".panel[data-collapsible]").forEach((panel) => {
+        if (panel.dataset.enhanced === "true") return;
+
+        const eyebrow = panel.querySelector(":scope > .eyebrow");
+        const title = panel.querySelector(":scope > .section-title");
+        if (!eyebrow || !title) return;
+
+        const sectionKey = panel.dataset.section || title.textContent.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        panel.dataset.section = sectionKey;
+
+        const head = document.createElement("div");
+        head.className = "panel-head";
+
+        const headCopy = document.createElement("div");
+        headCopy.className = "panel-head-copy";
+        headCopy.appendChild(eyebrow);
+        headCopy.appendChild(title);
+
+        const toggle = document.createElement("button");
+        toggle.type = "button";
+        toggle.className = "panel-toggle";
+        toggle.setAttribute("aria-expanded", "true");
+        toggle.innerHTML = `<span>▾</span>`;
+
+        const body = document.createElement("div");
+        body.className = "panel-body";
+
+        while (panel.children.length) {
+          const child = panel.children[0];
+          if (child === eyebrow || child === title) {
+            panel.removeChild(child);
+            continue;
+          }
+          body.appendChild(child);
+        }
+
+        head.appendChild(headCopy);
+        head.appendChild(toggle);
+        panel.appendChild(head);
+        panel.appendChild(body);
+
+        const defaultCollapsed = ["quest-board", "memory", "journal", "ai-companion"].includes(sectionKey);
+        const stored = state.profile.panelPrefs?.[sectionKey];
+        const collapsed = typeof stored === "boolean" ? stored : defaultCollapsed;
+        panel.dataset.collapsed = collapsed ? "true" : "false";
+        toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+
+        toggle.addEventListener("click", () => {
+          const nextCollapsed = panel.dataset.collapsed !== "true";
+          panel.dataset.collapsed = nextCollapsed ? "true" : "false";
+          toggle.setAttribute("aria-expanded", nextCollapsed ? "false" : "true");
+          state.profile.panelPrefs = state.profile.panelPrefs || {};
+          state.profile.panelPrefs[sectionKey] = nextCollapsed;
+          saveProfile();
+        });
+
+        panel.dataset.enhanced = "true";
+      });
+    }
+
+    function refreshCoachFromState() {
+      const input = getCurrentInput();
+      const need = inferCoreNeed(input);
+      const edge = inferGrowthEdge(input);
+      const coachState = nextCoachQuestion(input, need, edge);
+      const combo = currentRecommendedCombo(input);
+
+      state.coach.question = coachState.question;
+      state.coach.prompts = coachState.prompts;
+      state.coach.meta = coachState.meta;
+
+      const opening = `I’m noticing ${input.feeling} energy around a ${input.arena} situation. The strongest need looks like ${need.toLowerCase()}, and the growth edge looks like ${edge.toLowerCase()}. I’m using ${combo.lenses.map((lens) => lens.title).join(", ")} as the lead lens combo here. ${coachState.question}`;
+
+      if (!state.coach.messages.length || state.coach.messages[0]?.text !== opening) {
+        state.coach.messages = [{ role: "ai", text: opening }];
+      }
+
+      renderCoach();
+    }
+
+    function sendCoachReply() {
+      const text = coachInput.value.trim();
+      if (!text) return;
+
+      const input = getCurrentInput();
+      const need = inferCoreNeed(input);
+      const edge = inferGrowthEdge(input);
+      state.coach.messages.push({ role: "user", text });
+      state.coach.messages.push({ role: "ai", text: buildCoachReply(text, input, need, edge) });
+      coachInput.value = "";
+      renderCoach();
+      awardXp(10);
+    }
+
+    function runReflection() {
+      const input = getCurrentInput();
+      const need = inferCoreNeed(input);
+      const edge = inferGrowthEdge(input);
+      const mode = inferMode(input);
+      applyRecommendedLensState(input);
+      buildExecutionPlan(input, need, edge);
+      state.profile.lastDraft = {
+        situation: input.situation,
+        feeling: input.feeling,
+        arena: input.arena,
+        updatedAt: new Date().toISOString()
+      };
+      saveProfile();
+      renderProfile();
+
+      modeChip.textContent = mode;
+      needChip.textContent = need;
+      coreNeedOutput.textContent = need;
+      growthEdgeOutput.textContent = edge;
+      coreNeedCopy.textContent = `The system thinks this situation is mainly asking for ${need.toLowerCase()}, not just speed.`;
+      growthEdgeCopy.textContent = `Your next meaningful rep probably involves ${edge.toLowerCase()} in practice, not just in theory.`;
+      mirrorOutput.textContent = buildMirror(input, need, edge);
+      blindSpotOutput.textContent = buildBlindSpot(input);
+      synthesisOutput.textContent = synthesize(input, need, edge);
+
+      renderLensSuite(input, need, edge);
+
+      const steps = buildPlan(input, need, edge);
+      renderExecutionPlan();
+
+      questBoard.innerHTML = questTemplates.map((quest) => `
+        <div class="quest">
+          <div>
+            <strong>${quest.title}</strong>
+            <span>${quest.copy}</span>
+          </div>
+          <button class="secondary quest-claim" type="button" data-reward="${quest.reward}">+${quest.reward} XP</button>
+        </div>
+      `).join("");
+
+      document.querySelectorAll(".quest-claim").forEach((button) => {
+        button.addEventListener("click", () => {
+          awardXp(Number(button.dataset.reward));
+          button.textContent = "claimed";
+          button.disabled = true;
+        });
+      });
+
+      refreshCoachFromState();
+    }
+
+    function awardXp(amount) {
+      state.profile.xp += amount;
+      saveProfile();
+      renderProfile();
+    }
+
+    function updateRanges() {
+      energyValue.textContent = `${energyRange.value}/10`;
+      pressureValue.textContent = `${pressureRange.value}/10`;
+    }
+
+    function todayKey() {
+      const now = new Date();
+      return now.toISOString().slice(0, 10);
+    }
+
+    function saveCurrentReflection() {
+      const input = getCurrentInput();
+      if (!input.situation) return;
+      const combo = currentRecommendedCombo(input);
+
+      const entry = {
+        id: state.editingEntryId || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+        createdAt: new Date().toISOString(),
+        situation: input.situation,
+        feeling: input.feeling,
+        arena: input.arena,
+        energy: input.energy,
+        pressure: input.pressure,
+        summary: synthesize(input, inferCoreNeed(input), inferGrowthEdge(input)),
+        combo: combo.lenses.map((lens) => lens.title).join(" + ")
+      };
+
+      if (state.editingEntryId) {
+        const existing = state.profile.entries.find((item) => item.id === state.editingEntryId);
+        entry.createdAt = existing?.createdAt || entry.createdAt;
+        entry.updatedAt = new Date().toISOString();
+        state.profile.entries = state.profile.entries.map((item) => item.id === state.editingEntryId ? entry : item);
+      } else {
+        state.profile.entries.unshift(entry);
+      }
+      if (combo.lenses.length) {
+        state.profile.comboHistory.unshift({
+          ts: new Date().toISOString(),
+          lenses: combo.lenses.map((lens) => lens.key),
+          arena: input.arena,
+          feeling: input.feeling
+        });
+        state.profile.comboHistory = state.profile.comboHistory.slice(0, 20);
+      }
+      state.profile.xp += 40;
+
+      const key = todayKey();
+      if (state.profile.lastSavedDay !== key) {
+        state.profile.streak += 1;
+        state.profile.lastSavedDay = key;
+      }
+
+      state.editingEntryId = null;
+      saveReflectionButton.textContent = "Save to memory";
+      saveProfile();
+      renderProfile();
+    }
+
+    function loadEntryIntoForm(entry) {
+      situationInput.value = entry.situation;
+      state.selectedFeeling = entry.feeling;
+      arenaSelect.value = entry.arena;
+      energyRange.value = String(entry.energy || 6);
+      pressureRange.value = String(entry.pressure || 7);
+      updateRanges();
+      renderFeelings();
+      runReflection();
+    }
+
+    function editEntry(entryId) {
+      const entry = state.profile.entries.find((item) => item.id === entryId);
+      if (!entry) return;
+      state.editingEntryId = entryId;
+      saveReflectionButton.textContent = "Update session";
+      loadEntryIntoForm(entry);
+      document.getElementById("reflectionPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      situationInput.focus();
+    }
+
+    function deleteEntry(entryId) {
+      state.profile.entries = state.profile.entries.filter((item) => item.id !== entryId);
+      if (state.editingEntryId === entryId) {
+        state.editingEntryId = null;
+        saveReflectionButton.textContent = "Save to memory";
+      }
+      saveProfile();
+      renderProfile();
+    }
+
+    function renderProfile() {
+      const xp = state.profile.xp;
+      const level = Math.max(1, Math.floor(xp / 120) + 1);
+      const memoryCount = state.profile.entries.length;
+
+      xpValue.textContent = `${xp} XP`;
+      streakValue.textContent = `${state.profile.streak} days`;
+      memoryValue.textContent = `${memoryCount} entries`;
+      levelPill.textContent = `Level ${level} / ${xp} XP`;
+      streakPill.textContent = `${state.profile.streak} day streak`;
+
+      const insights = profileInsights();
+      adaptiveSummary.textContent = insights.summary;
+      memoryInsight.textContent = insights.memory;
+
+      if (!memoryCount && !state.profile.lastDraft?.situation) {
+        memoryList.innerHTML = `<p class="empty">Saved reflections will appear here with the emotional tone, arena, and synthesis so the companion can start spotting recurring loops over time.</p>`;
+        return;
+      }
+
+      const draftCard = state.profile.lastDraft?.situation ? `
+        <article class="memory-item">
+          <div class="memory-top">
+            <strong>Live draft / ${capitalize(state.profile.lastDraft.feeling)} / ${capitalize(state.profile.lastDraft.arena)}</strong>
+            <div class="memory-actions">
+              <button class="mini-btn" type="button" data-load-draft="true">Resume ✍️</button>
+            </div>
+          </div>
+          <p>${state.profile.lastDraft.situation.length > 150 ? state.profile.lastDraft.situation.slice(0, 147) + "..." : state.profile.lastDraft.situation}</p>
+          <small>Updated ${new Date(state.profile.lastDraft.updatedAt).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</small>
+        </article>
+      ` : "";
+
+      memoryList.innerHTML = draftCard + state.profile.entries.slice(0, 8).map((entry) => `
+        <article class="memory-item">
+          <div class="memory-top">
+            <strong>${capitalize(entry.feeling)} / ${capitalize(entry.arena)}</strong>
+            <div class="memory-actions">
+              <button class="mini-btn" type="button" data-load-entry="${entry.id}">Load</button>
+              <button class="mini-btn" type="button" data-edit-entry="${entry.id}">Edit</button>
+              <button class="mini-btn" type="button" data-delete-entry="${entry.id}">Delete</button>
+            </div>
+          </div>
+          <p>${entry.situation.length > 150 ? entry.situation.slice(0, 147) + "..." : entry.situation}</p>
+          <small>${new Date(entry.createdAt).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}${entry.updatedAt ? ` / Edited ${new Date(entry.updatedAt).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` : ""}</small>
+        </article>
+      `).join("");
+
+      memoryList.querySelectorAll("[data-load-draft]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!state.profile.lastDraft?.situation) return;
+          situationInput.value = state.profile.lastDraft.situation;
+          state.selectedFeeling = state.profile.lastDraft.feeling;
+          arenaSelect.value = state.profile.lastDraft.arena;
+          updateRanges();
+          renderFeelings();
+          runReflection();
+        });
+      });
+
+      memoryList.querySelectorAll("[data-load-entry]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const entry = state.profile.entries.find((item) => item.id === button.dataset.loadEntry);
+          if (!entry) return;
+          state.editingEntryId = null;
+          saveReflectionButton.textContent = "Save to memory";
+          loadEntryIntoForm(entry);
+        });
+      });
+
+      memoryList.querySelectorAll("[data-edit-entry]").forEach((button) => {
+        button.addEventListener("click", () => editEntry(button.dataset.editEntry));
+      });
+
+      memoryList.querySelectorAll("[data-delete-entry]").forEach((button) => {
+        button.addEventListener("click", () => deleteEntry(button.dataset.deleteEntry));
+      });
+    }
+
+    function profileInsights() {
+      const entries = state.profile.entries;
+      if (!entries.length) {
+        return {
+          summary: state.profile.lastDraft?.situation
+            ? `The system has started tracking your live reflection style. It still needs more saved reps before it can distinguish habits from one-off moments.`
+            : "Right now the system knows almost nothing about you. With repeated use, it will start surfacing your pressure patterns, decision style, emotional triggers, and common blind spots.",
+          memory: state.profile.lastDraft?.situation
+            ? "The live draft is being remembered. Save reflections to turn temporary insight into longer-term pattern recognition."
+            : "Memory is empty right now. Save reflections and this area will start noticing patterns across your decisions."
+        };
+      }
+
+      const feelingsCount = {};
+      const arenasCount = {};
+
+      entries.forEach((entry) => {
+        feelingsCount[entry.feeling] = (feelingsCount[entry.feeling] || 0) + 1;
+        arenasCount[entry.arena] = (arenasCount[entry.arena] || 0) + 1;
+      });
+
+      const topFeeling = Object.entries(feelingsCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "conflicted";
+      const topArena = Object.entries(arenasCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "career";
+      const comboCounts = {};
+      for (const item of state.profile.comboHistory || []) {
+        const name = item.lenses.join(" + ");
+        comboCounts[name] = (comboCounts[name] || 0) + 1;
+      }
+      const topCombo = Object.entries(comboCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+      return {
+        summary: `The system is beginning to notice a pattern around ${topFeeling} moments, especially in ${topArena} situations. ${topCombo ? `It is also starting to learn that the combo ${topCombo.replaceAll("+", " + ")} often becomes relevant in similar reflections.` : ""}${state.profile.customLenses?.length ? ` You have also created ${state.profile.customLenses.length} custom lens${state.profile.customLenses.length === 1 ? "" : "es"}, which makes this workspace more personal.` : ""}`,
+        memory: `So far, your strongest recurring theme appears around ${topArena} and the emotional tone of ${topFeeling}. ${topCombo ? `A recurring lens mix is also emerging, which means future recommendations can become more personal instead of only text-driven.` : "Watch whether the same fear, pressure, or identity story keeps showing up in different clothes."}${state.profile.lifePlan?.vision ? ` Your life plan is also live, so long-term goals can now shape daily reflection.` : ""}`
+      };
+    }
+
+    function resetReflection() {
+      state.editingEntryId = null;
+      saveReflectionButton.textContent = "Save to memory";
+      situationInput.value = "";
+      state.selectedFeeling = "conflicted";
+      arenaSelect.value = "career";
+      energyRange.value = "6";
+      pressureRange.value = "7";
+      updateRanges();
+      renderFeelings();
+      runReflection();
+    }
+
+    function updateClock() {
+      const now = new Date();
+      liveNow.textContent = now.toLocaleString("en-AU", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "Australia/Perth"
+      }) + " AWST";
+    }
+
+    document.getElementById("runReflection").addEventListener("click", runReflection);
+    document.getElementById("saveReflection").addEventListener("click", saveCurrentReflection);
+    document.getElementById("resetReflection").addEventListener("click", resetReflection);
+    document.getElementById("addStepButton").addEventListener("click", addCustomStep);
+    document.getElementById("addJournalEntry").addEventListener("click", addJournalItem);
+    document.getElementById("addCustomLens").addEventListener("click", addCustomLens);
+    document.getElementById("addMilestone").addEventListener("click", addLifeMilestone);
+    cloudSendLink.addEventListener("click", sendCloudMagicLink);
+    cloudPush.addEventListener("click", pushCloudProfile);
+    cloudPull.addEventListener("click", pullCloudProfile);
+    cloudSignOut.addEventListener("click", signOutCloud);
+    exportBackup.addEventListener("click", exportProfileBackupJson);
+    importBackup.addEventListener("click", () => backupFileInput.click());
+    backupFileInput.addEventListener("change", async () => {
+      await importProfileBackupFile(backupFileInput.files?.[0]);
+      backupFileInput.value = "";
+    });
+    document.getElementById("mergeCompare").addEventListener("click", () => {
+      const input = getCurrentInput();
+      mergeComparedLenses(input, inferCoreNeed(input), inferGrowthEdge(input));
+    });
+    document.getElementById("clearCompare").addEventListener("click", () => {
+      state.compareLenses = [];
+      runReflection();
+    });
+    document.getElementById("startReflection").addEventListener("click", () => {
+      document.getElementById("reflectionPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      situationInput.focus();
+    });
+    document.getElementById("loadDemo").addEventListener("click", () => {
+      state.editingEntryId = null;
+      saveReflectionButton.textContent = "Save to memory";
+      situationInput.value = demoSituation;
+      state.selectedFeeling = "conflicted";
+      arenaSelect.value = "identity";
+      energyRange.value = "5";
+      pressureRange.value = "8";
+      updateRanges();
+      renderFeelings();
+      runReflection();
+      document.getElementById("reflectionPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    situationInput.addEventListener("input", runReflection);
+    arenaSelect.addEventListener("change", runReflection);
+    energyRange.addEventListener("input", () => {
+      updateRanges();
+      runReflection();
+    });
+    pressureRange.addEventListener("input", () => {
+      updateRanges();
+      runReflection();
+    });
+    lensSearch.addEventListener("input", () => {
+      state.lensSearch = lensSearch.value;
+      runReflection();
+    });
+    planOutcome.addEventListener("input", savePlanMeta);
+    planReviewDate.addEventListener("input", savePlanMeta);
+    planSuccessCriteria.addEventListener("input", savePlanMeta);
+    lifeVision.addEventListener("input", saveLifePlan);
+    lifeIdentity.addEventListener("input", saveLifePlan);
+    lifeGoals.addEventListener("input", saveLifePlan);
+    lifeMap.addEventListener("input", saveLifePlan);
+    helpfulYes.addEventListener("click", () => setHelpfulness("helpful"));
+    helpfulMixed.addEventListener("click", () => setHelpfulness("partly helpful"));
+    helpfulNo.addEventListener("click", () => setHelpfulness("not helpful"));
+    document.getElementById("sendCoach").addEventListener("click", sendCoachReply);
+    coachInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        sendCoachReply();
+      }
+    });
+    newStepInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addCustomStep();
+      }
+    });
+
+    updateClock();
+    setInterval(updateClock, 30000);
+    window.runReflection = runReflection;
+    window.saveCurrentReflection = saveCurrentReflection;
+    syncCustomLenses();
+    initializeCollapsiblePanels();
+    renderCloudPanel();
+    renderFeelings();
+    renderProfile();
+    renderJournal();
+    renderLifePlan();
+    situationInput.value = demoSituation;
+    updateRanges();
+    runReflection();
+    initCloud();
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch((error) => console.error("SW registration failed", error));
+      });
+    }
+  </script>
+</body>
+</html>

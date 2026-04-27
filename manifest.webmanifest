@@ -1,0 +1,17 @@
+{
+  "name": "Compass OS",
+  "short_name": "Compass OS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1422",
+  "theme_color": "#0b1422",
+  "description": "A gamified second brain for decisions, emotional intelligence, and life planning.",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
