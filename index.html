@@ -1610,23 +1610,22 @@
           <div class="eyebrow">🫶 Companion Voice</div>
           <h2 class="section-title">What the emotionally intelligent guide sees</h2>
           <p class="companion-voice" id="mirrorOutput">
-            You seem to be carrying both urgency and ambiguity at once. Before solving too fast, name what part of this is external pressure
-            and what part is inner conflict. Good decisions usually get sharper when those are separated.
+            Bring a real situation, feeling, or decision here and the companion will reflect it back once there is something real to work with.
           </p>
           <p class="subtle" id="blindSpotOutput">
-            Blind spot watch: you may be treating uncertainty like evidence against yourself, when it may simply be the price of a meaningful choice.
+            Blind spot watch will appear after you add enough context for the system to assess something real.
           </p>
 
           <div class="result-grid">
             <div class="card">
               <div class="stat-label">Core need</div>
-              <div class="stat-value" id="coreNeedOutput">Clarity</div>
-              <p class="stat-copy" id="coreNeedCopy">The system believes the main job is to make the situation more thinkable.</p>
+              <div class="stat-value" id="coreNeedOutput">Waiting</div>
+              <p class="stat-copy" id="coreNeedCopy">Enter a situation and the system will identify what this moment is really asking of you.</p>
             </div>
             <div class="card">
               <div class="stat-label">Current growth edge</div>
-              <div class="stat-value" id="growthEdgeOutput">Courage</div>
-              <p class="stat-copy" id="growthEdgeCopy">The next level often involves acting with more truth than comfort.</p>
+              <div class="stat-value" id="growthEdgeOutput">Waiting</div>
+              <p class="stat-copy" id="growthEdgeCopy">Your likely growth edge will appear after the app has enough context to work with.</p>
             </div>
           </div>
         </div>
@@ -1702,8 +1701,7 @@
           <div class="eyebrow">🛠️ Execution Board</div>
           <h2 class="section-title">Interactive planning, execution, and review</h2>
           <p class="section-copy" id="synthesisOutput">
-            Across the lenses, the emerging signal is this: simplify the decision into what is essential, tell the truth about the fear beneath it,
-            and move with a small brave action instead of waiting for complete certainty.
+            When you add a real situation, the app will synthesize the lenses into a practical point of view and a forward plan.
           </p>
           <div class="progress-shell">
             <div class="plan-toolbar">
@@ -2188,6 +2186,14 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.profile));
     }
 
+    function hasMeaningfulSituation(value) {
+      return typeof value === "string" && value.trim().length > 0;
+    }
+
+    function clearLiveDraft() {
+      delete state.profile.lastDraft;
+    }
+
     function getCurrentAppUrl() {
       const configured = (window.COMPASS_CONFIG?.publicAppUrl || "").trim();
       if (configured) return configured;
@@ -2260,6 +2266,110 @@
 
     function capitalize(value) {
       return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function renderIdleLensSuite() {
+      lensFilters.innerHTML = lensCategories.map((category) => `
+        <button class="lens-filter ${state.lensCategory === category ? "active" : ""} ${category === "all" ? "recommended" : ""}" data-category="${category}" type="button">${capitalize(category)}</button>
+      `).join("");
+
+      lensFilters.querySelectorAll(".lens-filter").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.lensCategory = button.dataset.category;
+          renderIdleLensSuite();
+        });
+      });
+
+      const q = state.lensSearch.trim().toLowerCase();
+      const visibleLenses = lenses.filter((lens) => {
+        const matchesCategory = state.lensCategory === "all" || lens.category === state.lensCategory;
+        const haystack = `${lens.title} ${lens.category} ${lens.angle}`.toLowerCase();
+        const matchesSearch = !q || haystack.includes(q);
+        return matchesCategory && matchesSearch;
+      });
+
+      showRecommendedLenses.classList.toggle("active", state.recommendedOnly);
+      showAllLenses.classList.toggle("active", !state.recommendedOnly);
+      lensPackSuggestion.textContent = "Waiting for a situation...";
+      bestComboTitle.textContent = "Waiting for a situation...";
+      bestComboWhy.textContent = "Type more detail and the app will explain why these lenses fit together.";
+      suggestedLenses.innerHTML = `<span class="subtle">Add a real situation first, then the app will recommend the best lens pack and combo.</span>`;
+
+      lensGrid.innerHTML = visibleLenses.map((lens) => `
+        <button class="lens-tile ${lens.key === state.selectedLens ? "active" : ""}" data-lens="${lens.key}" type="button">
+          <strong><span class="lens-icon">${lensIcon(lens)}</span>${lens.title}</strong>
+          <span>${lens.angle}</span>
+          <small>Enter a situation to see this lens assess it contextually.</small>
+        </button>
+      `).join("");
+
+      lensGrid.querySelectorAll(".lens-tile").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.selectedLens = button.dataset.lens;
+          renderIdleLensSuite();
+        });
+      });
+
+      const lens = lenses.find((item) => item.key === state.selectedLens) || lenses[0];
+      lensDetail.innerHTML = `
+        <h3>${lensIcon(lens)} ${lens.title}</h3>
+        <p class="section-copy">${lens.angle}</p>
+        <div class="lens-meta">
+          <span>Category: ${capitalize(lens.category)}</span>
+          <span>Add a situation to unlock contextual analysis</span>
+        </div>
+        <div class="lens-blocks">
+          <div class="lens-block">
+            <strong>How this lens works</strong>
+            <p>${lens.title} becomes useful once there is a real situation to assess from this perspective.</p>
+          </div>
+        </div>
+      `;
+
+      compareSummary.textContent = "Add a real situation before comparing lenses side by side.";
+      compareGrid.innerHTML = "";
+      compareMergeOutput.innerHTML = "<p class=\"subtle\">Merged lens insight will appear after you add a real situation.</p>";
+    }
+
+    function renderIdleExecutionPlan() {
+      planPercent.textContent = "0% complete";
+      planProgressFill.style.width = "0%";
+      planSummary.textContent = "No active execution plan yet.";
+      planOutcome.value = "";
+      planReviewDate.value = "";
+      planSuccessCriteria.value = "";
+      helpfulSummary.textContent = "No plan feedback yet. Once you work a real plan, you can rate whether it helped.";
+      helpfulYes.classList.remove("active");
+      helpfulMixed.classList.remove("active");
+      helpfulNo.classList.remove("active");
+      planList.innerHTML = `<p class="empty">Add a real situation and the app will turn the insight into specific, trackable steps.</p>`;
+    }
+
+    function renderIdleReflectionState() {
+      modeChip.textContent = "Waiting";
+      needChip.textContent = "No active reflection";
+      coreNeedOutput.textContent = "Waiting";
+      growthEdgeOutput.textContent = "Waiting";
+      coreNeedCopy.textContent = "Enter a situation and the system will identify what this moment is really asking of you.";
+      growthEdgeCopy.textContent = "Your likely growth edge will appear after the app has enough context to work with.";
+      mirrorOutput.textContent = "Bring a real situation, feeling, or decision here and the companion will reflect it back once there is something real to work with.";
+      blindSpotOutput.textContent = "Blind spot watch will appear after you add enough context for the system to assess something real.";
+      synthesisOutput.textContent = "When you add a real situation, the app will synthesize the lenses into a practical point of view and a forward plan.";
+      state.coach.messages = [{
+        role: "ai",
+        text: "Start with the real situation, decision, or feeling you want help thinking through. Once there is real context, I can reflect it back, challenge blind spots, and help plan the next move."
+      }];
+      state.coach.question = "What situation, feeling, or decision do you want to think through right now?";
+      state.coach.prompts = [
+        "I need help deciding whether to...",
+        "The situation that keeps weighing on me is...",
+        "What I am really feeling is..."
+      ];
+      state.coach.meta = "The companion becomes contextual once you give it something real to work with.";
+      renderCoach();
+      renderIdleLensSuite();
+      renderIdleExecutionPlan();
+      questBoard.innerHTML = `<div class="quest"><div><strong>Reflection ready</strong><span>Add a real situation to unlock companion coaching, lens analysis, and execution planning.</span></div></div>`;
     }
 
     function applyTheme(themeName) {
@@ -3820,7 +3930,11 @@
       renderProfile();
       renderJournal();
       renderLifePlan();
-      runReflection();
+      if (hasMeaningfulSituation(situationInput.value)) {
+        runReflection();
+      } else {
+        renderIdleReflectionState();
+      }
     }
 
     function exportProfileBackupJson() {
@@ -4312,6 +4426,10 @@
 
     function refreshCoachFromState() {
       const input = getCurrentInput();
+      if (!hasMeaningfulSituation(input.situation)) {
+        renderIdleReflectionState();
+        return;
+      }
       const need = inferCoreNeed(input);
       const edge = inferGrowthEdge(input);
       const coachState = nextCoachQuestion(input, need, edge);
@@ -4346,6 +4464,10 @@
 
     function runReflection() {
       const input = getCurrentInput();
+      if (!hasMeaningfulSituation(input.situation)) {
+        renderIdleReflectionState();
+        return false;
+      }
       if (input.situation) {
         const inferredArena = inferArenaFromSituation(input);
         if (arenaSelect.value !== inferredArena) {
@@ -4401,6 +4523,7 @@
       });
 
       refreshCoachFromState();
+      return true;
     }
 
     function awardXp(amount) {
@@ -4621,6 +4744,8 @@
       arenaSelect.value = "career";
       energyRange.value = "6";
       pressureRange.value = "7";
+      clearLiveDraft();
+      saveProfile();
       updateRanges();
       renderFeelings();
       runReflection();
@@ -4638,8 +4763,13 @@
       }) + " AWST";
     }
 
-    document.getElementById("runReflection").addEventListener("click", runReflection);
     document.getElementById("runReflection").addEventListener("click", () => {
+      const hasReflection = runReflection();
+      if (!hasReflection) {
+        document.getElementById("reflectionPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+        situationInput.focus();
+        return;
+      }
       setPanelCollapsed("companion-voice", false);
       setPanelCollapsed("ai-companion", false);
       setPanelCollapsed("thinking-lenses", false);
@@ -4767,7 +4897,7 @@
     applyDensity(state.profile.density || "comfortable");
     applyDefaultView(state.profile.defaultView || "companion");
     updateRanges();
-    runReflection();
+    renderIdleReflectionState();
     applyStartupView();
     initCloud();
     if ("serviceWorker" in navigator) {
