@@ -2272,7 +2272,9 @@
       status: "The companion should feel like a calm conversation: what it is noticing, what matters most, and the next question to answer.",
       lastQuestion: "",
       lastFocus: "",
-      turnCount: 0
+      turnCount: 0,
+      sessionSummary: "",
+      sessionFacts: []
     };
 
     state.cloud = {
@@ -2432,6 +2434,44 @@
       const directMarkers = /(because|actually|truth|really|part of me|i want|i feel|the issue|the problem|the fear|the decision)/i.test(reply || "");
       const partialTopicMarkers = /(reason|emotion|instinct|fear|risk|consequence|boundary|truth|desire|stability|people|approval|money)/i.test(reply || "");
       return overlap >= 1 || directMarkers || partialTopicMarkers;
+    }
+
+    function extractSessionFact(reply) {
+      const text = (reply || "").trim();
+      if (!text) return "";
+
+      const patterns = [
+        /the real fear is (.+)/i,
+        /the realistic consequence is (.+)/i,
+        /reason says (.+)/i,
+        /emotion says (.+)/i,
+        /instinct says (.+)/i,
+        /the boundary (?:i need|underneath this is) (.+)/i,
+        /the smallest honest move is (.+)/i,
+        /the next evidence-gathering step is (.+)/i,
+        /the honest truth is (.+)/i
+      ];
+
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match?.[1]) return match[1].trim();
+      }
+
+      return text.length > 120 ? `${text.slice(0, 117)}...` : text;
+    }
+
+    function updateCoachSessionMemory(reply, input) {
+      const fact = extractSessionFact(reply);
+      if (!fact) return;
+
+      state.coach.sessionFacts = state.coach.sessionFacts || [];
+      state.coach.sessionFacts.unshift(fact);
+      state.coach.sessionFacts = [...new Set(state.coach.sessionFacts)].slice(0, 5);
+
+      const arenaLine = input?.arena ? `in ${input.arena}` : "in this situation";
+      const feelingLine = input?.feeling ? `${input.feeling} energy` : "mixed emotion";
+      const highlights = state.coach.sessionFacts.slice(0, 3).join(" | ");
+      state.coach.sessionSummary = `So far, you are working through ${feelingLine} ${arenaLine}. Key thread: ${highlights}.`;
     }
 
     function nextCoachFollowUp(reply, input, need, edge, comboNames) {
@@ -2663,6 +2703,8 @@
       state.coach.lastQuestion = state.coach.question;
       state.coach.lastFocus = "Start with the real situation, what feels hard about it, or the decision you are trying to make.";
       state.coach.turnCount = 0;
+      state.coach.sessionSummary = "";
+      state.coach.sessionFacts = [];
       renderCoach();
       renderIdleLensSuite();
       renderIdleExecutionPlan();
@@ -4804,9 +4846,10 @@
       state.coach.question = coachState.question;
       state.coach.prompts = coachState.prompts;
       state.coach.stage = stage;
-      state.coach.status = combo.lenses.length
+      const baseStatus = combo.lenses.length
         ? `Using ${combo.lenses.map((lens) => lens.title).join(", ")} to guide the next step.`
         : "Narrowing the issue and guiding the next step.";
+      state.coach.status = state.coach.sessionSummary || baseStatus;
       state.coach.meta = coachState.meta;
 
       const opening = `I’m noticing ${input.feeling} energy around a ${input.arena} situation. The strongest need looks like ${need.toLowerCase()}, and the growth edge looks like ${edge.toLowerCase()}. I’m using ${combo.lenses.map((lens) => lens.title).join(", ")} as the lead lens combo here. ${coachState.question}`;
@@ -4840,14 +4883,18 @@
       const need = inferCoreNeed(input);
       const edge = inferGrowthEdge(input);
       const comboNames = currentRecommendedCombo(input).lenses.map((lens) => lens.title).join(", ");
+      updateCoachSessionMemory(text, input);
       const followUp = nextCoachFollowUp(text, input, need, edge, comboNames);
+      if (state.coach.sessionSummary) {
+        followUp.message.focus = `${followUp.message.focus} Session memory says: ${state.coach.sessionSummary}`;
+      }
       state.coach.messages.push(buildUserMessage(text));
       state.coach.messages.push(followUp.message);
       state.coach.question = followUp.message.question || state.coach.question;
       state.coach.prompts = followUp.prompts || state.coach.prompts;
       state.coach.meta = followUp.meta || state.coach.meta;
       state.coach.stage = followUp.message.stage || state.coach.stage;
-      state.coach.status = followUp.message.focus || state.coach.status;
+      state.coach.status = state.coach.sessionSummary || followUp.message.focus || state.coach.status;
       state.coach.lastQuestion = followUp.message.question || state.coach.lastQuestion;
       state.coach.lastFocus = followUp.message.focus || state.coach.lastFocus;
       state.coach.turnCount = (state.coach.turnCount || 0) + 1;
