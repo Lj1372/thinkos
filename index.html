@@ -119,6 +119,14 @@
       min-width: 170px;
       border-radius: 999px;
       padding: 8px 12px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .theme-select option {
+      color: #eff5ff;
+      background: #132033;
     }
 
     .top-meta {
@@ -1324,6 +1332,8 @@
       <div class="top-meta">
         <span class="pill live" id="shareStatusPill">Live preview ready</span>
         <select class="theme-select" id="themeSelect">
+          <option value="dark">Dark Mode</option>
+          <option value="dark_rainbow">Dark Rainbow</option>
           <option value="ocean">Ocean Glass</option>
           <option value="sunset">Sunset Signal</option>
           <option value="forest">Forest Calm</option>
@@ -1794,7 +1804,7 @@
       lensCategory: "all",
       compareLenses: ["first_principles", "rei", "kingdom"],
       editingEntryId: null,
-      recommendedOnly: false
+      recommendedOnly: true
     };
 
     const situationInput = document.getElementById("situationInput");
@@ -1961,7 +1971,7 @@
         lifePlan: { vision: "", identity: "", goals: "", map: "", milestones: [] },
         helpfulnessScore: 0,
         panelPrefs: {},
-        theme: "ocean",
+        theme: "dark",
         ...saved
       };
       if (!profile.executionPlan) {
@@ -2014,6 +2024,32 @@
 
     function applyTheme(themeName) {
       const themes = {
+        dark: {
+          bg: "#070b12",
+          bgSoft: "#101826",
+          panel: "rgba(12, 18, 28, 0.86)",
+          card: "rgba(255, 255, 255, 0.05)",
+          line: "rgba(138, 162, 190, 0.14)",
+          text: "#eef3ff",
+          muted: "#9dafc8",
+          teal: "#67dfc8",
+          gold: "#f4c56e",
+          rose: "#ff8b8b",
+          sky: "#7cbcff"
+        },
+        dark_rainbow: {
+          bg: "#0e0717",
+          bgSoft: "#1b0f2a",
+          panel: "rgba(23, 14, 38, 0.84)",
+          card: "rgba(255, 255, 255, 0.07)",
+          line: "rgba(215, 171, 255, 0.16)",
+          text: "#fff4ff",
+          muted: "#d0b8ec",
+          teal: "#7df9ff",
+          gold: "#ffd166",
+          rose: "#ff6ec7",
+          sky: "#8f7cff"
+        },
         ocean: {
           bg: "#0b1422",
           bgSoft: "#11223a",
@@ -3001,6 +3037,9 @@
       const scored = suggestSpecificLenses(input);
       const topLenses = scored.map((item) => item.lens);
       const combo = chooseBestCombo(scored, input);
+
+      showRecommendedLenses.classList.toggle("active", state.recommendedOnly);
+      showAllLenses.classList.toggle("active", !state.recommendedOnly);
 
       bestComboTitle.textContent = combo.lenses.length
         ? combo.lenses.map((lens) => lens.title).join(" + ")
