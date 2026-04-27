@@ -151,6 +151,12 @@
       border-color: rgba(93, 220, 198, 0.24);
     }
 
+    .pill.warn {
+      color: #fff6ea;
+      background: linear-gradient(135deg, rgba(246, 194, 107, 0.2), rgba(255, 138, 122, 0.14));
+      border-color: rgba(246, 194, 107, 0.28);
+    }
+
     .hero {
       display: grid;
       grid-template-columns: 1.08fr 0.92fr;
@@ -1237,6 +1243,25 @@
       margin-top: 18px;
     }
 
+    .backup-banner {
+      margin-top: 16px;
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid rgba(246, 194, 107, 0.22);
+      background: linear-gradient(135deg, rgba(246, 194, 107, 0.1), rgba(255, 138, 122, 0.08));
+      display: grid;
+      gap: 10px;
+    }
+
+    .backup-banner strong {
+      display: block;
+    }
+
+    .backup-banner p {
+      color: #f7ead8;
+      line-height: 1.55;
+    }
+
     .share-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1456,6 +1481,7 @@
       </div>
       <div class="top-meta">
         <span class="pill live" id="shareStatusPill">Live preview ready</span>
+        <span class="pill warn" id="backupStatusPill">Backup reminder</span>
         <select class="theme-select" id="themeSelect">
           <option value="dark">Dark Mode</option>
           <option value="dark_rainbow">Dark Rainbow</option>
@@ -1766,6 +1792,13 @@
           <h2 class="section-title">Protect progress and sync across devices</h2>
           <p class="section-copy">Use local backup right away, then connect cloud auth and sync so the app can travel safely across PC and mobile.</p>
           <div class="sync-shell">
+            <div class="backup-banner" id="backupBanner">
+              <strong>Backup now</strong>
+              <p id="backupBannerCopy">You have important progress here. Export a JSON backup regularly so your reflections, life plan, and settings are easy to restore anywhere.</p>
+              <div class="action-row">
+                <button class="secondary" id="backupNowButton" type="button">Backup now 💾</button>
+              </div>
+            </div>
             <div class="sync-status" id="cloudStatus">Cloud sync is not configured yet. Local backup still works now.</div>
             <div class="share-grid">
               <div class="share-card">
@@ -2055,6 +2088,10 @@
     const milestoneTimeline = document.getElementById("milestoneTimeline");
     const milestoneList = document.getElementById("milestoneList");
     const shareStatusPill = document.getElementById("shareStatusPill");
+    const backupStatusPill = document.getElementById("backupStatusPill");
+    const backupBanner = document.getElementById("backupBanner");
+    const backupBannerCopy = document.getElementById("backupBannerCopy");
+    const backupNowButton = document.getElementById("backupNowButton");
     const themeSelect = document.getElementById("themeSelect");
     const settingsThemeSelect = document.getElementById("settingsThemeSelect");
     const densitySelect = document.getElementById("densitySelect");
@@ -2130,6 +2167,7 @@
 
     const LIVE_PREVIEW_URL = "https://raw.githack.com/Lj1372/thinkos/compass-os-live/index.html";
     const REPO_BRANCH_URL = "https://github.com/Lj1372/thinkos/tree/compass-os-live";
+    const BACKUP_REMINDER_MS = 1000 * 60 * 60 * 24 * 3;
 
     function loadProfile() {
       try {
@@ -2163,6 +2201,7 @@
         theme: "dark",
         density: "comfortable",
         defaultView: "companion",
+        lastBackupAt: null,
         ...saved
       };
       if (!profile.executionPlan) {
@@ -3787,6 +3826,9 @@
       anchor.download = `compass-os-backup-${new Date().toISOString().slice(0, 10)}.json`;
       anchor.click();
       URL.revokeObjectURL(url);
+      state.profile.lastBackupAt = new Date().toISOString();
+      saveProfile();
+      renderBackupReminder();
     }
 
     async function importProfileBackupFile(file) {
@@ -3795,6 +3837,27 @@
       const parsed = JSON.parse(text);
       const profile = parsed.profile || parsed;
       applyImportedProfile(profile);
+    }
+
+    function renderBackupReminder() {
+      const lastBackupAt = state.profile.lastBackupAt ? new Date(state.profile.lastBackupAt) : null;
+      if (!lastBackupAt || Number.isNaN(lastBackupAt.getTime())) {
+        backupStatusPill.textContent = "No backup exported yet";
+        backupBannerCopy.textContent = "You have important progress here. Export a JSON backup now so your reflections, life plan, settings, and custom lenses are easy to restore if anything happens.";
+        return;
+      }
+
+      const ageMs = Date.now() - lastBackupAt.getTime();
+      const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+
+      if (ageMs > BACKUP_REMINDER_MS) {
+        backupStatusPill.textContent = `Backup is ${ageDays} day${ageDays === 1 ? "" : "s"} old`;
+        backupBannerCopy.textContent = `Your last backup was ${ageDays} day${ageDays === 1 ? "" : "s"} ago. Export a fresh JSON backup so recent work is protected too.`;
+        return;
+      }
+
+      backupStatusPill.textContent = `Backed up ${ageDays === 0 ? "today" : `${ageDays} day${ageDays === 1 ? "" : "s"} ago`}`;
+      backupBannerCopy.textContent = `Your last backup was exported ${ageDays === 0 ? "today" : `${ageDays} day${ageDays === 1 ? "" : "s"} ago`}. Keep exporting after meaningful work so your progress stays safe.`;
     }
 
     function renderCloudPanel() {
@@ -4601,6 +4664,7 @@
     cloudPull.addEventListener("click", pullCloudProfile);
     cloudSignOut.addEventListener("click", signOutCloud);
     exportBackup.addEventListener("click", exportProfileBackupJson);
+    backupNowButton.addEventListener("click", exportProfileBackupJson);
     importBackup.addEventListener("click", () => backupFileInput.click());
     backupFileInput.addEventListener("change", async () => {
       await importProfileBackupFile(backupFileInput.files?.[0]);
@@ -4682,6 +4746,7 @@
     prioritizeCompanionPanel();
     initializeCollapsiblePanels();
     renderCloudPanel();
+    renderBackupReminder();
     renderFeelings();
     renderProfile();
     renderJournal();
