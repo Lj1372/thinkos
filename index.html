@@ -130,6 +130,12 @@
       font-size: 0.92rem;
     }
 
+    .pill.live {
+      color: #f8fff8;
+      background: linear-gradient(135deg, rgba(93, 220, 198, 0.16), rgba(119, 186, 255, 0.14));
+      border-color: rgba(93, 220, 198, 0.24);
+    }
+
     .hero {
       display: grid;
       grid-template-columns: 1.08fr 0.92fr;
@@ -1152,6 +1158,32 @@
       margin-top: 18px;
     }
 
+    .share-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .share-card {
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      display: grid;
+      gap: 10px;
+    }
+
+    .share-card strong {
+      display: block;
+    }
+
+    .share-card code {
+      display: block;
+      word-break: break-all;
+      color: #dce8f8;
+      font-size: 0.9rem;
+    }
+
     .sync-status {
       border-radius: 18px;
       padding: 14px;
@@ -1195,6 +1227,10 @@
       .layout {
         grid-template-columns: 1fr;
       }
+
+      .share-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 720px) {
@@ -1208,6 +1244,20 @@
         align-items: flex-start;
       }
 
+      .top-meta,
+      .hero-actions,
+      .action-row,
+      .memory-actions,
+      .journal-actions,
+      .link-row {
+        width: 100%;
+      }
+
+      .pill {
+        width: 100%;
+        text-align: center;
+      }
+
       .mini-grid,
       .grid-2,
       .result-grid,
@@ -1215,6 +1265,15 @@
       .lens-suite,
       .compare-grid {
         grid-template-columns: 1fr;
+      }
+
+      .plan-adder,
+      .coach-input-row {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        padding: 22px;
       }
 
       h1 {
@@ -1231,6 +1290,7 @@
         <div class="brand-title">Compass OS / gamified second brain with emotional intelligence</div>
       </div>
       <div class="top-meta">
+        <span class="pill live" id="shareStatusPill">Live preview ready</span>
         <span class="pill" id="liveNow">Loading local time...</span>
         <span class="pill" id="levelPill">Level 1 / 0 XP</span>
         <span class="pill" id="streakPill">0 day streak</span>
@@ -1490,6 +1550,24 @@
           <p class="section-copy">Use local backup right away, then connect cloud auth and sync so the app can travel safely across PC and mobile.</p>
           <div class="sync-shell">
             <div class="sync-status" id="cloudStatus">Cloud sync is not configured yet. Local backup still works now.</div>
+            <div class="share-grid">
+              <div class="share-card">
+                <strong>Live preview link</strong>
+                <code id="shareLinkCode">https://raw.githack.com/Lj1372/thinkos/compass-os-live/index.html</code>
+                <div class="action-row">
+                  <button class="secondary" id="copyShareLink" type="button">Copy link 🔗</button>
+                  <button class="secondary" id="openShareLink" type="button">Open preview ↗</button>
+                </div>
+              </div>
+              <div class="share-card">
+                <strong>Source + deploy path</strong>
+                <code id="repoLinkCode">https://github.com/Lj1372/thinkos/tree/compass-os-live</code>
+                <div class="action-row">
+                  <button class="secondary" id="openRepoLink" type="button">Open branch ↗</button>
+                  <button class="secondary" id="copyRepoLink" type="button">Copy repo URL 📋</button>
+                </div>
+              </div>
+            </div>
             <div class="grid-2">
               <input id="cloudEmail" type="email" placeholder="Email for magic link login">
               <button class="secondary" id="cloudSendLink" type="button">Send magic link 🔐</button>
@@ -1740,6 +1818,13 @@
     const milestoneTitle = document.getElementById("milestoneTitle");
     const milestoneTimeline = document.getElementById("milestoneTimeline");
     const milestoneList = document.getElementById("milestoneList");
+    const shareStatusPill = document.getElementById("shareStatusPill");
+    const shareLinkCode = document.getElementById("shareLinkCode");
+    const repoLinkCode = document.getElementById("repoLinkCode");
+    const copyShareLink = document.getElementById("copyShareLink");
+    const openShareLink = document.getElementById("openShareLink");
+    const openRepoLink = document.getElementById("openRepoLink");
+    const copyRepoLink = document.getElementById("copyRepoLink");
     const cloudStatus = document.getElementById("cloudStatus");
     const cloudEmail = document.getElementById("cloudEmail");
     const cloudSendLink = document.getElementById("cloudSendLink");
@@ -1796,6 +1881,9 @@
       status: "Local-only mode",
       client: null
     };
+
+    const LIVE_PREVIEW_URL = "https://raw.githack.com/Lj1372/thinkos/compass-os-live/index.html";
+    const REPO_BRANCH_URL = "https://github.com/Lj1372/thinkos/tree/compass-os-live";
 
     function loadProfile() {
       try {
@@ -3278,15 +3366,30 @@
     }
 
     function renderCloudPanel() {
+      shareLinkCode.textContent = LIVE_PREVIEW_URL;
+      repoLinkCode.textContent = REPO_BRANCH_URL;
       if (!state.cloud.ready) {
         cloudStatus.textContent = "Cloud sync is not configured yet. Local backup works now. Add Supabase keys in app-config.js and deploy to enable login + multi-device sync.";
+        shareStatusPill.textContent = "Live preview ready";
         return;
       }
       if (!state.cloud.user) {
         cloudStatus.textContent = "Cloud is configured. Send yourself a magic link to sign in, then you can sync progress across devices.";
+        shareStatusPill.textContent = "Cloud ready, sign in next";
         return;
       }
       cloudStatus.textContent = `Signed in as ${state.cloud.user.email || "authenticated user"}. Cloud sync is ready for this account.`;
+      shareStatusPill.textContent = "Cloud sync connected";
+    }
+
+    async function copyText(value, successLabel) {
+      try {
+        await navigator.clipboard.writeText(value);
+        cloudStatus.textContent = successLabel;
+      } catch (error) {
+        console.error("Copy failed", error);
+        cloudStatus.textContent = "Copy failed on this browser. You can still select and copy the link manually.";
+      }
     }
 
     async function initCloud() {
@@ -4028,6 +4131,10 @@
     document.getElementById("addJournalEntry").addEventListener("click", addJournalItem);
     document.getElementById("addCustomLens").addEventListener("click", addCustomLens);
     document.getElementById("addMilestone").addEventListener("click", addLifeMilestone);
+    copyShareLink.addEventListener("click", () => copyText(LIVE_PREVIEW_URL, "Live preview link copied."));
+    copyRepoLink.addEventListener("click", () => copyText(REPO_BRANCH_URL, "Repo branch link copied."));
+    openShareLink.addEventListener("click", () => window.open(LIVE_PREVIEW_URL, "_blank", "noopener,noreferrer"));
+    openRepoLink.addEventListener("click", () => window.open(REPO_BRANCH_URL, "_blank", "noopener,noreferrer"));
     cloudSendLink.addEventListener("click", sendCloudMagicLink);
     cloudPush.addEventListener("click", pushCloudProfile);
     cloudPull.addEventListener("click", pullCloudProfile);

@@ -10,6 +10,12 @@ Compass OS is a single-page web app for reflection, decision-making, adaptive th
 - `supabase-schema.sql`: database schema and row-level security for cloud save
 - `vercel.json`: simple static deploy config for Vercel
 
+## Current public links
+
+- Live preview: https://raw.githack.com/Lj1372/thinkos/compass-os-live/index.html
+- GitHub branch: https://github.com/Lj1372/thinkos/tree/compass-os-live
+- Pull request target: https://github.com/Lj1372/thinkos/pull/new/compass-os-live
+
 ## Back it up right now
 
 1. Keep this whole folder in a cloud-synced drive or Git repository.
@@ -41,6 +47,15 @@ Official docs:
 2. Import that repo into Vercel.
 3. Deploy.
 4. Add your custom domain if you want.
+5. Set your production URL in Supabase Auth redirect settings.
+
+### Recommended production setup
+
+1. Use the `compass-os-live` branch first if you want to keep `main` untouched.
+2. After Vercel is connected, create:
+   - a preview deployment from the branch
+   - a production deployment after you are happy with the preview
+3. Add `app-config.js` values before your final production deploy.
 
 Official docs:
 
