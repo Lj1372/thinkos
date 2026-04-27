@@ -15,6 +15,12 @@ Compass OS is a single-page web app for reflection, decision-making, adaptive th
 - Live preview: https://raw.githack.com/Lj1372/thinkos/compass-os-live/index.html
 - GitHub branch: https://github.com/Lj1372/thinkos/tree/compass-os-live
 - Pull request target: https://github.com/Lj1372/thinkos/pull/new/compass-os-live
+- One-click Vercel import: https://vercel.com/new/clone?repository-url=https://github.com/Lj1372/thinkos&project-name=compass-os&repository-name=thinkos&production-branch=compass-os-live
+
+## Mobile note
+
+- `raw.githack` is only a quick preview host and can be flaky on phones.
+- For a stable mobile-friendly share link, deploy the `compass-os-live` branch to Vercel.
 
 ## Back it up right now
 
@@ -43,11 +49,12 @@ Official docs:
 
 ### Vercel
 
-1. Put this folder in a GitHub repository.
-2. Import that repo into Vercel.
-3. Deploy.
-4. Add your custom domain if you want.
-5. Set your production URL in Supabase Auth redirect settings.
+1. Open the one-click import link above, or import `Lj1372/thinkos` in Vercel manually.
+2. When Vercel asks which branch to use, select `compass-os-live` first if you want to keep `main` untouched.
+3. Deploy the static app with the default settings.
+4. Copy the generated `*.vercel.app` URL into `app-config.js` as `publicAppUrl`.
+5. Add that same URL to Supabase Auth site URL and redirect URLs.
+6. Redeploy after adding your Supabase keys.
 
 ### Recommended production setup
 
@@ -60,6 +67,8 @@ Official docs:
 Official docs:
 
 - Vercel deploys: https://vercel.com/docs/deployments
+- Import an existing project: https://vercel.com/docs/getting-started-with-vercel/import
+- Git deployments: https://vercel.com/docs/deployments/git
 
 ## Mobile and desktop
 

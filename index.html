@@ -1802,11 +1802,11 @@
             <div class="sync-status" id="cloudStatus">Cloud sync is not configured yet. Local backup still works now.</div>
             <div class="share-grid">
               <div class="share-card">
-                <strong>Live preview link</strong>
+                <strong>Current app link</strong>
                 <code id="shareLinkCode">https://raw.githack.com/Lj1372/thinkos/compass-os-live/index.html</code>
                 <div class="action-row">
                   <button class="secondary" id="copyShareLink" type="button">Copy link 🔗</button>
-                  <button class="secondary" id="openShareLink" type="button">Open preview ↗</button>
+                  <button class="secondary" id="openShareLink" type="button">Open app ↗</button>
                 </div>
               </div>
               <div class="share-card">
@@ -1835,6 +1835,7 @@
             <div class="link-row">
               <a href="https://supabase.com/docs/guides/auth" target="_blank" rel="noreferrer">Supabase Auth</a>
               <a href="https://vercel.com/docs/deployments" target="_blank" rel="noreferrer">Deploy on Vercel</a>
+              <a id="vercelImportLink" href="https://vercel.com/new/clone?repository-url=https://github.com/Lj1372/thinkos&project-name=compass-os&repository-name=thinkos&production-branch=compass-os-live" target="_blank" rel="noreferrer">One-click Vercel import</a>
               <a href="https://developer.mozilla.org/en-US/docs/Web/Manifest" target="_blank" rel="noreferrer">PWA / install docs</a>
             </div>
           </div>
@@ -2102,6 +2103,7 @@
     const openShareLink = document.getElementById("openShareLink");
     const openRepoLink = document.getElementById("openRepoLink");
     const copyRepoLink = document.getElementById("copyRepoLink");
+    const vercelImportLink = document.getElementById("vercelImportLink");
     const cloudStatus = document.getElementById("cloudStatus");
     const cloudEmail = document.getElementById("cloudEmail");
     const cloudSendLink = document.getElementById("cloudSendLink");
@@ -2165,8 +2167,9 @@
       client: null
     };
 
-    const LIVE_PREVIEW_URL = "https://raw.githack.com/Lj1372/thinkos/compass-os-live/index.html";
+    const FALLBACK_PREVIEW_URL = "https://raw.githack.com/Lj1372/thinkos/compass-os-live/index.html";
     const REPO_BRANCH_URL = "https://github.com/Lj1372/thinkos/tree/compass-os-live";
+    const VERCEL_IMPORT_URL = "https://vercel.com/new/clone?repository-url=https://github.com/Lj1372/thinkos&project-name=compass-os&repository-name=thinkos&production-branch=compass-os-live";
     const BACKUP_REMINDER_MS = 1000 * 60 * 60 * 24 * 3;
 
     function loadProfile() {
@@ -2183,6 +2186,13 @@
 
     function saveProfile() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.profile));
+    }
+
+    function getCurrentAppUrl() {
+      const configured = (window.COMPASS_CONFIG?.publicAppUrl || "").trim();
+      if (configured) return configured;
+      if (window.location.protocol.startsWith("http")) return window.location.href;
+      return FALLBACK_PREVIEW_URL;
     }
 
     function hydrateProfile(saved) {
@@ -3861,11 +3871,13 @@
     }
 
     function renderCloudPanel() {
-      shareLinkCode.textContent = LIVE_PREVIEW_URL;
+      const appUrl = getCurrentAppUrl();
+      shareLinkCode.textContent = appUrl;
       repoLinkCode.textContent = REPO_BRANCH_URL;
+      vercelImportLink.href = VERCEL_IMPORT_URL;
       if (!state.cloud.ready) {
-        cloudStatus.textContent = "Cloud sync is not configured yet. Local backup works now. Add Supabase keys in app-config.js and deploy to enable login + multi-device sync.";
-        shareStatusPill.textContent = "Live preview ready";
+        cloudStatus.textContent = "Cloud sync is not configured yet. Local backup works now. Add Supabase keys in app-config.js and use the Vercel import link for a more reliable mobile URL.";
+        shareStatusPill.textContent = window.location.protocol.startsWith("http") ? "Live app ready" : "Local app open";
         return;
       }
       if (!state.cloud.user) {
@@ -4640,9 +4652,9 @@
     document.getElementById("addJournalEntry").addEventListener("click", addJournalItem);
     document.getElementById("addCustomLens").addEventListener("click", addCustomLens);
     document.getElementById("addMilestone").addEventListener("click", addLifeMilestone);
-    copyShareLink.addEventListener("click", () => copyText(LIVE_PREVIEW_URL, "Live preview link copied."));
+    copyShareLink.addEventListener("click", () => copyText(getCurrentAppUrl(), "App link copied."));
     copyRepoLink.addEventListener("click", () => copyText(REPO_BRANCH_URL, "Repo branch link copied."));
-    openShareLink.addEventListener("click", () => window.open(LIVE_PREVIEW_URL, "_blank", "noopener,noreferrer"));
+    openShareLink.addEventListener("click", () => window.open(getCurrentAppUrl(), "_blank", "noopener,noreferrer"));
     openRepoLink.addEventListener("click", () => window.open(REPO_BRANCH_URL, "_blank", "noopener,noreferrer"));
     showRecommendedLenses.addEventListener("click", () => {
       state.recommendedOnly = true;
