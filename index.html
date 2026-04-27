@@ -114,6 +114,13 @@
       text-overflow: ellipsis;
     }
 
+    .theme-select {
+      width: auto;
+      min-width: 170px;
+      border-radius: 999px;
+      padding: 8px 12px;
+    }
+
     .top-meta {
       display: flex;
       gap: 10px;
@@ -325,6 +332,7 @@
       font-size: 1.85rem;
       letter-spacing: -0.04em;
       line-height: 1;
+      overflow-wrap: anywhere;
     }
 
     .stat-copy {
@@ -620,6 +628,10 @@
     .lens-filter.active {
       background: rgba(246, 194, 107, 0.14);
       border-color: rgba(246, 194, 107, 0.28);
+    }
+
+    .lens-filter.recommended {
+      background: rgba(93, 220, 198, 0.1);
     }
 
     .lens-tile {
@@ -1079,6 +1091,7 @@
     .memory-item strong {
       display: block;
       margin-bottom: 6px;
+      overflow-wrap: anywhere;
     }
 
     .memory-item p {
@@ -1191,6 +1204,7 @@
       background: rgba(255,255,255,0.04);
       color: #dce8f8;
       line-height: 1.55;
+      overflow-wrap: anywhere;
     }
 
     .link-row {
@@ -1244,6 +1258,10 @@
         align-items: flex-start;
       }
 
+      .brand-title {
+        white-space: normal;
+      }
+
       .top-meta,
       .hero-actions,
       .action-row,
@@ -1256,6 +1274,10 @@
       .pill {
         width: 100%;
         text-align: center;
+      }
+
+      .theme-select {
+        width: 100%;
       }
 
       .mini-grid,
@@ -1276,6 +1298,16 @@
         padding: 22px;
       }
 
+      .stat-value {
+        font-size: 1.45rem;
+      }
+
+      .memory-top,
+      .journal-top,
+      .milestone-item-top {
+        flex-direction: column;
+      }
+
       h1 {
         max-width: none;
       }
@@ -1291,6 +1323,12 @@
       </div>
       <div class="top-meta">
         <span class="pill live" id="shareStatusPill">Live preview ready</span>
+        <select class="theme-select" id="themeSelect">
+          <option value="ocean">Ocean Glass</option>
+          <option value="sunset">Sunset Signal</option>
+          <option value="forest">Forest Calm</option>
+          <option value="candy">Candy Flux</option>
+        </select>
         <span class="pill" id="liveNow">Loading local time...</span>
         <span class="pill" id="levelPill">Level 1 / 0 XP</span>
         <span class="pill" id="streakPill">0 day streak</span>
@@ -1360,6 +1398,7 @@
             Include the facts, your feelings, the decision you are facing, and what is making the situation hard. This app is trying
             to become a compassionate strategist, not just a productivity machine.
           </p>
+          <p class="subtle">The arena auto-selects from your text, and running the companion will bring the main coaching view into focus.</p>
 
           <div class="form-grid">
             <label>
@@ -1452,6 +1491,10 @@
               <div class="suggestion-bar" id="suggestedLenses"></div>
             </div>
             <input id="lensSearch" type="text" placeholder="Search lenses, disciplines, or ways of thinking...">
+            <div class="action-row">
+              <button class="secondary" id="showRecommendedLenses" type="button">Show recommended only</button>
+              <button class="secondary" id="showAllLenses" type="button">Show all lenses</button>
+            </div>
             <div class="lens-filters" id="lensFilters"></div>
           </div>
           <div class="lens-suite">
@@ -1750,7 +1793,8 @@
       lensSearch: "",
       lensCategory: "all",
       compareLenses: ["first_principles", "rei", "kingdom"],
-      editingEntryId: null
+      editingEntryId: null,
+      recommendedOnly: false
     };
 
     const situationInput = document.getElementById("situationInput");
@@ -1819,6 +1863,7 @@
     const milestoneTimeline = document.getElementById("milestoneTimeline");
     const milestoneList = document.getElementById("milestoneList");
     const shareStatusPill = document.getElementById("shareStatusPill");
+    const themeSelect = document.getElementById("themeSelect");
     const shareLinkCode = document.getElementById("shareLinkCode");
     const repoLinkCode = document.getElementById("repoLinkCode");
     const copyShareLink = document.getElementById("copyShareLink");
@@ -1847,6 +1892,8 @@
     const coachInput = document.getElementById("coachInput");
     const coachSummary = document.getElementById("coachSummary");
     const coachMeta = document.getElementById("coachMeta");
+    const showRecommendedLenses = document.getElementById("showRecommendedLenses");
+    const showAllLenses = document.getElementById("showAllLenses");
 
     let lensCategories = ["all", ...new Set(lenses.map((lens) => lens.category))];
     const lensPacks = {
@@ -1914,6 +1961,7 @@
         lifePlan: { vision: "", identity: "", goals: "", map: "", milestones: [] },
         helpfulnessScore: 0,
         panelPrefs: {},
+        theme: "ocean",
         ...saved
       };
       if (!profile.executionPlan) {
@@ -1962,6 +2010,110 @@
 
     function capitalize(value) {
       return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function applyTheme(themeName) {
+      const themes = {
+        ocean: {
+          bg: "#0b1422",
+          bgSoft: "#11223a",
+          panel: "rgba(13, 24, 42, 0.78)",
+          card: "rgba(255, 255, 255, 0.05)",
+          line: "rgba(161, 199, 255, 0.14)",
+          text: "#eff5ff",
+          muted: "#9db0c8",
+          teal: "#5ddcc6",
+          gold: "#f6c26b",
+          rose: "#ff8a7a",
+          sky: "#77baff"
+        },
+        sunset: {
+          bg: "#21111a",
+          bgSoft: "#3b1c2a",
+          panel: "rgba(40, 18, 31, 0.8)",
+          card: "rgba(255, 255, 255, 0.06)",
+          line: "rgba(255, 185, 145, 0.18)",
+          text: "#fff2ec",
+          muted: "#e6b7ab",
+          teal: "#ff9e7a",
+          gold: "#ffd166",
+          rose: "#ff6f91",
+          sky: "#ffc3a0"
+        },
+        forest: {
+          bg: "#0d1914",
+          bgSoft: "#193126",
+          panel: "rgba(18, 37, 28, 0.82)",
+          card: "rgba(255, 255, 255, 0.05)",
+          line: "rgba(149, 214, 170, 0.15)",
+          text: "#effff3",
+          muted: "#a6c9af",
+          teal: "#7be495",
+          gold: "#f4d35e",
+          rose: "#ff9f7f",
+          sky: "#8bd3dd"
+        },
+        candy: {
+          bg: "#1e1230",
+          bgSoft: "#2e1f46",
+          panel: "rgba(37, 24, 61, 0.82)",
+          card: "rgba(255, 255, 255, 0.07)",
+          line: "rgba(255, 179, 216, 0.18)",
+          text: "#fff4ff",
+          muted: "#d6b7ea",
+          teal: "#7df9ff",
+          gold: "#ffd166",
+          rose: "#ff7eb6",
+          sky: "#9d8cff"
+        }
+      };
+
+      const theme = themes[themeName] || themes.ocean;
+      const root = document.documentElement;
+      root.style.setProperty("--bg", theme.bg);
+      root.style.setProperty("--bg-soft", theme.bgSoft);
+      root.style.setProperty("--panel", theme.panel);
+      root.style.setProperty("--card", theme.card);
+      root.style.setProperty("--line", theme.line);
+      root.style.setProperty("--text", theme.text);
+      root.style.setProperty("--muted", theme.muted);
+      root.style.setProperty("--teal", theme.teal);
+      root.style.setProperty("--gold", theme.gold);
+      root.style.setProperty("--rose", theme.rose);
+      root.style.setProperty("--sky", theme.sky);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme.bg);
+      state.profile.theme = themeName;
+      themeSelect.value = themeName;
+      saveProfile();
+    }
+
+    function inferArenaFromSituation(input) {
+      const text = `${input.situation} ${input.feeling}`.toLowerCase();
+      if (/body|sleep|fatigue|recovery|diet|food|exercise|burnout|health/.test(text)) return "health";
+      if (/partner|family|friend|marriage|relationship|conflict|conversation|resent/.test(text)) return "relationships";
+      if (/money|debt|budget|income|salary|runway|financial|cost/.test(text)) return "money";
+      if (/calling|purpose|mission|meaning|why am i here/.test(text)) return "purpose";
+      if (/identity|who am i|becoming|self-worth|version of me/.test(text)) return "identity";
+      return "career";
+    }
+
+    function setPanelCollapsed(sectionKey, collapsed) {
+      const panel = document.querySelector(`.panel[data-section="${sectionKey}"]`);
+      if (!panel) return;
+      const toggle = panel.querySelector(".panel-toggle");
+      panel.dataset.collapsed = collapsed ? "true" : "false";
+      toggle?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      state.profile.panelPrefs = state.profile.panelPrefs || {};
+      state.profile.panelPrefs[sectionKey] = collapsed;
+      saveProfile();
+    }
+
+    function prioritizeCompanionPanel() {
+      const resultsStack = document.querySelector(".results-stack");
+      const companionPanel = document.querySelector('.panel[data-section="ai-companion"]');
+      if (resultsStack && companionPanel && resultsStack.firstElementChild !== companionPanel) {
+        resultsStack.prepend(companionPanel);
+      }
     }
 
     function getCurrentInput() {
@@ -2871,7 +3023,7 @@
 
     function renderLensSuite(input, need, edge) {
       lensFilters.innerHTML = lensCategories.map((category) => `
-        <button class="lens-filter ${state.lensCategory === category ? "active" : ""}" data-category="${category}" type="button">${capitalize(category)}</button>
+        <button class="lens-filter ${state.lensCategory === category ? "active" : ""} ${category === "all" ? "recommended" : ""}" data-category="${category}" type="button">${capitalize(category)}</button>
       `).join("");
 
       lensFilters.querySelectorAll(".lens-filter").forEach((button) => {
@@ -2881,12 +3033,14 @@
         });
       });
 
+      const recommendedKeys = new Set(suggestSpecificLenses(input).map((item) => item.lens.key));
       const visibleLenses = lenses.filter((lens) => {
         const matchesCategory = state.lensCategory === "all" || lens.category === state.lensCategory;
         const q = state.lensSearch.trim().toLowerCase();
         const haystack = `${lens.title} ${lens.category} ${lens.angle}`.toLowerCase();
         const matchesSearch = !q || haystack.includes(q);
-        return matchesCategory && matchesSearch;
+        const matchesRecommended = !state.recommendedOnly || recommendedKeys.has(lens.key);
+        return matchesCategory && matchesSearch && matchesRecommended;
       });
 
       lensGrid.innerHTML = visibleLenses.map((lens) => `
@@ -3784,7 +3938,7 @@
         panel.appendChild(head);
         panel.appendChild(body);
 
-        const defaultCollapsed = ["quest-board", "memory", "journal", "ai-companion"].includes(sectionKey);
+        const defaultCollapsed = ["quest-board", "memory", "journal"].includes(sectionKey);
         const stored = state.profile.panelPrefs?.[sectionKey];
         const collapsed = typeof stored === "boolean" ? stored : defaultCollapsed;
         panel.dataset.collapsed = collapsed ? "true" : "false";
@@ -3839,6 +3993,13 @@
 
     function runReflection() {
       const input = getCurrentInput();
+      if (input.situation) {
+        const inferredArena = inferArenaFromSituation(input);
+        if (arenaSelect.value !== inferredArena) {
+          arenaSelect.value = inferredArena;
+          input.arena = inferredArena;
+        }
+      }
       const need = inferCoreNeed(input);
       const edge = inferGrowthEdge(input);
       const mode = inferMode(input);
@@ -4125,6 +4286,13 @@
     }
 
     document.getElementById("runReflection").addEventListener("click", runReflection);
+    document.getElementById("runReflection").addEventListener("click", () => {
+      setPanelCollapsed("companion-voice", false);
+      setPanelCollapsed("ai-companion", false);
+      setPanelCollapsed("thinking-lenses", false);
+      document.querySelector('.panel[data-section="ai-companion"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
+      coachInput.focus();
+    });
     document.getElementById("saveReflection").addEventListener("click", saveCurrentReflection);
     document.getElementById("resetReflection").addEventListener("click", resetReflection);
     document.getElementById("addStepButton").addEventListener("click", addCustomStep);
@@ -4135,6 +4303,17 @@
     copyRepoLink.addEventListener("click", () => copyText(REPO_BRANCH_URL, "Repo branch link copied."));
     openShareLink.addEventListener("click", () => window.open(LIVE_PREVIEW_URL, "_blank", "noopener,noreferrer"));
     openRepoLink.addEventListener("click", () => window.open(REPO_BRANCH_URL, "_blank", "noopener,noreferrer"));
+    showRecommendedLenses.addEventListener("click", () => {
+      state.recommendedOnly = true;
+      runReflection();
+    });
+    showAllLenses.addEventListener("click", () => {
+      state.recommendedOnly = false;
+      state.lensCategory = "all";
+      state.lensSearch = "";
+      lensSearch.value = "";
+      runReflection();
+    });
     cloudSendLink.addEventListener("click", sendCloudMagicLink);
     cloudPush.addEventListener("click", pushCloudProfile);
     cloudPull.addEventListener("click", pullCloudProfile);
@@ -4185,6 +4364,7 @@
       state.lensSearch = lensSearch.value;
       runReflection();
     });
+    themeSelect.addEventListener("change", () => applyTheme(themeSelect.value));
     planOutcome.addEventListener("input", savePlanMeta);
     planReviewDate.addEventListener("input", savePlanMeta);
     planSuccessCriteria.addEventListener("input", savePlanMeta);
@@ -4214,13 +4394,14 @@
     window.runReflection = runReflection;
     window.saveCurrentReflection = saveCurrentReflection;
     syncCustomLenses();
+    prioritizeCompanionPanel();
     initializeCollapsiblePanels();
     renderCloudPanel();
     renderFeelings();
     renderProfile();
     renderJournal();
     renderLifePlan();
-    situationInput.value = demoSituation;
+    applyTheme(state.profile.theme || "ocean");
     updateRanges();
     runReflection();
     initCloud();
