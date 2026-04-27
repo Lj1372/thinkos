@@ -481,6 +481,64 @@
       gap: 18px;
     }
 
+    .hub-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .hub-btn {
+      border-radius: 18px;
+      padding: 14px 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.09);
+      color: var(--text);
+      text-align: center;
+    }
+
+    .hub-btn strong {
+      display: block;
+      font-size: 0.98rem;
+      margin-bottom: 4px;
+    }
+
+    .hub-btn span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .settings-form {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .settings-note {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    body[data-density="compact"] .panel {
+      padding: 20px;
+    }
+
+    body[data-density="compact"] .card,
+    body[data-density="compact"] .memory-item,
+    body[data-density="compact"] .plan-step,
+    body[data-density="compact"] .quest {
+      padding: 13px;
+    }
+
+    body[data-density="compact"] .section-copy,
+    body[data-density="compact"] .companion-voice,
+    body[data-density="compact"] .subtle {
+      line-height: 1.5;
+    }
+
     .companion-voice {
       font-size: 1.16rem;
       line-height: 1.72;
@@ -1253,6 +1311,10 @@
       .share-grid {
         grid-template-columns: 1fr;
       }
+
+      .hub-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 720px) {
@@ -1306,6 +1368,26 @@
         padding: 22px;
       }
 
+      .hub-grid,
+      .badge-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lens-library,
+      .journal-list,
+      .memory-list,
+      .coach-thread {
+        max-height: none;
+      }
+
+      .lens-controls,
+      .progress-shell,
+      .settings-form,
+      .custom-lens-form,
+      .life-plan-form {
+        gap: 12px;
+      }
+
       .stat-value {
         font-size: 1.45rem;
       }
@@ -1318,6 +1400,49 @@
 
       h1 {
         max-width: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .wrap {
+        width: min(100% - 12px, 1240px);
+      }
+
+      .panel {
+        padding: 18px;
+        border-radius: 22px;
+      }
+
+      .section-title {
+        font-size: 1.55rem;
+      }
+
+      .hero-actions button,
+      .action-row button,
+      .memory-actions .mini-btn,
+      .journal-actions .mini-btn {
+        width: 100%;
+      }
+
+      .hub-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lens-tile,
+      .compare-card,
+      .share-card,
+      .journal-item,
+      .milestone-item {
+        padding: 12px;
+      }
+
+      .plan-step {
+        grid-template-columns: 1fr;
+      }
+
+      .plan-step .index {
+        width: 30px;
+        height: 30px;
       }
     }
   </style>
@@ -1591,6 +1716,45 @@
       </div>
 
       <div class="right-stack">
+        <div class="panel fade-up delay-2" data-collapsible data-section="settings">
+          <div class="eyebrow">⚙️ Settings</div>
+          <h2 class="section-title">Customize your workspace</h2>
+          <p class="section-copy">Change theme, reading density, and which view the app should favor when you come back.</p>
+          <div class="settings-form">
+            <div class="grid-2">
+              <label>
+                <span class="field-label">Theme preset</span>
+                <select id="settingsThemeSelect">
+                  <option value="dark">Dark Mode</option>
+                  <option value="dark_rainbow">Dark Rainbow</option>
+                  <option value="ocean">Ocean Glass</option>
+                  <option value="sunset">Sunset Signal</option>
+                  <option value="forest">Forest Calm</option>
+                  <option value="candy">Candy Flux</option>
+                </select>
+              </label>
+              <label>
+                <span class="field-label">Density</span>
+                <select id="densitySelect">
+                  <option value="comfortable">Comfortable</option>
+                  <option value="compact">Compact</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              <span class="field-label">Default view</span>
+              <select id="defaultViewSelect">
+                <option value="companion">Companion</option>
+                <option value="reflection">Reflection</option>
+                <option value="lenses">Lenses</option>
+                <option value="plan">Plan</option>
+                <option value="life">Life map</option>
+              </select>
+            </label>
+            <p class="settings-note">These preferences are saved locally so the app can reopen in the style and focus that fits you best.</p>
+          </div>
+        </div>
+
         <div class="panel fade-up delay-2" data-collapsible data-section="quest-board">
           <div class="eyebrow">🏁 Gamified Progress</div>
           <h2 class="section-title">Quest board</h2>
@@ -1697,6 +1861,24 @@
           <p class="section-copy" id="coachSummary">
             This companion uses your current reflection, emotional tone, and saved patterns to ask questions that improve your thinking instead of drowning you in advice.
           </p>
+          <div class="hub-grid">
+            <button class="hub-btn" id="hubReflect" type="button">
+              <strong>Reflect</strong>
+              <span>Mirror and blind spots</span>
+            </button>
+            <button class="hub-btn" id="hubPlan" type="button">
+              <strong>Plan</strong>
+              <span>Execution steps and review</span>
+            </button>
+            <button class="hub-btn" id="hubLens" type="button">
+              <strong>Lens me</strong>
+              <span>Recommended lenses first</span>
+            </button>
+            <button class="hub-btn" id="hubLife" type="button">
+              <strong>Life map</strong>
+              <span>Long arc and milestones</span>
+            </button>
+          </div>
           <div class="coach-shell">
             <div class="coach-thread" id="coachThread"></div>
             <div class="coach-prompts" id="coachPrompts"></div>
@@ -1874,6 +2056,9 @@
     const milestoneList = document.getElementById("milestoneList");
     const shareStatusPill = document.getElementById("shareStatusPill");
     const themeSelect = document.getElementById("themeSelect");
+    const settingsThemeSelect = document.getElementById("settingsThemeSelect");
+    const densitySelect = document.getElementById("densitySelect");
+    const defaultViewSelect = document.getElementById("defaultViewSelect");
     const shareLinkCode = document.getElementById("shareLinkCode");
     const repoLinkCode = document.getElementById("repoLinkCode");
     const copyShareLink = document.getElementById("copyShareLink");
@@ -1904,6 +2089,10 @@
     const coachMeta = document.getElementById("coachMeta");
     const showRecommendedLenses = document.getElementById("showRecommendedLenses");
     const showAllLenses = document.getElementById("showAllLenses");
+    const hubReflect = document.getElementById("hubReflect");
+    const hubPlan = document.getElementById("hubPlan");
+    const hubLens = document.getElementById("hubLens");
+    const hubLife = document.getElementById("hubLife");
 
     let lensCategories = ["all", ...new Set(lenses.map((lens) => lens.category))];
     const lensPacks = {
@@ -1972,6 +2161,8 @@
         helpfulnessScore: 0,
         panelPrefs: {},
         theme: "dark",
+        density: "comfortable",
+        defaultView: "companion",
         ...saved
       };
       if (!profile.executionPlan) {
@@ -2120,6 +2311,22 @@
       document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme.bg);
       state.profile.theme = themeName;
       themeSelect.value = themeName;
+      if (settingsThemeSelect) settingsThemeSelect.value = themeName;
+      saveProfile();
+    }
+
+    function applyDensity(density) {
+      const nextDensity = density || "comfortable";
+      document.body.dataset.density = nextDensity;
+      state.profile.density = nextDensity;
+      if (densitySelect) densitySelect.value = nextDensity;
+      saveProfile();
+    }
+
+    function applyDefaultView(defaultView) {
+      const nextView = defaultView || "companion";
+      state.profile.defaultView = nextView;
+      if (defaultViewSelect) defaultViewSelect.value = nextView;
       saveProfile();
     }
 
@@ -2150,6 +2357,38 @@
       if (resultsStack && companionPanel && resultsStack.firstElementChild !== companionPanel) {
         resultsStack.prepend(companionPanel);
       }
+    }
+
+    function navigateHub(target) {
+      const sectionMap = {
+        reflection: "reflection-console",
+        companion: "ai-companion",
+        plan: "execution-board",
+        lenses: "thinking-lenses",
+        life: "life-plan"
+      };
+      const section = sectionMap[target] || "ai-companion";
+      setPanelCollapsed(section, false);
+      if (target === "lenses") {
+        state.recommendedOnly = true;
+        state.lensCategory = "all";
+        runReflection();
+      }
+      document.querySelector(`.panel[data-section="${section}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (target === "reflection") situationInput.focus();
+      if (target === "companion") coachInput.focus();
+    }
+
+    function applyStartupView() {
+      const target = state.profile.defaultView || "companion";
+      if (target === "companion") {
+        setPanelCollapsed("ai-companion", false);
+        setPanelCollapsed("companion-voice", false);
+      }
+      if (target === "reflection") setPanelCollapsed("reflection-console", false);
+      if (target === "lenses") setPanelCollapsed("thinking-lenses", false);
+      if (target === "plan") setPanelCollapsed("execution-board", false);
+      if (target === "life") setPanelCollapsed("life-plan", false);
     }
 
     function getCurrentInput() {
@@ -4353,6 +4592,10 @@
       lensSearch.value = "";
       runReflection();
     });
+    hubReflect.addEventListener("click", () => navigateHub("reflection"));
+    hubPlan.addEventListener("click", () => navigateHub("plan"));
+    hubLens.addEventListener("click", () => navigateHub("lenses"));
+    hubLife.addEventListener("click", () => navigateHub("life"));
     cloudSendLink.addEventListener("click", sendCloudMagicLink);
     cloudPush.addEventListener("click", pushCloudProfile);
     cloudPull.addEventListener("click", pullCloudProfile);
@@ -4404,6 +4647,9 @@
       runReflection();
     });
     themeSelect.addEventListener("change", () => applyTheme(themeSelect.value));
+    settingsThemeSelect.addEventListener("change", () => applyTheme(settingsThemeSelect.value));
+    densitySelect.addEventListener("change", () => applyDensity(densitySelect.value));
+    defaultViewSelect.addEventListener("change", () => applyDefaultView(defaultViewSelect.value));
     planOutcome.addEventListener("input", savePlanMeta);
     planReviewDate.addEventListener("input", savePlanMeta);
     planSuccessCriteria.addEventListener("input", savePlanMeta);
@@ -4440,9 +4686,12 @@
     renderProfile();
     renderJournal();
     renderLifePlan();
-    applyTheme(state.profile.theme || "ocean");
+    applyTheme(state.profile.theme || "dark");
+    applyDensity(state.profile.density || "comfortable");
+    applyDefaultView(state.profile.defaultView || "companion");
     updateRanges();
     runReflection();
+    applyStartupView();
     initCloud();
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
