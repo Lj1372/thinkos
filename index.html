@@ -1187,6 +1187,28 @@
       margin-top: 18px;
     }
 
+    .coach-status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .coach-status .pill {
+      margin: 0;
+    }
+
+    .coach-status-copy {
+      color: var(--muted);
+      font-size: 0.93rem;
+      line-height: 1.5;
+      flex: 1 1 260px;
+    }
+
     .coach-thread {
       display: grid;
       gap: 10px;
@@ -1196,6 +1218,8 @@
     }
 
     .coach-msg {
+      display: grid;
+      gap: 10px;
       border-radius: 22px;
       padding: 15px 16px;
       border: 1px solid rgba(255,255,255,0.08);
@@ -1210,13 +1234,66 @@
       background: linear-gradient(180deg, rgba(93, 220, 198, 0.12), rgba(255,255,255,0.03));
     }
 
+    .coach-msg-head {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
     .coach-msg strong {
       display: block;
-      margin-bottom: 6px;
       font-size: 0.9rem;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       color: #dce8f8;
+    }
+
+    .coach-stage {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: #dce8f8;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .coach-body {
+      display: grid;
+      gap: 10px;
+    }
+
+    .coach-card {
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .coach-card-label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .coach-question {
+      font-size: 1.03rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .coach-user-text {
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.65;
     }
 
     .coach-prompts {
@@ -1225,10 +1302,27 @@
       gap: 10px;
     }
 
+    .coach-prompt {
+      text-align: left;
+    }
+
     .coach-input-row {
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 12px;
+      align-items: end;
+    }
+
+    .coach-input-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .coach-input-label {
+      color: var(--muted);
+      font-size: 0.86rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
     }
 
     .coach-microcopy {
@@ -1405,6 +1499,10 @@
         max-height: none;
       }
 
+      .coach-status {
+        padding: 12px;
+      }
+
       .lens-controls,
       .progress-shell,
       .settings-form,
@@ -1468,6 +1566,11 @@
       .plan-step .index {
         width: 30px;
         height: 30px;
+      }
+
+      .coach-status,
+      .coach-input-row {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -1912,11 +2015,18 @@
             </button>
           </div>
           <div class="coach-shell">
+            <div class="coach-status">
+              <span class="pill" id="coachStagePill">Guided chat</span>
+              <div class="coach-status-copy" id="coachStatusCopy">The companion should feel like a calm conversation: what it is noticing, what matters most, and the next question to answer.</div>
+            </div>
             <div class="coach-thread" id="coachThread"></div>
             <div class="coach-prompts" id="coachPrompts"></div>
             <div class="coach-input-row">
-              <input id="coachInput" type="text" placeholder="Answer the companion or add more context...">
-              <button class="primary" id="sendCoach" type="button">Reply</button>
+              <div class="coach-input-wrap">
+                <label class="coach-input-label" for="coachInput">Reply naturally</label>
+                <input id="coachInput" type="text" placeholder="Type what is true, what feels stuck, or what you need help deciding...">
+              </div>
+              <button class="primary" id="sendCoach" type="button">Send</button>
             </div>
             <p class="coach-microcopy" id="coachMeta">
               The companion will keep shifting between emotional clarity, decision quality, blind spots, and action depending on what you reveal.
@@ -2124,6 +2234,8 @@
     const coachInput = document.getElementById("coachInput");
     const coachSummary = document.getElementById("coachSummary");
     const coachMeta = document.getElementById("coachMeta");
+    const coachStagePill = document.getElementById("coachStagePill");
+    const coachStatusCopy = document.getElementById("coachStatusCopy");
     const showRecommendedLenses = document.getElementById("showRecommendedLenses");
     const showAllLenses = document.getElementById("showAllLenses");
     const hubReflect = document.getElementById("hubReflect");
@@ -2155,7 +2267,9 @@
     state.coach = {
       messages: [],
       question: "",
-      prompts: []
+      prompts: [],
+      stage: "Guided chat",
+      status: "The companion should feel like a calm conversation: what it is noticing, what matters most, and the next question to answer."
     };
 
     state.cloud = {
@@ -2268,6 +2382,34 @@
       return value.charAt(0).toUpperCase() + value.slice(1);
     }
 
+    function coachStageForInput(input, need) {
+      if (/decide|whether|choice|move|leave|stay|risk/i.test(input.situation)) return "Decision";
+      if (input.arena === "relationships") return "Relationship";
+      if (input.arena === "health") return "Regulate";
+      if (need === "Courage") return "Courage";
+      if (need === "Clarity") return "Clarify";
+      return "Reflect";
+    }
+
+    function buildGuideMessage(stage, glance, focus, question) {
+      return {
+        role: "ai",
+        kind: "guide",
+        stage,
+        glance,
+        focus,
+        question
+      };
+    }
+
+    function buildUserMessage(text) {
+      return {
+        role: "user",
+        kind: "user",
+        text
+      };
+    }
+
     function renderIdleLensSuite() {
       lensFilters.innerHTML = lensCategories.map((category) => `
         <button class="lens-filter ${state.lensCategory === category ? "active" : ""} ${category === "all" ? "recommended" : ""}" data-category="${category}" type="button">${capitalize(category)}</button>
@@ -2357,7 +2499,11 @@
       synthesisOutput.textContent = "When you add a real situation, the app will synthesize the lenses into a practical point of view and a forward plan.";
       state.coach.messages = [{
         role: "ai",
-        text: "Start with the real situation, decision, or feeling you want help thinking through. Once there is real context, I can reflect it back, challenge blind spots, and help plan the next move."
+        kind: "guide",
+        stage: "Start",
+        glance: "We do not need a polished story yet.",
+        focus: "Give me the real situation, what feels hard about it, or the decision you are trying to make.",
+        question: "What situation, feeling, or decision do you want to think through right now?"
       }];
       state.coach.question = "What situation, feeling, or decision do you want to think through right now?";
       state.coach.prompts = [
@@ -2365,6 +2511,8 @@
         "The situation that keeps weighing on me is...",
         "What I am really feeling is..."
       ];
+      state.coach.stage = "Start";
+      state.coach.status = "Start with what is real. The companion will then narrow the issue, reflect what matters, and guide the next move.";
       state.coach.meta = "The companion becomes contextual once you give it something real to work with.";
       renderCoach();
       renderIdleLensSuite();
@@ -4247,31 +4395,98 @@
       const text = userText.toLowerCase();
       const combo = currentRecommendedCombo(input);
       const comboNames = combo.lenses.map((lens) => lens.title).join(", ");
+      const stage = coachStageForInput(input, need);
       if (text.includes("afraid") || text.includes("fear") || text.includes("scared")) {
-        return `That fear matters. Through ${comboNames || "the current lens mix"}, the useful question is whether the fear is signaling a real constraint, an emotional wound, or an instinctive protection pattern. What would the fear say if it could speak in one full, brutally honest sentence?`;
+        return buildGuideMessage(
+          stage,
+          "Fear is probably carrying useful information, not just noise.",
+          `Through ${comboNames || "the current lens mix"}, the next job is to tell the difference between a real constraint, an old wound, and a protection reflex.`,
+          "If the fear could speak in one brutally honest sentence, what would it say?"
+        );
       }
       if (text.includes("should")) {
-        return `I notice the word "should." That often means borrowed expectations are in the room. Which part of that "should" is reasoned conviction, which part is relational pressure, and which part is image management?`;
+        return buildGuideMessage(
+          stage,
+          "The word \"should\" usually means more than one voice is in the room.",
+          "This often blends conviction, outside pressure, and image management into one sentence.",
+          "Which part of that \"should\" is truly yours, and which part belongs to pressure, guilt, or performance?"
+        );
       }
       if (text.includes("tired") || text.includes("exhausted") || text.includes("burnt")) {
-        return `That changes the decision context. Your recommended lenses would treat exhaustion as decision-relevant data. What would this whole situation look like after two steadier days with less physiological noise in the system?`;
+        return buildGuideMessage(
+          "Regulate",
+          "Exhaustion changes the meaning of the problem.",
+          "Your current state may be making everything look heavier, more urgent, or more hopeless than it really is.",
+          "What would this whole situation look like after two steadier days with less physiological noise in the system?"
+        );
       }
       if (text.includes("want")) {
-        return `Desire is useful data. The next layer is to ask whether what you want is aligned with your values, your deeper truth, and the fruit you want your life to bear, or whether it is mostly a reaction against discomfort.`;
+        return buildGuideMessage(
+          stage,
+          "What you want is important data.",
+          "The next step is to test whether that desire is aligned with your values and deeper truth, or whether it is mostly a reaction against discomfort.",
+          "What part of this desire feels deeply true, and what part feels more like escape or relief?"
+        );
       }
       if (edge === "Decisiveness") {
-        return `You may already have enough information for a provisional move. If ${comboNames || "these lenses"} are right, what tiny decision could you make now that would create better evidence instead of demanding perfect certainty first?`;
+        return buildGuideMessage(
+          "Decision",
+          "You may already have enough signal for a provisional move.",
+          `If ${comboNames || "these lenses"} are right, the goal is not perfect certainty. It is a small move that creates better evidence.`,
+          "What tiny decision could you make now that would teach you more than another hour of circling?"
+        );
       }
-      return `What you just said adds signal. If we compress it through ${comboNames || "the current lens mix"}: what part of this feels most true, what part feels most conditioned, and what is the next honest move that respects the truth without turning the whole situation into a dramatic ultimatum?`;
+      return buildGuideMessage(
+        stage,
+        "That adds useful signal.",
+        `If we compress what you just said through ${comboNames || "the current lens mix"}, there is usually a difference between what feels most true, what feels conditioned, and what needs action next.`,
+        "What part of this feels most true, and what is the next honest move that does not require turning the whole thing into a dramatic ultimatum?"
+      );
     }
 
     function renderCoach() {
-      coachThread.innerHTML = state.coach.messages.map((message) => `
-        <div class="coach-msg ${message.role}">
-          <strong>${message.role === "ai" ? "Companion" : "You"}</strong>
-          <div>${message.text}</div>
-        </div>
-      `).join("");
+      coachStagePill.textContent = state.coach.stage || "Guided chat";
+      coachStatusCopy.textContent = state.coach.status || "The companion is here to help you see the issue more clearly and decide the next move.";
+
+      coachThread.innerHTML = state.coach.messages.map((message) => {
+        if (message.role === "user") {
+          return `
+            <div class="coach-msg user">
+              <div class="coach-msg-head">
+                <strong>You</strong>
+              </div>
+              <div class="coach-user-text">${message.text || ""}</div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="coach-msg ai">
+            <div class="coach-msg-head">
+              <strong>Companion</strong>
+              <span class="coach-stage">${message.stage || state.coach.stage || "Reflect"}</span>
+            </div>
+            <div class="coach-body">
+              <div class="coach-card">
+                <span class="coach-card-label">What I am noticing</span>
+                <div>${message.glance || message.text || ""}</div>
+              </div>
+              ${message.focus ? `
+                <div class="coach-card">
+                  <span class="coach-card-label">What matters most</span>
+                  <div>${message.focus}</div>
+                </div>
+              ` : ""}
+              ${message.question ? `
+                <div class="coach-card">
+                  <span class="coach-card-label">Next question</span>
+                  <div class="coach-question">${message.question}</div>
+                </div>
+              ` : ""}
+            </div>
+          </div>
+        `;
+      }).join("");
 
       coachPrompts.innerHTML = state.coach.prompts.map((prompt) => `
         <button class="chip coach-prompt" type="button" data-prompt="${escapeAttr(prompt)}">${prompt}</button>
@@ -4279,6 +4494,7 @@
 
       coachSummary.textContent = state.coach.question || coachSummary.textContent;
       coachMeta.textContent = state.coach.meta || coachMeta.textContent;
+      coachThread.scrollTop = coachThread.scrollHeight;
 
       coachPrompts.querySelectorAll(".coach-prompt").forEach((button) => {
         button.addEventListener("click", () => {
@@ -4434,15 +4650,32 @@
       const edge = inferGrowthEdge(input);
       const coachState = nextCoachQuestion(input, need, edge);
       const combo = currentRecommendedCombo(input);
+      const stage = coachStageForInput(input, need);
 
       state.coach.question = coachState.question;
       state.coach.prompts = coachState.prompts;
+      state.coach.stage = stage;
+      state.coach.status = combo.lenses.length
+        ? `Using ${combo.lenses.map((lens) => lens.title).join(", ")} to guide the next step.`
+        : "Narrowing the issue and guiding the next step.";
       state.coach.meta = coachState.meta;
 
       const opening = `I’m noticing ${input.feeling} energy around a ${input.arena} situation. The strongest need looks like ${need.toLowerCase()}, and the growth edge looks like ${edge.toLowerCase()}. I’m using ${combo.lenses.map((lens) => lens.title).join(", ")} as the lead lens combo here. ${coachState.question}`;
 
-      if (!state.coach.messages.length || state.coach.messages[0]?.text !== opening) {
-        state.coach.messages = [{ role: "ai", text: opening }];
+      const structuredOpening = buildGuideMessage(
+        stage,
+        `I am noticing ${input.feeling} energy around a ${input.arena} situation.`,
+        `The strongest need looks like ${need.toLowerCase()}, and the growth edge looks like ${edge.toLowerCase()}. ${combo.lenses.length ? `The lead lens mix here is ${combo.lenses.map((lens) => lens.title).join(", ")}.` : ""}`.trim(),
+        coachState.question
+      );
+      const first = state.coach.messages[0];
+      const changed = !first
+        || first.kind !== structuredOpening.kind
+        || first.glance !== structuredOpening.glance
+        || first.focus !== structuredOpening.focus
+        || first.question !== structuredOpening.question;
+      if (!state.coach.messages.length || changed) {
+        state.coach.messages = [structuredOpening];
       }
 
       renderCoach();
@@ -4455,8 +4688,8 @@
       const input = getCurrentInput();
       const need = inferCoreNeed(input);
       const edge = inferGrowthEdge(input);
-      state.coach.messages.push({ role: "user", text });
-      state.coach.messages.push({ role: "ai", text: buildCoachReply(text, input, need, edge) });
+      state.coach.messages.push(buildUserMessage(text));
+      state.coach.messages.push(buildCoachReply(text, input, need, edge));
       coachInput.value = "";
       renderCoach();
       awardXp(10);
